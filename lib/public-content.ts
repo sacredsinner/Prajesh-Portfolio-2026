@@ -3,12 +3,22 @@ import { db } from "@/lib/db"
 import { blogPosts, clients, projects, showcaseVideos, testimonials } from "@/lib/db/schema"
 
 export async function getActiveShowcaseVideo() {
-  const rows = await db.select({ url: showcaseVideos.url, filename: showcaseVideos.filename }).from(showcaseVideos).where(eq(showcaseVideos.isActive, true)).limit(1)
-  return rows[0] ?? null
+  try {
+    const rows = await db.select({ url: showcaseVideos.url, filename: showcaseVideos.filename }).from(showcaseVideos).where(eq(showcaseVideos.isActive, true)).limit(1)
+    return rows[0] ?? null
+  } catch (error) {
+    console.error("[v0] Failed to load showcase video", error)
+    return null
+  }
 }
 
 export async function getPublishedClients() {
-  return db.select().from(clients).where(eq(clients.isPublished, true)).orderBy(clients.sortOrder, desc(clients.createdAt))
+  try {
+    return await db.select().from(clients).where(eq(clients.isPublished, true)).orderBy(clients.sortOrder, desc(clients.createdAt))
+  } catch (error) {
+    console.error("[v0] Failed to load clients", error)
+    return []
+  }
 }
 
 export async function getPublishedClient(slug: string) {
@@ -17,11 +27,21 @@ export async function getPublishedClient(slug: string) {
 }
 
 export async function getPublishedTestimonials() {
-  return db.select().from(testimonials).where(eq(testimonials.published, true)).orderBy(desc(testimonials.featured), testimonials.sortOrder, desc(testimonials.createdAt))
+  try {
+    return await db.select().from(testimonials).where(eq(testimonials.published, true)).orderBy(desc(testimonials.featured), testimonials.sortOrder, desc(testimonials.createdAt))
+  } catch (error) {
+    console.error("[v0] Failed to load testimonials", error)
+    return []
+  }
 }
 
 export async function getPublishedProjects() {
-  return db.select().from(projects).orderBy(desc(projects.featured), desc(projects.updatedAt), desc(projects.createdAt))
+  try {
+    return await db.select().from(projects).orderBy(desc(projects.featured), desc(projects.updatedAt), desc(projects.createdAt))
+  } catch (error) {
+    console.error("[v0] Failed to load published projects", error)
+    return []
+  }
 }
 
 export async function getPublishedProject(slug: string) {
