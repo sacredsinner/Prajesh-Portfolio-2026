@@ -61,7 +61,15 @@ export async function listContacts() { await requireAdmin(); return db.select().
 export async function updateContact(id: string, status: string, notes: string) { await requireAdmin(); await db.update(contacts).set({ status: z.enum(["new", "read", "replied", "archived"]).parse(status), notes: notes.trim(), updatedAt: new Date() }).where(eq(contacts.id, id)); revalidatePath("/admin") }
 export async function deleteContact(id: string) { await requireAdmin(); await db.delete(contacts).where(eq(contacts.id, id)); revalidatePath("/admin") }
 
-export async function uploadAsset(formData: FormData) { await requireAdmin(); const file = formData.get("file"); if (!(file instanceof File) || file.size === 0) throw new Error("A file is required"); if (!file.type.startsWith("image/")) throw new Error("Only image files are supported"); if (file.size > 8 * 1024 * 1024) throw new Error("Image must be under 8MB"); const blob = await put(`portfolio/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true }); return blob.url }
+export async function uploadAsset(formData: FormData) {
+  await requireAdmin()
+  const file = formData.get("file")
+  if (!(file instanceof File) || file.size === 0) throw new Error("A file is required")
+  if (!file.type.startsWith("image/")) throw new Error("Only image files are supported")
+  if (file.size > 8 * 1024 * 1024) throw new Error("Image must be under 8MB")
+  const blob = await put(`portfolio/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true })
+  return { url: blob.url, pathname: blob.pathname }
+}
 
 export async function getAdminData() { await requireAdmin(); const [projectRows, postRows, contactRows] = await Promise.all([listProjects(), listPosts(), listContacts()]); return { projectRows, postRows, contactRows } }
 

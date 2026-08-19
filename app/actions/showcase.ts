@@ -49,7 +49,7 @@ export async function deleteShowcaseVideo(id: number) {
   await requireAdmin()
   const rows = await db.select().from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1)
   if (rows[0]) {
-    await del(rows[0].url)
+    await del(rows[0].pathname)
     await db.delete(showcaseVideos).where(eq(showcaseVideos.id, id))
   }
   revalidatePath("/")

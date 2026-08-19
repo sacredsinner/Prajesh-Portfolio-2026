@@ -3,6 +3,7 @@ import { pool } from "@/lib/db"
 
 const origins = [
   process.env.V0_RUNTIME_URL,
+  process.env.NEON_AUTH_BASE_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
   process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
 ].filter(Boolean) as string[]
