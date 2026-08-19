@@ -30,17 +30,24 @@ export async function uploadShowcaseVideo(formData: FormData) {
   if (!file.type.startsWith("video/")) throw new Error("Only video files are supported")
   if (file.size > 100 * 1024 * 1024) throw new Error("Video must be under 100MB")
   const blob = await put(`portfolio/showcase/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true })
-  const saved = await db.insert(showcaseVideos).values({ pathname: blob.pathname, url: blob.url, filename: file.name, contentType: file.type, sizeBytes: file.size }).returning()
-  revalidatePath("/")
+  const saved = await db.transaction(async (tx) => {
+    await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
+    return tx.insert(showcaseVideos).values({ pathname: blob.pathname, url: blob.url, filename: file.name, contentType: file.type, sizeBytes: file.size, isActive: true }).returning()
+  })
+  revalidatePath("/", "layout")
   revalidatePath("/admin")
   return saved[0]
 }
 
 export async function activateShowcaseVideo(id: number) {
   await requireAdmin()
-  await db.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
-  const saved = await db.update(showcaseVideos).set({ isActive: true }).where(eq(showcaseVideos.id, id)).returning()
-  revalidatePath("/")
+  const saved = await db.transaction(async (tx) => {
+    const target = await tx.select({ id: showcaseVideos.id }).from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1)
+    if (!target[0]) throw new Error("Showcase video not found")
+    await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
+    return tx.update(showcaseVideos).set({ isActive: true }).where(eq(showcaseVideos.id, id)).returning()
+  })
+  revalidatePath("/", "layout")
   revalidatePath("/admin")
   return saved[0]
 }
