@@ -10,7 +10,15 @@ export function AdminVideoManager({ videos }: { videos: Video[] }) {
   const [message, setMessage] = useState("")
   async function upload(file: File) {
     setBusy(true); setMessage("")
-    try { const formData = new FormData(); formData.set("file", file); await uploadShowcaseVideo(formData); window.location.reload() } catch (error) { setMessage(error instanceof Error ? error.message : "Upload failed") } finally { setBusy(false) }
+    try {
+      const formData = new FormData()
+      formData.set("file", file)
+      await uploadShowcaseVideo(formData)
+      window.location.reload()
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      setMessage(detail.includes("Body exceeded") ? "This video is too large for the upload request. Choose a file under 100MB." : detail || "Upload failed. Check the Blob and database connections.")
+    } finally { setBusy(false) }
   }
   async function activate(id: number) {
     setBusy(true); setMessage("")
