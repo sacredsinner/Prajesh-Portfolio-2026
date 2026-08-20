@@ -67,7 +67,9 @@ export async function uploadAsset(formData: FormData) {
   if (!(file instanceof File) || file.size === 0) throw new Error("A file is required")
   if (!file.type.startsWith("image/")) throw new Error("Only image files are supported")
   if (file.size > 8 * 1024 * 1024) throw new Error("Image must be under 8MB")
-  const blob = await put(`portfolio/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true })
+  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Blob storage is not configured")
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-") || "portfolio-image"
+  const blob = await put(`portfolio/${Date.now()}-${safeName}`, file, { access: "public", addRandomSuffix: true, contentType: file.type })
   return { url: blob.url, pathname: blob.pathname }
 }
 

@@ -29,11 +29,28 @@ export async function uploadShowcaseVideo(formData: FormData) {
   if (!(file instanceof File) || file.size === 0) throw new Error("A video file is required")
   if (!file.type.startsWith("video/")) throw new Error("Only video files are supported")
   if (file.size > 100 * 1024 * 1024) throw new Error("Video must be under 100MB")
-  const blob = await put(`portfolio/showcase/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true })
-  const saved = await db.transaction(async (tx) => {
-    await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
-    return tx.insert(showcaseVideos).values({ pathname: blob.pathname, url: blob.url, filename: file.name, contentType: file.type, sizeBytes: file.size, isActive: true }).returning()
+  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Blob storage is not configured")
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-") || "showcase-video"
+  const blob = await put(`portfolio/showcase/${Date.now()}-${safeName}`, file, {
+    access: "public",
+    addRandomSuffix: true,
+    contentType: file.type,
   })
+
+  try {
+    const saved = await db.transaction(async (tx) => {
+      await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
+      return tx.insert(showcaseVideos).values({ pathname: blob.pathname, url: blob.url, filename: file.name, contentType: file.type, sizeBytes: file.size, isActive: true }).returning()
+    })
+
+    revalidatePath("/", "layout")
+    revalidatePath("/admin")
+    return saved[0]
+  } catch (error) {
+    await del(blob.url).catch(() => undefined)
+    throw error
+  }
   revalidatePath("/", "layout")
   revalidatePath("/admin")
   return saved[0]
