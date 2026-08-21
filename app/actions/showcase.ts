@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { showcaseVideos } from "@/lib/db/schema"
+import { getBlobToken } from "@/lib/blob"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -29,13 +30,13 @@ export async function uploadShowcaseVideo(formData: FormData) {
   if (!(file instanceof File) || file.size === 0) throw new Error("A video file is required")
   if (!file.type.startsWith("video/")) throw new Error("Only video files are supported")
   if (file.size > 100 * 1024 * 1024) throw new Error("Video must be under 100MB")
-  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Blob storage is not configured")
-
+  const token = getBlobToken()
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-") || "showcase-video"
   const blob = await put(`portfolio/showcase/${Date.now()}-${safeName}`, file, {
     access: "public",
     addRandomSuffix: true,
     contentType: file.type,
+    token,
   })
 
   try {

@@ -8,6 +8,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { blogPosts, contacts, projects, testimonials } from "@/lib/db/schema"
+import { getBlobToken } from "@/lib/blob"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -67,9 +68,8 @@ export async function uploadAsset(formData: FormData) {
   if (!(file instanceof File) || file.size === 0) throw new Error("A file is required")
   if (!file.type.startsWith("image/")) throw new Error("Only image files are supported")
   if (file.size > 8 * 1024 * 1024) throw new Error("Image must be under 8MB")
-  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Blob storage is not configured")
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-") || "portfolio-image"
-  const blob = await put(`portfolio/${Date.now()}-${safeName}`, file, { access: "public", addRandomSuffix: true, contentType: file.type })
+  const blob = await put(`portfolio/${Date.now()}-${safeName}`, file, { access: "public", addRandomSuffix: true, contentType: file.type, token: getBlobToken() })
   return { url: blob.url, pathname: blob.pathname }
 }
 
