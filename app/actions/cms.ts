@@ -1,18 +1,18 @@
 "use server"
 
 import { put } from "@vercel/blob"
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq, gte } from "drizzle-orm"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { blogPosts, contacts, projects, testimonials } from "@/lib/db/schema"
 import { getBlobToken } from "@/lib/blob"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error("Unauthorized")
+  if (!session || !isAdminUser(session.user)) throw new Error("Unauthorized")
   return session.user
 }
 
@@ -56,8 +56,16 @@ export async function savePost(input: PostInput & { id?: string }) { await requi
 export async function deletePost(id: string) { await requireAdmin(); await db.delete(blogPosts).where(eq(blogPosts.id, id)); revalidatePath("/blog"); revalidatePath("/admin") }
 export async function getPostBySlug(value: string) { return (await db.select().from(blogPosts).where(eq(blogPosts.slug, value))).at(0) ?? null }
 
-const contactSchema = z.object({ name: z.string().trim().min(2).max(120), email: z.string().email().max(200), company: z.string().trim().max(160).optional(), message: z.string().trim().min(10).max(5000) })
-export async function submitContact(input: z.input<typeof contactSchema>) { const data = contactSchema.parse(input); await db.insert(contacts).values(data); revalidatePath("/admin"); return { ok: true } }
+const contactSchema = z.object({ name: z.string().trim().min(2).max(120), email: z.string().email().max(200), company: z.string().trim().max(160).optional(), message: z.string().trim().min(10).max(5000), website: z.string().trim().max(200).optional() })
+export async function submitContact(input: z.input<typeof contactSchema>) {
+  const data = contactSchema.parse(input)
+  if (data.website) return { ok: true }
+  const recent = await db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.email, data.email), gte(contacts.createdAt, new Date(Date.now() - 60_000)))).limit(1)
+  if (recent.length) return { ok: true }
+  await db.insert(contacts).values({ name: data.name, email: data.email, company: data.company, message: data.message })
+  revalidatePath("/admin")
+  return { ok: true }
+}
 export async function listContacts() { await requireAdmin(); return db.select().from(contacts).orderBy(desc(contacts.createdAt)) }
 export async function updateContact(id: string, status: string, notes: string) { await requireAdmin(); await db.update(contacts).set({ status: z.enum(["new", "read", "replied", "archived"]).parse(status), notes: notes.trim(), updatedAt: new Date() }).where(eq(contacts.id, id)); revalidatePath("/admin") }
 export async function deleteContact(id: string) { await requireAdmin(); await db.delete(contacts).where(eq(contacts.id, id)); revalidatePath("/admin") }

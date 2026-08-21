@@ -4,14 +4,14 @@ import { del, put } from "@vercel/blob"
 import { desc, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { auth } from "@/lib/auth"
+import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { showcaseVideos } from "@/lib/db/schema"
 import { getBlobToken } from "@/lib/blob"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error("Unauthorized")
+  if (!isAdminUser(session?.user)) throw new Error("Unauthorized")
 }
 
 export async function listShowcaseVideos() {
@@ -52,9 +52,6 @@ export async function uploadShowcaseVideo(formData: FormData) {
     await del(blob.url).catch(() => undefined)
     throw error
   }
-  revalidatePath("/", "layout")
-  revalidatePath("/admin")
-  return saved[0]
 }
 
 export async function activateShowcaseVideo(id: number) {
