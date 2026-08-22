@@ -4,13 +4,14 @@ import { del, put } from "@vercel/blob"
 import { desc, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { auth } from "@/lib/auth"
+import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { showcaseVideos } from "@/lib/db/schema"
+import { getBlobToken } from "@/lib/blob"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error("Unauthorized")
+  if (!isAdminUser(session?.user)) throw new Error("Unauthorized")
 }
 
 export async function listShowcaseVideos() {
@@ -29,29 +30,56 @@ export async function uploadShowcaseVideo(formData: FormData) {
   if (!(file instanceof File) || file.size === 0) throw new Error("A video file is required")
   if (!file.type.startsWith("video/")) throw new Error("Only video files are supported")
   if (file.size > 100 * 1024 * 1024) throw new Error("Video must be under 100MB")
-  const blob = await put(`portfolio/showcase/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true })
-  const saved = await db.insert(showcaseVideos).values({ pathname: blob.pathname, url: blob.url, filename: file.name, contentType: file.type, sizeBytes: file.size }).returning()
-  revalidatePath("/")
-  revalidatePath("/admin")
-  return saved[0]
+  const token = getBlobToken()
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-") || "showcase-video"
+  const blob = await put(`portfolio/showcase/${Date.now()}-${safeName}`, file, {
+    access: "public",
+    addRandomSuffix: true,
+    contentType: file.type,
+    token,
+  })
+
+  try {
+    const saved = await db.transaction(async (tx) => {
+      await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
+      return tx.insert(showcaseVideos).values({ pathname: blob.pathname, url: blob.url, filename: file.name, contentType: file.type, sizeBytes: file.size, isActive: true }).returning()
+    })
+
+    revalidatePath("/", "layout")
+    revalidatePath("/admin")
+    return saved[0]
+  } catch (error) {
+    await del(blob.url).catch(() => undefined)
+    throw error
+  }
 }
 
 export async function activateShowcaseVideo(id: number) {
   await requireAdmin()
-  await db.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
-  const saved = await db.update(showcaseVideos).set({ isActive: true }).where(eq(showcaseVideos.id, id)).returning()
-  revalidatePath("/")
+  const saved = await db.transaction(async (tx) => {
+    const target = await tx.select({ id: showcaseVideos.id }).from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1)
+    if (!target[0]) throw new Error("Showcase video not found")
+    await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
+    return tx.update(showcaseVideos).set({ isActive: true }).where(eq(showcaseVideos.id, id)).returning()
+  })
+  revalidatePath("/", "layout")
   revalidatePath("/admin")
   return saved[0]
 }
 
 export async function deleteShowcaseVideo(id: number) {
   await requireAdmin()
-  const rows = await db.select().from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1)
-  if (rows[0]) {
-    await del(rows[0].url)
-    await db.delete(showcaseVideos).where(eq(showcaseVideos.id, id))
-  }
-  revalidatePath("/")
+  const result = await db.transaction(async (tx) => {
+    const row = (await tx.select().from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1))[0]
+    if (!row) return null
+    await tx.delete(showcaseVideos).where(eq(showcaseVideos.id, id))
+    if (row.isActive) {
+      const replacement = (await tx.select({ id: showcaseVideos.id }).from(showcaseVideos).orderBy(desc(showcaseVideos.createdAt)).limit(1))[0]
+      if (replacement) await tx.update(showcaseVideos).set({ isActive: true }).where(eq(showcaseVideos.id, replacement.id))
+    }
+    return row
+  })
+  if (result) await del(result.pathname).catch(() => undefined)
+  revalidatePath("/", "layout")
   revalidatePath("/admin")
 }

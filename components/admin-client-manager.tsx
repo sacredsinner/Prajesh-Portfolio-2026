@@ -32,7 +32,7 @@ export function AdminClientManager({ initialClients }: { initialClients: Client[
 
   async function remove(client: Client) {
     if (!window.confirm(`Delete ${client.name}?`)) return
-    await deleteClient(client.id, client.logoUrl)
+    await deleteClient(client.id)
     setItems((current) => current.filter((item) => item.id !== client.id))
   }
 

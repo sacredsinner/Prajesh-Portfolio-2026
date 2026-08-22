@@ -27,8 +27,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: row.seoTitle || `${project.title} — Prajesh Shakya`,
-    description: row.seoDescription || project.overview,
+title: `${project.title} — Prajesh Shakya`,
+  description: project.overview,
   }
 }
 

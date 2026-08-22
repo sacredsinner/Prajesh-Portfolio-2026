@@ -13,7 +13,22 @@ import { getActiveShowcaseVideo, getPublishedClients, getPublishedTestimonials, 
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const [projectRows, testimonialRows, showcaseVideo, clientRows] = await Promise.all([getPublishedProjects(), getPublishedTestimonials(), getActiveShowcaseVideo(), getPublishedClients()])
+  let projectRows: Awaited<ReturnType<typeof getPublishedProjects>> = []
+  let testimonialRows: Awaited<ReturnType<typeof getPublishedTestimonials>> = []
+  let showcaseVideo: Awaited<ReturnType<typeof getActiveShowcaseVideo>> = null
+  let clientRows: Awaited<ReturnType<typeof getPublishedClients>> = []
+
+  try {
+    ;[projectRows, testimonialRows, showcaseVideo, clientRows] = await Promise.all([
+      getPublishedProjects(),
+      getPublishedTestimonials(),
+      getActiveShowcaseVideo(),
+      getPublishedClients(),
+    ])
+  } catch (error) {
+    console.error("[v0] Homepage CMS data unavailable:", error)
+  }
+
   const projects = projectRows.map(toProjectCard)
   return (
     <>
