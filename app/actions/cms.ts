@@ -49,12 +49,20 @@ export async function saveProject(input: ProjectInput & { id?: string }) {
   return saved[0]
 }
 export async function deleteProject(id: string) { await requireAdmin(); await db.delete(projects).where(eq(projects.id, id)); revalidatePath("/projects"); revalidatePath("/admin") }
-export async function getProjectBySlug(value: string) { return (await db.select().from(projects).where(eq(projects.slug, value))).at(0) ?? null }
+export async function getProjectBySlug(value: string) {
+  const parsed = slug.safeParse(value)
+  if (!parsed.success) return null
+  return (await db.select().from(projects).where(eq(projects.slug, parsed.data)).limit(1))[0] ?? null
+}
 
 export async function listPosts() { await requireAdmin(); return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)) }
 export async function savePost(input: PostInput & { id?: string }) { await requireAdmin(); const data = postSchema.parse(input); const values = { ...data, publishedAt: data.published ? data.publishedAt ?? new Date() : null, updatedAt: new Date() }; const saved = input.id ? await db.update(blogPosts).set(values).where(eq(blogPosts.id, input.id)).returning() : await db.insert(blogPosts).values(values).returning(); revalidatePath("/blog"); revalidatePath(`/blog/${data.slug}`); revalidatePath("/admin"); return saved[0] }
 export async function deletePost(id: string) { await requireAdmin(); await db.delete(blogPosts).where(eq(blogPosts.id, id)); revalidatePath("/blog"); revalidatePath("/admin") }
-export async function getPostBySlug(value: string) { return (await db.select().from(blogPosts).where(eq(blogPosts.slug, value))).at(0) ?? null }
+export async function getPostBySlug(value: string) {
+  const parsed = slug.safeParse(value)
+  if (!parsed.success) return null
+  return (await db.select().from(blogPosts).where(eq(blogPosts.slug, parsed.data)).limit(1))[0] ?? null
+}
 
 const contactSchema = z.object({ name: z.string().trim().min(2).max(120), email: z.string().email().max(200), company: z.string().trim().max(160).optional(), message: z.string().trim().min(10).max(5000), website: z.string().trim().max(200).optional() })
 export async function submitContact(input: z.input<typeof contactSchema>) {

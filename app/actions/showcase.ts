@@ -69,11 +69,17 @@ export async function activateShowcaseVideo(id: number) {
 
 export async function deleteShowcaseVideo(id: number) {
   await requireAdmin()
-  const rows = await db.select().from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1)
-  if (rows[0]) {
-    await del(rows[0].pathname)
-    await db.delete(showcaseVideos).where(eq(showcaseVideos.id, id))
-  }
-  revalidatePath("/")
+  const result = await db.transaction(async (tx) => {
+    const row = (await tx.select().from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1))[0]
+    if (!row) return null
+    await tx.delete(showcaseVideos).where(eq(showcaseVideos.id, id))
+    if (row.isActive) {
+      const replacement = (await tx.select({ id: showcaseVideos.id }).from(showcaseVideos).orderBy(desc(showcaseVideos.createdAt)).limit(1))[0]
+      if (replacement) await tx.update(showcaseVideos).set({ isActive: true }).where(eq(showcaseVideos.id, replacement.id))
+    }
+    return row
+  })
+  if (result) await del(result.pathname).catch(() => undefined)
+  revalidatePath("/", "layout")
   revalidatePath("/admin")
 }
