@@ -6,10 +6,15 @@ import { Resend } from "resend"
 // Neon Auth stores Better Auth tables in the neon_auth schema. Keep a
 // dedicated pool for auth so the app's Drizzle pool can continue using public.
 const authPool = new Pool({
-  // Neon pooled connections reject search_path startup parameters.
   // Use the unpooled connection for Better Auth's schema selection.
   connectionString: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL,
   options: "-c search_path=neon_auth,public",
+})
+
+// Ensure every newly opened connection uses Neon Auth's schema. Some Neon
+// connection strings ignore startup options, so apply it after connection too.
+authPool.on("connect", (client) => {
+  void client.query("SET search_path TO neon_auth, public")
 })
 
 export const ADMIN_EMAIL = "prajeshshakya@gmail.com"
