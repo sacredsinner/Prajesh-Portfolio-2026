@@ -69,7 +69,14 @@ export const auth = betterAuth({
     },
   } : {}),
   session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
-  ...(process.env.NODE_ENV === "development" ? {
-    advanced: { defaultCookieAttributes: { sameSite: "none" as const, secure: true } },
-  } : {}),
+  advanced: {
+    database: {
+      // Neon Auth uses UUID primary keys for its Better Auth tables.
+      generateId: "uuid",
+    },
+    ...(process.env.NODE_ENV === "development" ? {
+      // Required for the cross-site v0 preview iframe.
+      defaultCookieAttributes: { sameSite: "none" as const, secure: true },
+    } : {}),
+  },
 })
