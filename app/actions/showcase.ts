@@ -20,6 +20,7 @@ export async function listShowcaseVideos() {
 }
 
 export async function getActiveShowcaseVideo() {
+  await requireAdmin()
   const rows = await db.select().from(showcaseVideos).where(eq(showcaseVideos.isActive, true)).limit(1)
   return rows[0] ?? null
 }
