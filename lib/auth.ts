@@ -1,6 +1,16 @@
 import { betterAuth } from "better-auth"
+import { Pool } from "pg"
 import { pool } from "@/lib/db"
 import { Resend } from "resend"
+
+// Neon Auth stores Better Auth tables in the neon_auth schema. Keep a
+// dedicated pool for auth so the app's Drizzle pool can continue using public.
+const authPool = new Pool({
+  // Neon pooled connections reject search_path startup parameters.
+  // Use the unpooled connection for Better Auth's schema selection.
+  connectionString: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL,
+  options: "-c search_path=neon_auth,public",
+})
 
 export const ADMIN_EMAIL = "prajeshshakya@gmail.com"
 
@@ -23,7 +33,7 @@ const productionOrigins = [
 const origins = process.env.NODE_ENV === "development" ? developmentOrigins : productionOrigins
 
 export const auth = betterAuth({
-  database: pool,
+  database: authPool,
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL ?? origins[0] ?? "http://localhost:3000",
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
