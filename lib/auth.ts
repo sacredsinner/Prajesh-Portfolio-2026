@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth"
 import { pool } from "@/lib/db"
+import { Resend } from "resend"
 
 export const ADMIN_EMAIL = "prajeshshakya@gmail.com"
 
@@ -7,19 +8,51 @@ export function isAdminUser(user: { email?: string | null } | null | undefined) 
   return user?.email?.trim().toLowerCase() === ADMIN_EMAIL
 }
 
-const origins = [
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+const developmentOrigins = [
+  "http://localhost:3000",
   process.env.V0_RUNTIME_URL,
-  process.env.NEON_AUTH_BASE_URL,
+  process.env.V0_DEV_APP_URL,
+  process.env.V0_BUILD_URL,
+  process.env.V0_SANDBOX_URL,
+].filter(Boolean) as string[]
+const productionOrigins = [
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
   process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
 ].filter(Boolean) as string[]
+const origins = process.env.NODE_ENV === "development" ? developmentOrigins : productionOrigins
 
 export const auth = betterAuth({
   database: pool,
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL ?? origins[0] ?? "http://localhost:3000",
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
-  emailAndPassword: { enabled: true, allowSignUp: false, autoSignIn: true },
+  emailAndPassword: {
+    enabled: true,
+    allowSignUp: false,
+    autoSignIn: true,
+    sendResetPassword: async ({ user, url }) => {
+      if (!resend) {
+        console.error("[v0] RESEND_API_KEY is not configured for password reset")
+        return
+      }
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>",
+        to: user.email,
+        subject: "Reset your portfolio password",
+        text: `Reset your password by opening this link: ${url}`,
+        html: `<p>Reset your portfolio password by clicking the link below.</p><p><a href="${url}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
+      })
+    },
+  },
+  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? {
+    socialProviders: {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      },
+    },
+  } : {}),
   session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
   ...(process.env.NODE_ENV === "development" ? {
     advanced: { defaultCookieAttributes: { sameSite: "none" as const, secure: true } },
