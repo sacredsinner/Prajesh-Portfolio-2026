@@ -44,7 +44,7 @@ export const auth = betterAuth({
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
   emailAndPassword: {
     enabled: true,
-    allowSignUp: false,
+    allowSignUp: true,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
       if (!resend) {

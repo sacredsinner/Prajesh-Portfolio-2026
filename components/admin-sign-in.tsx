@@ -62,8 +62,11 @@ export function AdminSignIn() {
       >
         {pending ? "Please wait…" : "Sign in"}
       </button>
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <a href="/forgot-password" className="text-muted-foreground underline underline-offset-4">Forgot password?</a>
+      <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+        <div className="flex gap-4">
+          <a href="/forgot-password" className="text-muted-foreground underline underline-offset-4">Forgot password?</a>
+          <a href="/admin/signup" className="text-muted-foreground underline underline-offset-4">Create account</a>
+        </div>
         <button
           type="button"
           disabled={pending}
