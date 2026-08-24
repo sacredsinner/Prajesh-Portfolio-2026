@@ -4,7 +4,6 @@ import { type FormEvent, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 
 export function AdminSignIn() {
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in")
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
 
@@ -16,21 +15,15 @@ export function AdminSignIn() {
     const email = String(form.get("email"))
     const password = String(form.get("password"))
 
-    const result =
-      mode === "sign-up"
-        ? await authClient.signUp.email({
-            email,
-            password,
-            name: String(form.get("name") || "Admin"),
-          })
-        : await authClient.signIn.email({ email, password })
-
-    if (result.error) {
-      setError(result.error.message ?? "Something went wrong")
-    } else {
-      window.location.assign("/admin")
+    try {
+      const result = await authClient.signIn.email({ email, password })
+      if (result.error) setError("Unable to sign in. Check your email and password.")
+      else window.location.assign("/admin")
+    } catch {
+      setError("Unable to sign in right now. Please try again.")
+    } finally {
+      setPending(false)
     }
-    setPending(false)
   }
 
   return (
@@ -40,20 +33,10 @@ export function AdminSignIn() {
     >
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Private workspace</p>
-        <h1 className="mt-2 font-serif text-3xl">{mode === "sign-up" ? "Create admin account" : "Admin sign in"}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {mode === "sign-up"
-            ? "Set up the first administrator to manage your projects and notes."
-            : "Sign in to manage your projects and notes."}
-        </p>
+<h1 className="mt-2 font-serif text-3xl">Admin sign in</h1>
+  <p className="mt-2 text-sm text-muted-foreground">Sign in to manage your projects and notes.</p>
       </div>
-      {mode === "sign-up" && (
-        <label className="grid gap-2 text-sm">
-          Name
-          <input name="name" type="text" required className="rounded-lg border border-border bg-background px-3 py-2" />
-        </label>
-      )}
-      <label className="grid gap-2 text-sm">
+<label className="grid gap-2 text-sm">
         Email
         <input name="email" type="email" required className="rounded-lg border border-border bg-background px-3 py-2" />
       </label>
@@ -77,18 +60,39 @@ export function AdminSignIn() {
         disabled={pending}
         className="rounded-full bg-foreground px-4 py-3 text-sm text-background disabled:opacity-50"
       >
-        {pending ? "Please wait…" : mode === "sign-up" ? "Create account" : "Sign in"}
+        {pending ? "Please wait…" : "Sign in"}
       </button>
-      <button
-        type="button"
-        onClick={() => {
-          setMode(mode === "sign-up" ? "sign-in" : "sign-up")
-          setError("")
-        }}
-        className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-      >
-        {mode === "sign-up" ? "Already have an account? Sign in" : "Need an account? Create one"}
-      </button>
+      <div className="flex flex-col gap-3 text-sm">
+        <a href="/forgot-password" className="text-muted-foreground underline underline-offset-4">
+          Forgot password?
+        </a>
+        <a
+          href="/admin/signup"
+          className="inline-flex w-fit items-center justify-center rounded-full border border-border px-4 py-2 font-medium text-foreground underline-offset-4 transition-colors hover:bg-muted hover:underline"
+        >
+          Create an account
+        </a>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={async () => {
+            setPending(true)
+            setError("")
+            try {
+              const result = await authClient.signIn.social({ provider: "google", callbackURL: "/admin" })
+              if (result.error) setError("Unable to continue with Google. Please try again.")
+            } catch {
+              setError("Unable to continue with Google. Please try again.")
+            } finally {
+              setPending(false)
+            }
+          }}
+          className="rounded-full border border-border px-4 py-2 disabled:opacity-50"
+        >
+          Continue with Google
+        </button>
+      </div>
+
     </form>
   )
 }
