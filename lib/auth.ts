@@ -51,13 +51,20 @@ export const auth = betterAuth({
         console.error("[v0] RESEND_API_KEY is not configured for password reset")
         return
       }
-      await resend.emails.send({
+      const escapeHtml = (value: string) =>
+        value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;")
+      const safeUrl = escapeHtml(url)
+      const response = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>",
         to: user.email,
         subject: "Reset your portfolio password",
         text: `Reset your password by opening this link: ${url}`,
-        html: `<p>Reset your portfolio password by clicking the link below.</p><p><a href="${url}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
+        html: `<p>Reset your password by clicking the link below.</p><p><a href="${safeUrl}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
       })
+      if (response.error) {
+        console.error("[v0] Resend rejected password reset email", response.error)
+        throw new Error("Password reset email delivery failed")
+      }
     },
   },
   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? {
