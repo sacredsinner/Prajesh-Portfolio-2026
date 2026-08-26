@@ -32,15 +32,18 @@ const developmentOrigins = [
   process.env.V0_SANDBOX_URL,
 ].filter(Boolean) as string[]
 const productionOrigins = [
+  "https://shakyaprajesh.com.np",
+  "https://www.shakyaprajesh.com.np",
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
   process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
 ].filter(Boolean) as string[]
 const origins = process.env.NODE_ENV === "development" ? developmentOrigins : productionOrigins
+const canonicalProductionUrl = "https://shakyaprajesh.com.np"
 
 export const auth = betterAuth({
   database: authPool,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL ?? origins[0] ?? "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL ?? (process.env.NODE_ENV === "production" ? canonicalProductionUrl : origins[0] ?? "http://localhost:3000"),
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
   emailAndPassword: {
     enabled: true,
