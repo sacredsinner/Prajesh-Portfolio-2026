@@ -63,10 +63,10 @@ export function AboutStory() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-border"
+            className="pt-8 grid grid-cols-2 md:grid-cols-3 gap-8 border-t border-border"
           >
             <div>
-              <span className="font-serif text-3xl md:text-4xl">10+</span>
+              <span className="font-serif text-3xl md:text-4xl">9+</span>
               <p className="text-sm text-muted-foreground mt-1">
                 Years Experience
               </p>
