@@ -24,6 +24,7 @@ export function isAdminUser(user: { email?: string | null } | null | undefined) 
 }
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+const resetEmailFrom = process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>"
 const developmentOrigins = [
   "http://localhost:3000",
   process.env.V0_RUNTIME_URL,
@@ -58,7 +59,7 @@ export const auth = betterAuth({
         value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;")
       const safeUrl = escapeHtml(url)
       const response = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>",
+        from: resetEmailFrom,
         to: user.email,
         subject: "Reset your portfolio password",
         text: `Reset your password by opening this link: ${url}`,
