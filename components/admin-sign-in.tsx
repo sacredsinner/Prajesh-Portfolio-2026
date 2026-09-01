@@ -79,7 +79,10 @@ export function AdminSignIn() {
             setPending(true)
             setError("")
             try {
-              const result = await authClient.signIn.social({ provider: "google", callbackURL: "/admin" })
+              const result = await authClient.signIn.social({
+                provider: "google",
+                callbackURL: `${window.location.origin}/admin`,
+              })
               if (result.error) setError("Unable to continue with Google. Please try again.")
             } catch {
               setError("Unable to continue with Google. Please try again.")

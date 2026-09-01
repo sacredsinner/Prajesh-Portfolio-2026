@@ -3,13 +3,15 @@ import Link from "next/link"
 const footerLinks = [
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
+  { href: "/blog", label: "Notes" },
+  { href: "/clients", label: "Clients" },
   { href: "/contact", label: "Contact" },
 ]
 
 const socialLinks = [
-  { href: "https://instagram.com", label: "Instagram" },
-  { href: "https://linkedin.com", label: "LinkedIn" },
-  { href: "https://dribbble.com", label: "Dribbble" },
+  { href: "https://instagram.com/prajeshshakya", label: "Instagram" },
+  { href: "https://www.linkedin.com/in/prajeshshakya/", label: "LinkedIn" },
+  { href: "https://dribbble.com/prajesh", label: "Dribbble" },
 ]
 
 export function Footer() {

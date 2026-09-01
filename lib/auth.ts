@@ -24,6 +24,7 @@ export function isAdminUser(user: { email?: string | null } | null | undefined) 
 }
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+const resetEmailFrom = process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>"
 const developmentOrigins = [
   "http://localhost:3000",
   process.env.V0_RUNTIME_URL,
@@ -32,15 +33,18 @@ const developmentOrigins = [
   process.env.V0_SANDBOX_URL,
 ].filter(Boolean) as string[]
 const productionOrigins = [
+  "https://shakyaprajesh.com.np",
+  "https://www.shakyaprajesh.com.np",
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
   process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
 ].filter(Boolean) as string[]
 const origins = process.env.NODE_ENV === "development" ? developmentOrigins : productionOrigins
+const canonicalProductionUrl = "https://shakyaprajesh.com.np"
 
 export const auth = betterAuth({
   database: authPool,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL ?? origins[0] ?? "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL ?? (process.env.NODE_ENV === "production" ? canonicalProductionUrl : origins[0] ?? "http://localhost:3000"),
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
   emailAndPassword: {
     enabled: true,
@@ -51,13 +55,20 @@ export const auth = betterAuth({
         console.error("[v0] RESEND_API_KEY is not configured for password reset")
         return
       }
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>",
+      const escapeHtml = (value: string) =>
+        value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;")
+      const safeUrl = escapeHtml(url)
+      const response = await resend.emails.send({
+        from: resetEmailFrom,
         to: user.email,
         subject: "Reset your portfolio password",
         text: `Reset your password by opening this link: ${url}`,
-        html: `<p>Reset your portfolio password by clicking the link below.</p><p><a href="${url}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
+        html: `<p>Reset your password by clicking the link below.</p><p><a href="${safeUrl}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
       })
+      if (response.error) {
+        console.error("[v0] Resend rejected password reset email", response.error)
+        throw new Error("Password reset email delivery failed")
+      }
     },
   },
   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? {
