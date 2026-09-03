@@ -17,8 +17,8 @@ export function TrustedPartnershipsSection({ clients }: { clients: Client[] }) {
       {clients.length > 0 ? (
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }} className="mt-12 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           {clients.slice(0, 12).map((client) => (
-            <motion.div key={client.id} variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }} transition={{ duration: 0.45 }} className="flex aspect-[1.35] items-center justify-center border border-foreground/80 p-5">
-              <img src={client.logoUrl} alt={`${client.name} logo`} className="mx-auto max-h-20 w-full object-contain object-center" />
+            <motion.div key={client.id} variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }} transition={{ duration: 0.45 }} className="group flex aspect-[1.35] items-center justify-center border border-foreground/80 p-0 transition-colors hover:bg-foreground">
+              <img src={client.logoUrl} alt={`${client.name} logo`} className="mx-auto max-h-20 w-full object-contain object-center grayscale transition-all duration-300 group-hover:grayscale-0" />
             </motion.div>
           ))}
         </motion.div>
