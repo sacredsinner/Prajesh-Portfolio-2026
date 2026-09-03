@@ -11,9 +11,12 @@ const metrics = [
 ]
 
 const services = [
-  { title: "Brand Strategy", description: "Research, positioning, messaging, and strategic direction that define how your business should be perceived.", deliverables: ["Brand Discovery", "Audience Research", "Positioning", "Messaging Framework", "Brand Strategy Document"] },
-  { title: "Brand Identity", description: "A complete visual identity system designed to create recognition, consistency, and trust.", deliverables: ["Logo System", "Colour Palette", "Typography", "Iconography", "Brand Guidelines"] },
-  { title: "Digital Experience", description: "Bringing your brand to life across websites, digital products, and customer touchpoints.", deliverables: ["Portfolio Websites", "Landing Pages", "Design Systems", "UI Design", "CMS Integration"] },
+  { title: "(01) Brand Strategy", description: "Research, positioning, messaging, and strategic direction that define how your business should be perceived.", deliverables: ["Brand Discovery", "Audience Research", "Positioning", "Messaging Framework", "Brand Strategy Document"] },
+  { title: "(02) Logo Design", description: "Create distinctive logos and mark systems that represent your brand identity and make you memorable.", deliverables: ["Logo Concepts", "Logo Variations", "Mark System", "Usage Guidelines", "Brand Assets"] },
+  { title: "(03) Brand Identity", description: "A complete visual identity system designed to create recognition, consistency, and trust.", deliverables: ["Logo System", "Colour Palette", "Typography", "Iconography", "Brand Guidelines"] },
+  { title: "(04) Packaging Design", description: "Strategic packaging design that stands out, communicates your values, and creates customer connection.", deliverables: ["Package Layout", "Material Selection", "Label Design", "Print Files", "Production Specs"] },
+  { title: "(05) Web Design", description: "Beautiful, functional web experiences that engage visitors and convert them into customers.", deliverables: ["Wireframes", "Visual Design", "Responsive Layout", "Interactive Prototypes", "Developer Handoff"] },
+  { title: "(06) SEO/AEO/GEO", description: "Optimize your digital presence for search, answer engines, and local discovery to reach your audience effectively.", deliverables: ["SEO Strategy", "Content Optimization", "Technical SEO", "Local Optimization", "Performance Analytics"] },
 ]
 
 export function IntroSection() {
