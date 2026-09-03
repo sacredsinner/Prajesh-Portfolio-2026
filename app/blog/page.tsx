@@ -1,6 +1,12 @@
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getPublishedPosts } from "@/lib/public-content"
+
+export const metadata: Metadata = {
+  title: "Brand Strategy Notes — Prajesh Shakya",
+  description: "I write about brand strategy, identity design, and the thinking behind meaningful brands.",
+}
 
 export const dynamic = "force-dynamic"
 

@@ -8,37 +8,37 @@ const processSteps = [
     number: "01",
     title: "Understand",
     description:
-      "We start by talking. I want to understand your business, your goals, your audience, and what you\'re trying to solve.",
+      "I start by listening. I want to understand your business, your goals, your audience, and what you\'re trying to solve.",
   },
   {
     number: "02",
     title: "Explore",
     description:
-      "We look deeper—at the market, competitors, people, and the things that could make your brand different.",
+      "I look deeper—at the market, competitors, people, and the things that could make your brand different.",
   },
   {
     number: "03",
     title: "Define",
     description:
-      "We bring those thoughts together into a clear direction: what the brand should say, feel, and stand for.",
+      "I bring those thoughts together into a clear direction: what the brand should say, feel, and stand for.",
   },
   {
     number: "04",
     title: "Design",
     description:
-      "This is where the thinking becomes visual. We explore ideas and build an identity around the direction we\'ve found.",
+      "This is where the thinking becomes visual. I explore ideas and build an identity around the direction we\'ve found.",
   },
   {
     number: "05",
     title: "Refine",
     description:
-      "Nothing should be there just because it looks good. We question, refine, and make sure every part feels intentional.",
+      "Nothing should be there just because it looks good. I question, refine, and make sure every part feels intentional.",
   },
   {
     number: "06",
     title: "Bring It To Life",
     description:
-      "The final identity is shaped into practical assets and systems you can actually use—not just a nice presentation.",
+      "I shape the final identity into practical assets and systems you can actually use—not just a nice presentation.",
   },
 ]
 
@@ -47,7 +47,7 @@ export function ProcessSection() {
     <Section>
       <SectionHeader
         label="Process"
-        title="How we work together"
+        title="How I work with you"
         description="A proven methodology that transforms insight into identity."
       />
 

@@ -7,9 +7,9 @@ import { getPublishedProjects } from "@/lib/public-content"
 import type { Project } from "@/components/project-card"
 
 export const metadata: Metadata = {
-  title: "Projects — Prajesh Shakya",
+  title: "Brand Identity Projects — Prajesh Shakya",
   description:
-    "Explore brand identity projects and case studies by Prajesh Shakya. Strategic design work for ambitious businesses.",
+    "Explore my selected brand identity projects and case studies, from strategy and logo design to complete visual systems.",
 }
 
 export const dynamic = "force-dynamic"

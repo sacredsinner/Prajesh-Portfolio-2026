@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getPublishedClients } from "@/lib/public-content"
+
+export const metadata: Metadata = {
+  title: "Clients — Prajesh Shakya",
+  description: "A selection of ambitious businesses I have helped through brand strategy and identity design.",
+}
 
 export const dynamic = "force-dynamic"
 
