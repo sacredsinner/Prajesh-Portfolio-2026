@@ -7,9 +7,9 @@ import { AboutValues } from "@/components/about/about-values"
 import { CTABlock } from "@/components/cta-block"
 
 export const metadata: Metadata = {
-  title: "About — Prajesh Shakya",
+  title: "About Prajesh Shakya — Brand Identity Designer",
   description:
-    "Learn about Prajesh Shakya, a brand identity designer creating strategic brand identities that combine psychology, design, and marketing.",
+    "Learn how I use strategy, design, and visual storytelling to build distinctive brand identities for ambitious businesses.",
 }
 
 export default function AboutPage() {

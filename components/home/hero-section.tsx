@@ -31,7 +31,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed"
           >
-            I create thoughtful visual identities that help businesses communicate clearly, build trust, and stand out in competitive markets.
+            Hi, I&apos;m Prajesh — I turn ideas into distinctive brands through strategy, design, and meaningful visual identities.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

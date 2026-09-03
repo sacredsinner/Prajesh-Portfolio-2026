@@ -4,9 +4,9 @@ import { Footer } from "@/components/footer"
 import { ContactForm } from "@/components/contact/contact-form"
 
 export const metadata: Metadata = {
-  title: "Contact — Prajesh Shakya",
+  title: "Contact Prajesh Shakya — Start a Brand Project",
   description:
-    "Get in touch to discuss your brand identity project. Start a conversation about transforming your brand.",
+    "Tell me about your business, brand, or next idea. I create distinctive identities through strategy and design.",
 }
 
 export default function ContactPage() {

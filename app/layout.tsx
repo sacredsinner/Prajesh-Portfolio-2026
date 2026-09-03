@@ -18,20 +18,20 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shakyaprajesh.com.np"),
-  title: "Prajesh Shakya — Brand Identity Designer",
+  title: "Prajesh Shakya — Brand Identity Designer in Nepal",
   description:
-    "Strategic brand identities combining psychology, design, and marketing — for businesses that want meaning, not just visuals.",
+    "I help ambitious businesses build distinctive brand identities through strategy, design, and meaningful visual systems.",
   generator: null,
   openGraph: {
     title: "Prajesh Shakya — Brand Identity Designer",
-    description: "Strategic brand identities combining psychology, design, and marketing for ambitious businesses.",
+    description: "I help ambitious businesses build distinctive brand identities through strategy, design, and meaningful visual systems.",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Prajesh Shakya — Brand Identity Designer" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Prajesh Shakya — Brand Identity Designer",
-    description: "Strategic brand identities combining psychology, design, and marketing for ambitious businesses.",
+    description: "I help ambitious businesses build distinctive brand identities through strategy, design, and meaningful visual systems.",
     images: ["/og-image.png"],
   },
   icons: {

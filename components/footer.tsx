@@ -28,8 +28,7 @@ export function Footer() {
               Prajesh Shakya
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Strategic brand identities combining psychology, design, and
-              marketing.
+              I build distinctive brand identities through strategy, design, and meaningful visual systems.
             </p>
           </div>
 
