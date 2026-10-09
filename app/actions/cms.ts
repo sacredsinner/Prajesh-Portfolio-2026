@@ -56,7 +56,7 @@ export async function getProjectBySlug(value: string) {
 }
 
 export async function listPosts() { await requireAdmin(); return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)) }
-export async function savePost(input: PostInput & { id?: string }) { await requireAdmin(); const data = postSchema.parse(input); const values = { ...data, publishedAt: data.published ? data.publishedAt ?? new Date() : null, updatedAt: new Date() }; const saved = input.id ? await db.update(blogPosts).set(values).where(eq(blogPosts.id, input.id)).returning() : await db.insert(blogPosts).values(values).returning(); revalidatePath("/blog"); revalidatePath(`/blog/${data.slug}`); revalidatePath("/admin"); return saved[0] }
+export async function savePost(input: PostInput & { id?: string }) { await requireAdmin(); const data = postSchema.parse({ ...input, featuredImage: input.featuredImage?.trim() || "/placeholder.jpg" }); const values = { ...data, publishedAt: data.published ? data.publishedAt ?? new Date() : null, updatedAt: new Date() }; const saved = input.id ? await db.update(blogPosts).set(values).where(eq(blogPosts.id, input.id)).returning() : await db.insert(blogPosts).values(values).returning(); revalidatePath("/blog"); revalidatePath(`/blog/${data.slug}`); revalidatePath("/admin"); return saved[0] }
 export async function deletePost(id: string) { await requireAdmin(); await db.delete(blogPosts).where(eq(blogPosts.id, id)); revalidatePath("/blog"); revalidatePath("/admin") }
 export async function getPostBySlug(value: string) {
   const parsed = slug.safeParse(value)
