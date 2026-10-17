@@ -224,3 +224,40 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
+
+// Newsletters written in Content studio → Newsletter. Each one goes out as a Resend
+// Broadcast to the "Website newsletter" segment.
+export const newsletterIssues = pgTable("newsletter_issues", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  subject: text("subject").notNull(),
+  previewText: text("preview_text"),
+  heading: text("heading"),
+  body: text("body").notNull().default(""),
+  imageUrl: text("image_url"),
+  ctaLabel: text("cta_label"),
+  ctaUrl: text("cta_url"),
+  noteId: uuid("note_id"), // the note it was written from (no foreign key, so the record survives the note)
+  status: text("status").notNull().default("draft"), // draft | sending | queued | scheduled | sent | canceled | failed
+  broadcastId: text("broadcast_id"),
+  recipientCount: integer("recipient_count"),
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+// Everyone who confirmed a newsletter sign-up on the site or was added by hand: a record
+// of when they agreed, and a list to retry from if Resend refused to add them.
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  email: text("email").primaryKey(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  source: text("source").notNull().default("website"), // website | admin
+  status: text("status").notNull().default("subscribed"), // subscribed | unsubscribed | removed
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull().defaultNow(),
+  syncedAt: timestamp("synced_at", { withTimezone: true }), // when Resend last accepted them
+  syncError: text("sync_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})

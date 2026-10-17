@@ -21,7 +21,7 @@ export function OverviewPanel({ data, onOpenContacts }: { data: Overview; onOpen
         <Stat label="New enquiries" value={String(enquiries.newCount)} note={`${enquiries.monthCount} in the last 30 days`} />
         <Stat label="Outstanding" value={money.outstanding.join(" · ") || "—"} note={money.overdueCount ? `${money.overdueCount} overdue` : `${money.quotesOpen} quote${money.quotesOpen === 1 ? "" : "s"} awaiting reply`} warn={money.overdueCount > 0} />
         <Stat label="Paid this year" value={money.paidThisYear.join(" · ") || "—"} note={`${content.projects} projects · ${content.notes} notes live`} />
-        <Stat label="Audience" value={audience.newsletter === null ? "—" : String(audience.newsletter)} note={audience.newsletter === null ? "Newsletter count needs a full-access Resend key" : `newsletter subscribers · ${audience.leads ?? "—"} leads in Resend`} />
+        <Link href="/admin/newsletter" className="min-w-0"><Stat label="Audience" value={audience.newsletter === null ? "—" : String(audience.newsletter)} note={audience.newsletter === null ? "Newsletter count needs a full-access Resend key" : `newsletter subscribers · ${audience.leads ?? "—"} leads in Resend`} /></Link>
       </section>
 
       {attention.length > 0 && (

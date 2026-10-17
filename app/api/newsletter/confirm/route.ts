@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { sendEmail } from "@/lib/email"
 import { newSubscriberEmail } from "@/lib/email-templates"
 import { verifyConfirmation } from "@/lib/newsletter"
+import { recordSubscriber } from "@/lib/newsletter-issues"
 import { addSubscriber } from "@/lib/resend-contacts"
 import { CONTACT_EMAIL, SITE_URL } from "@/lib/site"
 
@@ -15,6 +16,8 @@ export async function GET(request: NextRequest) {
 
   const added = await addSubscriber(email)
   if (!added.ok) console.error("[newsletter] Could not add subscriber to Resend:", added.error)
+  // Keep a record in the content studio too, so a refused address can be retried later.
+  await recordSubscriber({ email, source: "website", synced: added.ok, syncError: added.ok ? null : added.error }).catch((error) => console.error("[newsletter] Could not record the subscriber", error))
 
   // Tell Prajesh about new subscribers, and about any that need adding by hand.
   if (!added.ok || added.isNew) {

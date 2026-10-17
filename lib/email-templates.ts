@@ -49,9 +49,9 @@ export function detailsBlock(rows: [string, string][]) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;border-top:1px solid ${C.hair};">${cells}</table>`
 }
 
-type Layout = { preheader: string; kicker?: string; heading?: string; bodyHtml: string; cta?: { label: string; url: string }; afterHtml?: string }
+type Layout = { preheader: string; kicker?: string; heading?: string; bodyHtml: string; cta?: { label: string; url: string }; afterHtml?: string; footerHtml?: string }
 
-export function renderEmail({ preheader, kicker, heading, bodyHtml, cta, afterHtml = "" }: Layout) {
+export function renderEmail({ preheader, kicker, heading, bodyHtml, cta, afterHtml = "", footerHtml = "" }: Layout) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -80,6 +80,7 @@ ${afterHtml}
 <tr><td style="padding:28px 0 0;border-top:1px solid ${C.hair};">
 <p style="margin:0 0 8px;font-family:${SERIF};font-size:19px;line-height:1.3;font-style:italic;color:${C.ink};">Designed with intention.</p>
 <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.muted};">Prajesh Shakya &middot; Brand Identity Designer<br><a href="${SITE_URL}" style="color:${C.muted};">${SITE_LABEL}</a> &middot; <a href="${INSTAGRAM}" style="color:${C.muted};">@madebyprajesh</a></p>
+${footerHtml}
 </td></tr>
 </table>
 </td></tr>
@@ -179,8 +180,9 @@ export function newsletterConfirmEmail(url: string): EmailContent {
 // To Prajesh when someone confirms their subscription.
 export function newSubscriberEmail(email: string, problem?: string): EmailContent {
   const note = problem
-    ? `They couldn't be added to Resend automatically (${problem}). Add them by hand in Resend under Audience → Contacts.`
-    : `They've been added to the "Website newsletter" segment in Resend, ready for your next broadcast.`
+    ? `They couldn't be added to Resend automatically (${problem}). They're saved in the content studio: once that's fixed, open Newsletter → Subscribers and press "Add to Resend".`
+    : `They've been added to your newsletter list in Resend, ready for the next newsletter.`
+  const adminUrl = `${SITE_URL}/admin/newsletter`
   return {
     subject: `New newsletter subscriber: ${email}`,
     html: renderEmail({
@@ -188,8 +190,114 @@ export function newSubscriberEmail(email: string, problem?: string): EmailConten
       kicker: "Newsletter",
       heading: "New subscriber",
       bodyHtml: detailsBlock([["Email", escapeHtml(email)]]) + textToHtml(note),
+      cta: { label: "Open Newsletter", url: adminUrl },
     }),
-    text: `New newsletter subscriber: ${email}\n\n${note}`,
+    text: `New newsletter subscriber: ${email}\n\n${note}\n\n${adminUrl}`,
+  }
+}
+
+// ── Newsletter ───────────────────────────────────────────────────────────────
+
+// Resend swaps this for each reader's own unsubscribe link when a Broadcast goes out.
+export const UNSUBSCRIBE_PLACEHOLDER = "{{{RESEND_UNSUBSCRIBE_URL}}}"
+
+// Newsletters are written in the same small Markdown subset as notes (see
+// components/markdown.tsx) and turned into inline-styled email HTML here. Every piece of
+// text is escaped, so nothing typed into a newsletter can inject markup.
+const INLINE = /(\*\*[^*\n]+\*\*|\*[^*\s][^*\n]*\*|_[^_\s][^_\n]*_|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\))/g
+const LINK = /^\[([^\]]+)\]\(([^)\s]+)\)$/
+
+// Links and images in an email need full addresses: "/blog/x" becomes the site's URL.
+export function absoluteUrl(href: string) {
+  const value = href.trim()
+  if (/^https?:\/\//i.test(value) || /^mailto:/i.test(value)) return value
+  if (value.startsWith("/") && !value.startsWith("//")) return `${SITE_URL}${value}`
+  return null
+}
+
+function inlineHtml(text: string) {
+  let html = ""
+  let last = 0
+  for (const match of text.matchAll(INLINE)) {
+    const token = match[0]
+    const start = match.index ?? 0
+    html += escapeHtml(text.slice(last, start))
+    if (token.startsWith("**")) html += `<strong style="font-weight:600;color:${C.ink};">${escapeHtml(token.slice(2, -2))}</strong>`
+    else if (token.startsWith("`")) html += `<code style="font-family:Menlo,Consolas,monospace;font-size:0.9em;background:#ECEBE5;padding:1px 4px;">${escapeHtml(token.slice(1, -1))}</code>`
+    else if (token.startsWith("[")) {
+      const [, label = "", rawHref = ""] = LINK.exec(token) ?? []
+      const href = absoluteUrl(rawHref)
+      html += href ? `<a href="${escapeHtml(href)}" style="color:${C.ink};text-decoration:underline;">${escapeHtml(label)}</a>` : escapeHtml(label)
+    } else html += `<em>${escapeHtml(token.slice(1, -1))}</em>`
+    last = start + token.length
+  }
+  return html + escapeHtml(text.slice(last))
+}
+
+function inlineText(text: string) {
+  return text.replace(INLINE, (token) => {
+    if (token.startsWith("**")) return token.slice(2, -2)
+    if (token.startsWith("`")) return token.slice(1, -1)
+    if (token.startsWith("[")) {
+      const [, label = "", rawHref = ""] = LINK.exec(token) ?? []
+      const href = absoluteUrl(rawHref)
+      return href ? `${label} (${href})` : label
+    }
+    return token.slice(1, -1)
+  })
+}
+
+function markdownBlocks(markdown: string) {
+  return markdown
+    .replace(/\r\n?/g, "\n")
+    .split(/\n\s*\n/)
+    .map((block) => block.split("\n").filter((line) => line.trim() !== ""))
+    .filter((lines) => lines.length > 0)
+}
+
+const listItemStyle = `margin:0 0 8px;font-family:${SANS};font-size:16px;line-height:1.6;color:${C.soft};`
+
+export function markdownToEmailHtml(markdown: string) {
+  return markdownBlocks(markdown)
+    .map((lines) => {
+      const first = lines[0].trim()
+      if (lines.length === 1 && /^#{1,2}\s/.test(first)) return `<h2 style="margin:32px 0 14px;font-family:${SERIF};font-size:28px;line-height:1.15;font-weight:400;color:${C.ink};">${inlineHtml(first.replace(/^#{1,2}\s+/, ""))}</h2>`
+      if (lines.length === 1 && /^#{3,6}\s/.test(first)) return `<h3 style="margin:26px 0 12px;font-family:${SERIF};font-size:22px;line-height:1.2;font-weight:400;color:${C.ink};">${inlineHtml(first.replace(/^#{3,6}\s+/, ""))}</h3>`
+      if (lines.every((line) => /^\s*[-*]\s+/.test(line))) return `<ul style="margin:0 0 16px;padding:0 0 0 22px;">${lines.map((line) => `<li style="${listItemStyle}">${inlineHtml(line.replace(/^\s*[-*]\s+/, ""))}</li>`).join("")}</ul>`
+      if (lines.every((line) => /^\s*\d+[.)]\s+/.test(line))) return `<ol style="margin:0 0 16px;padding:0 0 0 22px;">${lines.map((line) => `<li style="${listItemStyle}">${inlineHtml(line.replace(/^\s*\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`
+      if (lines.every((line) => /^\s*>/.test(line))) return `<blockquote style="margin:24px 0;padding:0 0 0 20px;border-left:1px solid ${C.ink};font-family:${SERIF};font-size:22px;line-height:1.35;color:${C.ink};">${lines.map((line) => inlineHtml(line.replace(/^\s*>\s?/, ""))).join("<br>")}</blockquote>`
+      return `<p style="${textStyle}">${lines.map((line) => inlineHtml(line)).join("<br>")}</p>`
+    })
+    .join("")
+}
+
+export function markdownToText(markdown: string) {
+  return markdownBlocks(markdown)
+    .map((lines) => {
+      const first = lines[0].trim()
+      if (lines.length === 1 && /^#{1,6}\s/.test(first)) return inlineText(first.replace(/^#{1,6}\s+/, ""))
+      return lines.map((line) => inlineText(line.trim().replace(/^>\s?/, ""))).join("\n")
+    })
+    .join("\n\n")
+}
+
+export type NewsletterContent = { subject: string; previewText?: string | null; heading?: string | null; body: string; imageUrl?: string | null; ctaLabel?: string | null; ctaUrl?: string | null }
+
+// A newsletter. The real send carries Resend's unsubscribe placeholder; tests and
+// previews pass a harmless link instead.
+export function newsletterEmail(issue: NewsletterContent, unsubscribeUrl: string = UNSUBSCRIBE_PLACEHOLDER): EmailContent {
+  const heading = issue.heading?.trim() || issue.subject.trim()
+  const image = issue.imageUrl && !issue.imageUrl.startsWith("/placeholder") ? absoluteUrl(issue.imageUrl) : null
+  const ctaUrl = issue.ctaUrl ? absoluteUrl(issue.ctaUrl) : null
+  const cta = issue.ctaLabel?.trim() && ctaUrl ? { label: issue.ctaLabel.trim(), url: ctaUrl } : undefined
+  const bodyText = markdownToText(issue.body)
+  const preheader = issue.previewText?.trim() || bodyText.replace(/\s+/g, " ").slice(0, 140)
+  const imageHtml = image ? `<img src="${escapeHtml(image)}" width="560" alt="" style="display:block;width:100%;max-width:560px;height:auto;margin:0 0 28px;border:0;outline:none;">` : ""
+  const footerHtml = `<p style="margin:16px 0 0;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.muted};">You're getting this because you subscribed to notes from Prajesh Shakya at <a href="${SITE_URL}" style="color:${C.muted};">${SITE_LABEL}</a>. <a href="${escapeHtml(unsubscribeUrl)}" style="color:${C.muted};">Unsubscribe</a></p>`
+  return {
+    subject: issue.subject.trim(),
+    html: renderEmail({ preheader, kicker: "Notes from Prajesh Shakya", heading, bodyHtml: imageHtml + markdownToEmailHtml(issue.body), cta, footerHtml }),
+    text: `${heading}\n\n${bodyText}${cta ? `\n\n${cta.label}: ${cta.url}` : ""}${textFooter}\n\nYou're getting this because you subscribed at ${SITE_LABEL}. Unsubscribe: ${unsubscribeUrl}`,
   }
 }
 

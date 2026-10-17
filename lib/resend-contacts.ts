@@ -47,10 +47,14 @@ async function segmentId(resend: ResendClient, name: string) {
   }
 }
 
-async function addToSegment(resend: ResendClient, email: string, segment: string | null) {
-  if (!segment) return
+async function addToSegment(resend: ResendClient, email: string, segment: string | null): Promise<string | null> {
+  if (!segment) return "couldn't find or create the segment in Resend"
   const added = await withRateLimitRetry(() => resend.contacts.segments.add({ email, segmentId: segment }))
-  if (added.error && !/exist|already/i.test(added.error.message)) console.error("[resend] Could not add the contact to the segment:", added.error.message)
+  if (added.error && !/exist|already/i.test(added.error.message)) {
+    console.error("[resend] Could not add the contact to the segment:", added.error.message)
+    return describeResendError(added.error)
+  }
+  return null
 }
 
 function splitName(name: string) {
@@ -65,25 +69,33 @@ export async function isSubscribed(email: string) {
   return !found.error && Boolean(found.data) && !found.data.unsubscribed
 }
 
-// A confirmed newsletter sign-up: subscribed, and in the newsletter segment.
-export async function addSubscriber(email: string): Promise<ContactResult> {
+// A confirmed newsletter sign-up: subscribed, and in the newsletter segment. With
+// `resubscribe: false` (adding by hand, retries) someone who unsubscribed through Resend's
+// link is left alone, so only a fresh confirmation on the site can bring them back.
+export async function addSubscriber(email: string, name?: { firstName?: string | null; lastName?: string | null }, options: { resubscribe?: boolean } = {}): Promise<ContactResult> {
   const resend = getResend()
   if (!resend) return { ok: false, error: "RESEND_API_KEY is not set" }
   const segment = await segmentId(resend, NEWSLETTER_SEGMENT)
+  const names = { ...(name?.firstName ? { firstName: name.firstName } : {}), ...(name?.lastName ? { lastName: name.lastName } : {}) }
 
   const existing = await withRateLimitRetry(() => resend.contacts.get({ email }))
   if (existing.error || !existing.data) {
-    const created = await withRateLimitRetry(() => resend.contacts.create({ email, unsubscribed: false, ...(segment ? { segments: [{ id: segment }] } : {}) }))
-    if (!created.error) return { ok: true, isNew: true }
+    const created = await withRateLimitRetry(() => resend.contacts.create({ email, unsubscribed: false, ...names, ...(segment ? { segments: [{ id: segment }] } : {}) }))
+    if (!created.error) {
+      if (!segment) return { ok: false, error: "couldn't find or create the newsletter segment in Resend" }
+      return { ok: true, isNew: true }
+    }
     if (!/exist/i.test(created.error.message)) return { ok: false, error: describeResendError(created.error) }
   }
 
   // Already a contact (a lead, someone who unsubscribed before, or a second click on the
   // link): make sure they're subscribed and in the segment. Coming back counts as new.
   const wasSubscribed = existing.data ? !existing.data.unsubscribed : false
-  const updated = await withRateLimitRetry(() => resend.contacts.update({ email, unsubscribed: false }))
+  if (!wasSubscribed && existing.data && options.resubscribe === false) return { ok: false, error: "they unsubscribed through the link in an email, so they need to sign up again on the site themselves" }
+  const updated = await withRateLimitRetry(() => resend.contacts.update({ email, unsubscribed: false, ...(existing.data?.first_name ? {} : names) }))
   if (updated.error) return { ok: false, error: describeResendError(updated.error) }
-  await addToSegment(resend, email, segment)
+  const segmentError = await addToSegment(resend, email, segment)
+  if (segmentError) return { ok: false, error: segmentError }
   return { ok: true, isNew: !wasSubscribed }
 }
 
@@ -139,22 +151,78 @@ export async function addLead(lead: { email: string; name: string; packageIntere
   return { ok: true, isNew: false }
 }
 
-// How many people are in a segment (for the admin overview). Counts up to 1,000; null if
-// the key can't read contacts.
-export async function countSegment(name: string): Promise<number | null> {
+// The emails currently in a segment (lower-cased), or null if the key can't read contacts.
+export async function segmentEmails(name: string): Promise<Set<string> | null> {
+  const list = await listSegment(name)
+  return list.ok ? new Set(list.contacts.map((c) => c.email.toLowerCase())) : null
+}
+
+export type SegmentContact = { id: string; email: string; firstName: string | null; lastName: string | null; unsubscribed: boolean; createdAt: string }
+export type SegmentListResult = { ok: true; contacts: SegmentContact[]; truncated: boolean } | { ok: false; error: string }
+
+// Everyone in a segment (up to 2,000), newest first. Fails with a plain-English reason
+// when the key can't read contacts.
+export async function listSegment(name: string): Promise<SegmentListResult> {
   const resend = getResend()
-  if (!resend) return null
+  if (!resend) return { ok: false, error: "RESEND_API_KEY is not set" }
   const segment = await segmentId(resend, name)
-  if (!segment) return null
-  let total = 0
+  if (!segment) return { ok: false, error: "the Resend API key can't read contacts. To list subscribers it needs Full access (Resend → API Keys), saved as RESEND_API_KEY in Vercel" }
+  const contacts: SegmentContact[] = []
   let after: string | undefined
-  for (let page = 0; page < 10; page++) {
+  let truncated = false
+  for (let page = 0; ; page++) {
+    if (page === 20) { truncated = true; break }
     const list = await withRateLimitRetry(() => resend.contacts.list({ segmentId: segment, limit: 100, ...(after ? { after } : {}) }))
-    if (list.error) return null
-    const rows = list.data.data.filter((contact) => !contact.unsubscribed)
-    total += rows.length
+    if (list.error) return { ok: false, error: describeResendError(list.error) }
+    for (const c of list.data.data) contacts.push({ id: c.id, email: c.email, firstName: c.first_name, lastName: c.last_name, unsubscribed: c.unsubscribed, createdAt: c.created_at })
     if (!list.data.has_more || list.data.data.length === 0) break
     after = list.data.data[list.data.data.length - 1].id
   }
-  return total
+  contacts.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  return { ok: true, contacts, truncated }
+}
+
+// How many people are in a segment (for the admin overview). Counts up to 2,000; null if
+// the key can't read contacts.
+export async function countSegment(name: string): Promise<number | null> {
+  const list = await listSegment(name)
+  return list.ok ? list.contacts.filter((c) => !c.unsubscribed).length : null
+}
+
+// The newsletter segment's id, for Broadcasts. null when the key can't manage contacts.
+export async function newsletterSegmentId() {
+  const resend = getResend()
+  return resend ? segmentId(resend, NEWSLETTER_SEGMENT) : null
+}
+
+// Marks a contact unsubscribed (they stay in Resend, so a later "add by hand" can't
+// accidentally bring back someone who opted out without an explicit choice).
+export async function unsubscribeContact(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const resend = getResend()
+  if (!resend) return { ok: false, error: "RESEND_API_KEY is not set" }
+  const updated = await withRateLimitRetry(() => resend.contacts.update({ email, unsubscribed: true }))
+  if (updated.error && !/not.?found/i.test(updated.error.message)) return { ok: false, error: describeResendError(updated.error) }
+  return { ok: true }
+}
+
+// Takes a contact out of the newsletter segment; deletes them from Resend entirely if
+// they aren't a lead too.
+export async function removeSubscriber(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const resend = getResend()
+  if (!resend) return { ok: false, error: "RESEND_API_KEY is not set" }
+  const existing = await withRateLimitRetry(() => resend.contacts.get({ email }))
+  if (existing.error) return /not.?found/i.test(existing.error.message) ? { ok: true } : { ok: false, error: describeResendError(existing.error) }
+  const memberships = await withRateLimitRetry(() => resend.contacts.segments.list({ email, limit: 100 }))
+  const names = memberships.error ? [] : memberships.data.data.map((s) => s.name)
+  const isLead = names.includes(LEADS_SEGMENT)
+  if (isLead) {
+    const segment = await segmentId(resend, NEWSLETTER_SEGMENT)
+    if (!segment) return { ok: false, error: "couldn't find the newsletter segment in Resend" }
+    const removed = await withRateLimitRetry(() => resend.contacts.segments.remove({ email, segmentId: segment }))
+    if (removed.error && !/not.?found/i.test(removed.error.message)) return { ok: false, error: describeResendError(removed.error) }
+    return { ok: true }
+  }
+  const deleted = await withRateLimitRetry(() => resend.contacts.remove({ email }))
+  if (deleted.error && !/not.?found/i.test(deleted.error.message)) return { ok: false, error: describeResendError(deleted.error) }
+  return { ok: true }
 }

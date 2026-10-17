@@ -81,6 +81,38 @@ const STATEMENTS = [
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
   )`,
+  `CREATE TABLE IF NOT EXISTS newsletter_issues (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    subject text NOT NULL,
+    preview_text text,
+    heading text,
+    body text NOT NULL DEFAULT '',
+    image_url text,
+    cta_label text,
+    cta_url text,
+    note_id uuid,
+    status text NOT NULL DEFAULT 'draft',
+    broadcast_id text,
+    recipient_count integer,
+    scheduled_at timestamptz,
+    sent_at timestamptz,
+    error text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE INDEX IF NOT EXISTS newsletter_issues_note_idx ON newsletter_issues (note_id)`,
+  `CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    email text PRIMARY KEY,
+    first_name text,
+    last_name text,
+    source text NOT NULL DEFAULT 'website',
+    status text NOT NULL DEFAULT 'subscribed',
+    confirmed_at timestamptz NOT NULL DEFAULT now(),
+    synced_at timestamptz,
+    sync_error text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`,
 ]
 
 let ready: Promise<void> | null = null
