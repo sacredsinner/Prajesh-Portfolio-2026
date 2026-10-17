@@ -1,6 +1,6 @@
 "use server"
 
-import { del, put } from "@vercel/blob"
+import { del } from "@vercel/blob"
 import { desc, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
@@ -8,50 +8,100 @@ import { z } from "zod"
 import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/db/schema"
-import { getBlobToken } from "@/lib/blob"
+import { getBlobDeleteOptions, isBlobUrl } from "@/lib/blob"
+import { makeSlug } from "@/lib/utils"
+
+type Client = typeof clients.$inferSelect
+type Result<T> = { ok: true; data: T } | { ok: false; error: string }
 
 async function requireAdmin() { const session = await auth.api.getSession({ headers: await headers() }); if (!isAdminUser(session?.user)) throw new Error("Unauthorized") }
-const clientSchema = z.object({ name: z.string().trim().min(1).max(120), slug: z.string().trim().min(1).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), logoUrl: z.string().url(), logoPathname: z.string().min(1), websiteUrl: z.string().url().optional().or(z.literal("")), description: z.string().max(5000).optional().or(z.literal("")), isPublished: z.boolean(), sortOrder: z.coerce.number().int() })
-export type ClientInput = z.infer<typeof clientSchema>
-export async function listClients() { await requireAdmin(); return db.select().from(clients).orderBy(clients.sortOrder, desc(clients.createdAt)) }
-export async function uploadClientLogo(formData: FormData) { await requireAdmin(); const file = formData.get("file"); if (!(file instanceof File) || !file.type.startsWith("image/")) throw new Error("An image file is required"); if (file.size > 8 * 1024 * 1024) throw new Error("Logo must be under 8MB");   const token = getBlobToken()
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-") || "client-logo"
-  const blob = await put(`clients/${Date.now()}-${safeName}`, file, { access: "public", addRandomSuffix: true, contentType: file.type, token })
-  return { url: blob.url, pathname: blob.pathname } }
-export async function bulkUploadClientLogos(formData: FormData) {
-  await requireAdmin()
-  const token = getBlobToken()
-  const files = formData.getAll("files").filter((file): file is File => file instanceof File)
-  if (!files.length) throw new Error("Select at least one image")
-  if (files.length > 50) throw new Error("Upload up to 50 images at a time")
-  const uploaded: string[] = []
-  const rows = []
-  try {
-    for (const [index, file] of files.entries()) {
-      if (!file.type.startsWith("image/")) throw new Error(`${file.name} is not an image`)
-      if (file.size > 8 * 1024 * 1024) throw new Error(`${file.name} must be under 8MB`)
-      const blob = await put(`clients/${Date.now()}-${index}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, "-")}`, file, { access: "public", addRandomSuffix: true, contentType: file.type, token })
-      uploaded.push(blob.pathname)
-      const baseName = file.name.replace(/\\.[^/.]+$/, "").replace(/[-_]+/g, " ").trim() || "Client"
-      const slug = `${baseName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "client"}-${Date.now()}-${index}`
-      rows.push(...await db.insert(clients).values({ name: baseName, slug, logoUrl: blob.url, logoPathname: blob.pathname, isPublished: true, sortOrder: index }).returning())
-    }
-  } catch (error) {
-    await Promise.all(uploaded.map((pathname) => del(pathname).catch(() => undefined)))
-    throw error
-  }
-  revalidatePath("/"); revalidatePath("/clients"); revalidatePath("/admin")
-  return rows
+
+function revalidatePublicSite() {
+  revalidatePath("/", "layout")
 }
 
-export async function saveClient(input: ClientInput & { id?: number }) { await requireAdmin(); const data = clientSchema.parse(input); const values = { ...data, websiteUrl: data.websiteUrl || null, description: data.description || null }; const saved = input.id ? await db.update(clients).set(values).where(eq(clients.id, input.id)).returning() : await db.insert(clients).values(values).returning(); revalidatePath("/"); revalidatePath("/clients"); revalidatePath(`/clients/${data.slug}`); revalidatePath("/admin"); return saved[0] }
+const blobUrl = z.string().url().refine(isBlobUrl, "Logos must be uploaded to Blob storage")
+const clientSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120, "Keep the name under 120 characters"),
+  slug: z.string().trim().min(1, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and hyphens in the slug"),
+  logoUrl: z.string().url(),
+  logoPathname: z.string().min(1),
+  websiteUrl: z.string().trim().url("Use a full website address, starting with https://").optional().or(z.literal("")),
+  description: z.string().trim().max(5000).optional().or(z.literal("")),
+  isPublished: z.boolean(),
+  sortOrder: z.coerce.number().int(),
+})
+export type ClientInput = z.infer<typeof clientSchema>
+
+const uploadedLogosSchema = z.array(z.object({ name: z.string().trim().min(1).max(120), logoUrl: blobUrl, logoPathname: z.string().startsWith("clients/") })).min(1).max(50)
+
+function uniqueSlug(name: string, taken: Set<string>) {
+  const root = makeSlug(name) || "client"
+  let candidate = root
+  for (let suffix = 2; taken.has(candidate); suffix++) candidate = `${root}-${suffix}`
+  taken.add(candidate)
+  return candidate
+}
+
+export async function listClients() { await requireAdmin(); return db.select().from(clients).orderBy(clients.sortOrder, desc(clients.createdAt)) }
+
+// Runs after the browser has uploaded the logo files to Blob.
+export async function addClients(input: unknown): Promise<Result<Client[]>> {
+  await requireAdmin()
+  const parsed = uploadedLogosSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: "Some uploaded logos could not be verified. Please try again." }
+  try {
+    const existing = await db.select({ slug: clients.slug, sortOrder: clients.sortOrder }).from(clients)
+    const taken = new Set(existing.map((row) => row.slug))
+    let order = existing.reduce((highest, row) => Math.max(highest, row.sortOrder), 0)
+    const rows = await db.insert(clients).values(parsed.data.map((item) => ({
+      name: item.name,
+      slug: uniqueSlug(item.name, taken),
+      logoUrl: item.logoUrl,
+      logoPathname: item.logoPathname,
+      isPublished: true,
+      sortOrder: ++order,
+    }))).returning()
+    revalidatePublicSite()
+    return { ok: true, data: rows }
+  } catch (error) {
+    console.error("[clients] Could not save uploaded logos", error)
+    await del(parsed.data.map((item) => item.logoUrl), getBlobDeleteOptions()).catch(() => undefined)
+    return { ok: false, error: "Could not save these clients, so the uploaded logos were removed. Please try again." }
+  }
+}
+
+// Removes logos that were uploaded but never saved (e.g. when one file in a batch fails).
+export async function discardUploadedLogos(urls: unknown) {
+  await requireAdmin()
+  const parsed = z.array(blobUrl).max(50).safeParse(urls)
+  if (parsed.success && parsed.data.length > 0) await del(parsed.data, getBlobDeleteOptions()).catch(() => undefined)
+}
+
+export async function saveClient(input: ClientInput & { id?: number }): Promise<Result<Client>> {
+  await requireAdmin()
+  const parsed = clientSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the client details." }
+  const data = parsed.data
+  const values = { ...data, websiteUrl: data.websiteUrl || null, description: data.description || null }
+  try {
+    const clash = (await db.select({ id: clients.id }).from(clients).where(eq(clients.slug, data.slug)).limit(1))[0]
+    if (clash && clash.id !== input.id) return { ok: false, error: "Another client already uses that slug." }
+    const saved = input.id ? await db.update(clients).set(values).where(eq(clients.id, input.id)).returning() : await db.insert(clients).values(values).returning()
+    if (!saved[0]) return { ok: false, error: "That client no longer exists." }
+    revalidatePublicSite()
+    return { ok: true, data: saved[0] }
+  } catch (error) {
+    console.error("[clients] Could not save client", error)
+    return { ok: false, error: "Could not save the client. Please try again." }
+  }
+}
+
 export async function deleteClient(id: number) {
   await requireAdmin()
-  const row = (await db.select({ pathname: clients.logoPathname }).from(clients).where(eq(clients.id, id)).limit(1))[0]
+  const row = (await db.select({ logoUrl: clients.logoUrl }).from(clients).where(eq(clients.id, id)).limit(1))[0]
   if (!row) return
   await db.delete(clients).where(eq(clients.id, id))
-  await del(row.pathname).catch(() => undefined)
-  revalidatePath("/")
-  revalidatePath("/clients")
-  revalidatePath("/admin")
+  await del(row.logoUrl, getBlobDeleteOptions()).catch(() => undefined)
+  revalidatePublicSite()
 }

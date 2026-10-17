@@ -1,8 +1,11 @@
 import Link from "next/link"
+import { Navbar } from "@/components/navbar"
 
 export default function NotFound() {
   return (
-    <main className="min-h-[calc(100vh-5rem)] w-full px-4 py-20 sm:px-6 lg:px-8">
+    <>
+    <Navbar />
+    <main className="page-container min-h-[calc(100vh-5rem)] pb-20 pt-24">
       <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-between border-y border-border py-8 sm:py-12">
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span>404 · Wrong turn</span>
@@ -24,10 +27,10 @@ export default function NotFound() {
               Good design is about finding the right direction. This wasn&apos;t it.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
-              <Link href="/" className="rounded-full bg-foreground px-5 py-3 text-sm text-background transition-opacity hover:opacity-75">
+              <Link href="/" className="bg-foreground px-5 py-3 text-sm text-background transition-opacity hover:opacity-75">
                 Back to Home <span aria-hidden="true">↗</span>
               </Link>
-              <Link href="/projects" className="rounded-full border border-foreground px-5 py-3 text-sm transition-colors hover:bg-foreground hover:text-background">
+              <Link href="/projects" className="border border-foreground px-5 py-3 text-sm transition-colors hover:bg-foreground hover:text-background">
                 Explore My Work <span aria-hidden="true">↗</span>
               </Link>
             </div>
@@ -40,5 +43,6 @@ export default function NotFound() {
         </div>
       </div>
     </main>
+    </>
   )
 }

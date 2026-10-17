@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/home/hero-section"
@@ -10,7 +11,10 @@ import { TestimonialsSection } from "@/components/home/testimonials-section"
 import { TrustedPartnershipsSection } from "@/components/home/trusted-partnerships-section"
 import { getActiveShowcaseVideo, getPublishedClients, getPublishedTestimonials, getPublishedProjects, toProjectCard } from "@/lib/public-content"
 
-export const dynamic = "force-dynamic"
+export const metadata: Metadata = { alternates: { canonical: "/" } }
+
+// Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.
+export const revalidate = 300
 
 export default async function HomePage() {
   let projectRows: Awaited<ReturnType<typeof getPublishedProjects>> = []

@@ -19,7 +19,7 @@ export function Section({ children, className, id }: SectionProps) {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={cn("py-24 md:py-32", className)}
     >
-      <div className="w-full px-4 sm:px-6 lg:px-8">{children}</div>
+      <div className="page-container">{children}</div>
     </motion.section>
   )
 }

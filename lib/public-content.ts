@@ -2,13 +2,19 @@ import { and, desc, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { blogPosts, clients, projects, showcaseVideos, testimonials } from "@/lib/db/schema"
 
-// The public portfolio should still render when the optional CMS database is not
-// configured. This keeps the marketing pages usable with the bundled content.
+// The public portfolio should still render when the CMS database is
+// unavailable, so these return empty results instead of throwing. Errors are
+// logged so they show up in the Vercel function logs.
+function logUnavailable(what: string, error: unknown) {
+  console.error(`[content] Could not load ${what}:`, error instanceof Error ? error.message : error)
+}
+
 export async function getActiveShowcaseVideo() {
   try {
     const rows = await db.select({ url: showcaseVideos.url, filename: showcaseVideos.filename }).from(showcaseVideos).where(eq(showcaseVideos.isActive, true)).limit(1)
     return rows[0] ?? null
-  } catch {
+  } catch (error) {
+    logUnavailable("showcase video", error)
     return null
   }
 }
@@ -16,7 +22,8 @@ export async function getActiveShowcaseVideo() {
 export async function getPublishedClients() {
   try {
     return await db.select().from(clients).where(eq(clients.isPublished, true)).orderBy(clients.sortOrder, desc(clients.createdAt))
-  } catch {
+  } catch (error) {
+    logUnavailable("clients", error)
     return []
   }
 }
@@ -25,7 +32,8 @@ export async function getPublishedClient(slug: string) {
   try {
     const rows = await db.select().from(clients).where(and(eq(clients.slug, slug), eq(clients.isPublished, true))).limit(1)
     return rows[0] ?? null
-  } catch {
+  } catch (error) {
+    logUnavailable(`client "${slug}"`, error)
     return null
   }
 }
@@ -33,7 +41,8 @@ export async function getPublishedClient(slug: string) {
 export async function getPublishedTestimonials() {
   try {
     return await db.select().from(testimonials).where(eq(testimonials.published, true)).orderBy(desc(testimonials.featured), testimonials.sortOrder, desc(testimonials.createdAt))
-  } catch {
+  } catch (error) {
+    logUnavailable("testimonials", error)
     return []
   }
 }
@@ -41,7 +50,8 @@ export async function getPublishedTestimonials() {
 export async function getPublishedProjects() {
   try {
     return await db.select().from(projects).orderBy(desc(projects.featured), desc(projects.updatedAt), desc(projects.createdAt))
-  } catch {
+  } catch (error) {
+    logUnavailable("projects", error)
     return []
   }
 }
@@ -50,7 +60,8 @@ export async function getPublishedProject(slug: string) {
   try {
     const rows = await db.select().from(projects).where(eq(projects.slug, slug)).limit(1)
     return rows[0]
-  } catch {
+  } catch (error) {
+    logUnavailable(`project "${slug}"`, error)
     return undefined
   }
 }
@@ -58,7 +69,8 @@ export async function getPublishedProject(slug: string) {
 export async function getPublishedPosts() {
   try {
     return await db.select().from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.featured), desc(blogPosts.publishedAt))
-  } catch {
+  } catch (error) {
+    logUnavailable("notes", error)
     return []
   }
 }
@@ -67,7 +79,8 @@ export async function getPublishedPost(slug: string) {
   try {
     const rows = await db.select().from(blogPosts).where(and(eq(blogPosts.slug, slug), eq(blogPosts.published, true))).limit(1)
     return rows[0]
-  } catch {
+  } catch (error) {
+    logUnavailable(`note "${slug}"`, error)
     return undefined
   }
 }

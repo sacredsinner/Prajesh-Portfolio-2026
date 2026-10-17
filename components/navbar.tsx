@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Menu, X } from "lucide-react"
+import { BrandMark } from "@/components/brand-mark"
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -13,6 +14,10 @@ const navLinks = [
   { href: "/blog", label: "Notes" },
   { href: "/contact", label: "Contact" },
 ]
+
+function isActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
+}
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -23,9 +28,24 @@ export function Navbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
     }
-    window.addEventListener("scroll", handleScroll)
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  // Close the mobile menu on navigation (including back/forward) and on Escape.
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMobileMenuOpen(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [isMobileMenuOpen])
 
   return (
     <header
@@ -36,14 +56,15 @@ export function Navbar() {
           : "bg-transparent"
       )}
     >
-      <nav className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="page-container" aria-label="Main">
         <div className="flex items-center justify-between h-20">
-          {/* Logo */}
+          {/* Logo: PS monogram + wordmark */}
           <Link
             href="/"
-            className="font-serif text-xl tracking-tight hover:opacity-70 transition-opacity"
+            className="flex items-center gap-3 hover:opacity-70 transition-opacity"
           >
-            Prajesh Shakya
+            <BrandMark idPrefix="nav-mark" className="h-8 w-auto" />
+            <span className="text-[13px] font-semibold uppercase tracking-[0.3em]">Prajesh Shakya</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -52,9 +73,10 @@ export function Navbar() {
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  aria-current={isActive(pathname, link.href) ? "page" : undefined}
                   className={cn(
                     "text-sm tracking-wide uppercase transition-opacity hover:opacity-70",
-                    pathname === link.href
+                    isActive(pathname, link.href)
                       ? "text-foreground"
                       : "text-muted-foreground"
                   )}
@@ -75,9 +97,12 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2"
+            type="button"
+            className="md:hidden p-2 -mr-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
           >
             {isMobileMenuOpen ? (
               <X className="h-5 w-5" />
@@ -89,16 +114,17 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="absolute left-0 right-0 top-full min-h-[calc(100svh-5rem)] bg-background px-6 py-6 border-t border-border md:hidden">
-            <ul className="flex flex-col gap-4">
+          <div id="mobile-menu" className="absolute left-0 right-0 top-full min-h-[calc(100svh-5rem)] bg-background py-6 border-t border-border md:hidden">
+            <ul className="page-container flex flex-col gap-4">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-current={isActive(pathname, link.href) ? "page" : undefined}
                     className={cn(
                       "block text-lg transition-opacity hover:opacity-70",
-                      pathname === link.href
+                      isActive(pathname, link.href)
                         ? "text-foreground"
                         : "text-muted-foreground"
                     )}

@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Contact Prajesh Shakya — Start a Brand Project",
   description:
     "Tell me about your business, brand, or next idea. I create distinctive identities through strategy and design.",
+  alternates: { canonical: "/contact" },
 }
 
 export default function ContactPage() {

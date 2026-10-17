@@ -27,7 +27,7 @@ export function AboutStory() {
             transition={{ duration: 0.6 }}
             className="text-2xl md:text-3xl leading-relaxed"
           >
-            I started my journey in design over a decade ago, driven by a
+            I started my journey in design more than six years ago, driven by a
             fascination with how visual language shapes perception and behavior.
           </motion.p>
 
@@ -63,30 +63,25 @@ export function AboutStory() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="pt-8 grid grid-cols-2 md:grid-cols-3 gap-8 border-t border-border"
+            className="pt-8 grid grid-cols-3 gap-8 border-t border-border"
           >
+            {/* Same proof points as the homepage and the brand system: 6+ · 80+ · 7+ */}
             <div>
-              <span className="font-serif text-3xl md:text-4xl">9+</span>
+              <span className="font-serif text-3xl md:text-4xl">6+</span>
               <p className="text-sm text-muted-foreground mt-1">
                 Years Experience
               </p>
             </div>
             <div>
-              <span className="font-serif text-3xl md:text-4xl">60+</span>
+              <span className="font-serif text-3xl md:text-4xl">80+</span>
               <p className="text-sm text-muted-foreground mt-1">
-                Brands Created
+                Projects
               </p>
             </div>
             <div>
-              <span className="font-serif text-3xl md:text-4xl">12</span>
+              <span className="font-serif text-3xl md:text-4xl">7+</span>
               <p className="text-sm text-muted-foreground mt-1">
                 Countries
-              </p>
-            </div>
-            <div>
-              <span className="font-serif text-3xl md:text-4xl">100%</span>
-              <p className="text-sm text-muted-foreground mt-1">
-                Client Satisfaction
               </p>
             </div>
           </motion.div>

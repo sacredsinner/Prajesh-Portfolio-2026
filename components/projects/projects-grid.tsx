@@ -5,21 +5,20 @@ import { motion } from "framer-motion"
 import { ProjectCard, type Project } from "@/components/project-card"
 import { cn } from "@/lib/utils"
 
-const categories = ["All", "Identity", "Strategy", "Systems"]
-
 export function ProjectsGrid({ projects }: { projects: Project[] }) {
   const [activeCategory, setActiveCategory] = useState("All")
+
+  // Filters come from the categories actually used, so none of them can come up empty.
+  const categories = ["All", ...Array.from(new Set(projects.map((project) => project.category.trim()).filter(Boolean))).sort()]
 
   const filteredProjects =
     activeCategory === "All"
       ? projects
-      : projects.filter((project) =>
-          project.category.toLowerCase().includes(activeCategory.toLowerCase())
-        )
+      : projects.filter((project) => project.category.trim() === activeCategory)
 
   return (
     <section className="py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="page-container">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -40,27 +39,33 @@ export function ProjectsGrid({ projects }: { projects: Project[] }) {
         </motion.div>
 
         {/* Filter */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-wrap gap-2 mb-12"
-        >
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={cn(
-                "px-4 py-2 text-sm tracking-wide transition-colors",
-                activeCategory === category
-                  ? "bg-foreground text-background"
-                  : "bg-secondary text-foreground hover:bg-secondary/80"
-              )}
-            >
-              {category}
-            </button>
-          ))}
-        </motion.div>
+        {categories.length > 2 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-wrap gap-2 mb-12"
+            role="group"
+            aria-label="Filter projects by category"
+          >
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(category)}
+                aria-pressed={activeCategory === category}
+                className={cn(
+                  "px-4 py-2 text-sm tracking-wide transition-colors",
+                  activeCategory === category
+                    ? "bg-foreground text-background"
+                    : "bg-secondary text-foreground hover:bg-secondary/80"
+                )}
+              >
+                {category}
+              </button>
+            ))}
+          </motion.div>
+        )}
 
         {/* Projects Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-6">
@@ -69,9 +74,9 @@ export function ProjectsGrid({ projects }: { projects: Project[] }) {
           ))}
         </div>
 
-        {filteredProjects.length === 0 && (
+        {projects.length === 0 && (
           <p className="text-center text-muted-foreground py-12">
-            No projects found in this category.
+            Projects are on their way. In the meantime, <a href="/contact" className="underline underline-offset-4">get in touch</a>.
           </p>
         )}
       </div>

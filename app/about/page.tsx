@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "About Prajesh Shakya — Brand Identity Designer",
   description:
     "Learn how I use strategy, design, and visual storytelling to build distinctive brand identities for ambitious businesses.",
+  alternates: { canonical: "/about" },
 }
 
 export default function AboutPage() {

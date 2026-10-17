@@ -23,6 +23,14 @@ export function isAdminUser(user: { email?: string | null } | null | undefined) 
   return user?.email?.trim().toLowerCase() === ADMIN_EMAIL
 }
 
+// New accounts are closed: the admin account already exists, and anyone else
+// who signs up only gets an account with no access. To create a new admin
+// account, set ALLOW_ADMIN_SIGNUP=true in Vercel, redeploy, then remove it.
+export const ADMIN_SIGNUP_OPEN = process.env.ALLOW_ADMIN_SIGNUP === "true"
+
+// Google sign-in appears on /admin once GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in Vercel.
+export const GOOGLE_SIGN_IN_ENABLED = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const resetEmailFrom = process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>"
 const developmentOrigins = [
@@ -48,7 +56,7 @@ export const auth = betterAuth({
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
   emailAndPassword: {
     enabled: true,
-    allowSignUp: true,
+    disableSignUp: !ADMIN_SIGNUP_OPEN,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
       if (!resend) {
@@ -76,9 +84,23 @@ export const auth = betterAuth({
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        // Always show Google's account chooser, so it's easy to pick the admin account.
+        prompt: "select_account" as const,
+        // Existing users can still sign in with Google; only brand-new accounts are blocked.
+        disableSignUp: !ADMIN_SIGNUP_OPEN,
       },
     },
   } : {}),
+  account: {
+    accountLinking: {
+      enabled: true,
+      // Google confirms you own the address, so "Continue with Google" signs you into the
+      // existing admin account even if it was created with a password and never verified.
+      // Without this, Better Auth refuses with "account not linked".
+      trustedProviders: ["google"],
+      requireLocalEmailVerified: false,
+    },
+  },
   session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
   advanced: {
     database: {

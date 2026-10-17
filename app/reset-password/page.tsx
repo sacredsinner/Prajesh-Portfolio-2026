@@ -1,4 +1,7 @@
+import type { Metadata } from "next"
 import { ResetPasswordForm } from "@/components/password-reset-form"
+
+export const metadata: Metadata = { title: "Reset password", robots: { index: false, follow: false } }
 
 type Props = { searchParams: Promise<{ token?: string }> }
 

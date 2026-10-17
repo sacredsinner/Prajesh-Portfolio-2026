@@ -6,7 +6,7 @@ import Image from "next/image"
 export function AboutHero() {
   return (
     <section className="py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="page-container">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -37,7 +37,8 @@ export function AboutHero() {
               src="/images/about-portrait.jpg"
               alt="Prajesh Shakya"
               fill
-              className="object-cover"
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover grayscale"
               priority
             />
           </motion.div>

@@ -10,9 +10,11 @@ export const metadata: Metadata = {
   title: "Brand Identity Projects — Prajesh Shakya",
   description:
     "Explore my selected brand identity projects and case studies, from strategy and logo design to complete visual systems.",
+  alternates: { canonical: "/projects" },
 }
 
-export const dynamic = "force-dynamic"
+// Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.
+export const revalidate = 300
 
 export default async function ProjectsPage() {
   const rows = await getPublishedProjects()

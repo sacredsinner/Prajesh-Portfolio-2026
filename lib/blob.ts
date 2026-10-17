@@ -23,3 +23,13 @@ export function getBlobOptions() {
 export function getBlobDeleteOptions() {
   return { token: getBlobToken() }
 }
+
+// True for files stored in a public Vercel Blob store.
+export function isBlobUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" && url.hostname.endsWith(".public.blob.vercel-storage.com")
+  } catch {
+    return false
+  }
+}

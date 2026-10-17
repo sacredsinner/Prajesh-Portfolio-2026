@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { BrandMark } from "@/components/brand-mark"
+import { CONTACT_EMAIL, SOCIAL_LINKS } from "@/lib/site"
 
 const footerLinks = [
   { href: "/about", label: "About" },
@@ -8,35 +10,33 @@ const footerLinks = [
   { href: "/contact", label: "Contact" },
 ]
 
-const socialLinks = [
-  { href: "https://instagram.com/prajeshshakya", label: "Instagram" },
-  { href: "https://www.linkedin.com/in/prajeshshakya/", label: "LinkedIn" },
-  { href: "https://dribbble.com/prajesh", label: "Dribbble" },
-]
-
 export function Footer() {
   return (
     <footer className="border-t border-border">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
+      <div className="page-container py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
           {/* Brand */}
           <div className="space-y-4">
             <Link
               href="/"
-              className="font-serif text-xl tracking-tight hover:opacity-70 transition-opacity"
+              className="inline-flex items-center gap-3 hover:opacity-70 transition-opacity"
             >
-              Prajesh Shakya
+              <BrandMark idPrefix="footer-mark" className="h-8 w-auto" />
+              <span className="text-[13px] font-semibold uppercase tracking-[0.3em]">Prajesh Shakya</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               I build distinctive brand identities through strategy, design, and meaningful visual systems.
             </p>
+            <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block text-sm underline-offset-4 hover:underline">
+              {CONTACT_EMAIL}
+            </a>
           </div>
 
           {/* Navigation */}
           <div className="space-y-4">
-            <h4 className="text-xs uppercase tracking-widest text-muted-foreground">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground">
               Navigation
-            </h4>
+            </h2>
             <ul className="space-y-3">
               {footerLinks.map((link) => (
                 <li key={link.href}>
@@ -53,11 +53,11 @@ export function Footer() {
 
           {/* Social */}
           <div className="space-y-4">
-            <h4 className="text-xs uppercase tracking-widest text-muted-foreground">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground">
               Connect
-            </h4>
+            </h2>
             <ul className="space-y-3">
-              {socialLinks.map((link) => (
+              {SOCIAL_LINKS.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
@@ -78,8 +78,8 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Prajesh Shakya. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Designed with intention
+          <p className="font-serif text-lg italic text-muted-foreground">
+            Designed with intention.
           </p>
         </div>
       </div>

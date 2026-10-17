@@ -31,7 +31,12 @@ BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
 BETTER_AUTH_SECRET=generate-a-random-secret-at-least-32-characters-long
 BETTER_AUTH_URL=https://your-production-domain.com
 NEXT_PUBLIC_APP_URL=https://your-production-domain.com
+NEXT_PUBLIC_SITE_URL=https://www.your-production-domain.com
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=Your Name <hello@your-production-domain.com>
 ```
+
+`RESEND_API_KEY` sends password resets, emails you each new contact-form enquiry, and powers replies from `/admin`. Until your domain is verified in Resend, its test sender can only email the address that owns the Resend account, so verify the domain and set `RESEND_FROM_EMAIL`. `CONTACT_NOTIFICATION_EMAIL` changes where enquiries are sent. `.env.example` lists every variable.
 
 `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` may be omitted for local development. On Vercel, the app can use the deployment URL automatically, but setting the production URL is recommended for stable authentication redirects.
 
@@ -97,10 +102,21 @@ For Vercel deployment, connect the repository, set the environment variables, an
 
 ## 6. Create the first admin user
 
-1. Open `/sign-up` on the new deployment.
-2. Register with the admin email and password.
+Sign-up is closed by default, and only the email in `ADMIN_EMAIL` (`lib/auth.ts`) gets admin access.
+
+1. Set `ALLOW_ADMIN_SIGNUP=true` in the Vercel project and redeploy.
+2. Open `/admin/signup` and register with the admin email and a strong password.
 3. Open `/admin` and confirm the CMS loads.
-4. If the project uses an existing admin authorization rule, update that rule for the new user or email before production use.
+4. Remove `ALLOW_ADMIN_SIGNUP` (or set it to anything other than `true`) and redeploy, so nobody else can create accounts.
+
+### Google sign-in
+
+"Continue with Google" appears on `/admin` when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. In Google Cloud Console, open APIs & Services → Credentials and create an OAuth client ID (type: Web application) with:
+
+- Authorized JavaScript origins: `https://shakyaprajesh.com.np` and `https://www.shakyaprajesh.com.np` (plus `http://localhost:3000` for local development)
+- Authorized redirect URIs: `https://shakyaprajesh.com.np/api/auth/callback/google` (your `BETTER_AUTH_URL` followed by `/api/auth/callback/google`; add `http://localhost:3000/api/auth/callback/google` for local development)
+
+Signing in with Google as the admin email opens the existing admin account, even if it was created with a password, so either method works. Other Google accounts can't create accounts while sign-up is closed.
 
 Use a strong unique password and do not share it in source control.
 
@@ -112,9 +128,9 @@ From `/admin`:
 - Upload a showcase video and mark it active.
 - Open the client management screen and bulk upload partnership logo images.
 
-Client names are generated from image filenames during bulk upload. Rename files before uploading if the generated names should be cleaner.
+Client names are generated from image filenames during bulk upload (`hamro-patro.png` becomes "Hamro Patro"). Rename a client, add its website and description, or hide it with **Edit** on the client management screen.
 
-Uploaded media is stored in Vercel Blob and its public URL is saved in Neon.
+Files upload straight from the browser to Vercel Blob (through `/api/blob/upload`, which only issues upload tokens to the admin), and the public URL is saved in Neon. This avoids Vercel's 4.5 MB request limit.
 
 ## 8. Verify the deployment
 
@@ -126,6 +142,7 @@ Check these routes after deployment:
 - `/blog` — blog index
 - `/admin` — authenticated CMS
 - `/does-not-exist` — custom 404 page
+- `/sitemap.xml` and `/robots.txt`
 
 Also test:
 
@@ -143,7 +160,7 @@ Set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the exact deployed HTTPS orig
 
 ### Uploads fail
 
-Confirm `BLOB_READ_WRITE_TOKEN` belongs to the Blob store connected to the new project and that the store is public. Image uploads are limited to 8MB; showcase videos are limited to 100MB.
+Confirm `BLOB_READ_WRITE_TOKEN` belongs to the Blob store connected to the new project and that the store is public. Image uploads are limited to 8MB (photos are resized in the browser first); showcase videos are limited to 100MB.
 
 ### Database queries fail
 

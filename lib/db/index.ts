@@ -20,7 +20,8 @@ export const pool = new Pool({
   max: 5,
   idleTimeoutMillis: 20_000,
   connectionTimeoutMillis: 10_000,
-  ssl: { rejectUnauthorized: false },
+  // Encrypted and certificate-checked, the same way the auth pool already connects to Neon.
+  ssl: true,
 })
 
 export const db = drizzle(pool, { schema })

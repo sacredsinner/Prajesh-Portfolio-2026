@@ -1,8 +1,11 @@
+import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth, isAdminUser } from "@/lib/auth"
 import { listClients } from "@/app/actions/clients"
 import { AdminClientManager } from "@/components/admin-client-manager"
+
+export const metadata: Metadata = { title: "Clients · Content studio", robots: { index: false, follow: false } }
 
 export const dynamic = "force-dynamic"
 

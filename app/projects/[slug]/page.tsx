@@ -26,12 +26,14 @@ export async function generateMetadata({
   return {
     title,
     description: project.overview,
+    alternates: { canonical: `/projects/${project.slug}` },
     openGraph: { title, description: project.overview, images: [{ url: project.thumbnail }] },
     twitter: { card: "summary_large_image", title, description: project.overview, images: [project.thumbnail] },
   }
 }
 
-export const dynamic = "force-dynamic"
+// Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.
+export const revalidate = 300
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params
