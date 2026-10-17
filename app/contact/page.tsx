@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { Suspense } from "react"
 import { ContactForm } from "@/components/contact/contact-form"
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export default function ContactPage() {
     <>
       <Navbar />
       <main className="pt-20">
-        <ContactForm />
+        <Suspense fallback={null}><ContactForm /></Suspense>
       </main>
       <Footer />
     </>

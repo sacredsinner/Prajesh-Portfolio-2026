@@ -87,6 +87,14 @@ CREATE TABLE IF NOT EXISTS clients (
 );
 ```
 
+The tables added in October 2026 (`site_settings`, `moodboards`, `moodboard_comments`, `invoices`, and the `package_interest` / `budget` / `timeline` columns on `contacts`) are created automatically the first time they are needed, by `lib/db/migrate.ts`. Nothing needs to be run by hand.
+
+Optional environment variables for the newer features:
+
+- `CRON_SECRET` — if set, only Vercel's scheduler can trigger `/api/cron/invoice-reminders` (daily overdue-invoice reminders, see `vercel.json`).
+- `NEWSLETTER_SECRET` — signs newsletter confirmation links (falls back to `BETTER_AUTH_SECRET`).
+- `CONTACT_NOTIFICATION_EMAIL` — where enquiry, newsletter, moodboard and quote alerts go (defaults to the admin email).
+
 If the project already contains migration SQL or an initialized database, use that schema as the source of truth instead of recreating existing tables.
 
 ## 5. Deploy

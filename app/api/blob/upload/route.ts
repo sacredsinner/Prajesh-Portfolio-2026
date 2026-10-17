@@ -15,6 +15,7 @@ const RULES = [
   { prefix: "portfolio/showcase/", types: VIDEO_TYPES, maxBytes: 100 * MB },
   { prefix: "portfolio/", types: IMAGE_TYPES, maxBytes: 8 * MB },
   { prefix: "clients/", types: IMAGE_TYPES, maxBytes: 8 * MB },
+  { prefix: "moodboards/", types: IMAGE_TYPES, maxBytes: 8 * MB },
 ]
 
 export async function POST(request: Request) {

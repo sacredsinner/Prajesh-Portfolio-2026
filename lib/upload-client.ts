@@ -6,7 +6,7 @@ import { upload } from "@vercel/blob/client"
 // Server Action or route hits Vercel's 4.5 MB request limit, which is why
 // videos and larger images used to fail.
 
-export type UploadFolder = "portfolio" | "clients" | "portfolio/showcase"
+export type UploadFolder = "portfolio" | "clients" | "portfolio/showcase" | "moodboards"
 
 export type UploadedFile = { url: string; pathname: string; filename: string; contentType: string; size: number }
 

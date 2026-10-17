@@ -6,6 +6,7 @@ import { CONTACT_EMAIL, SOCIAL_LINKS } from "@/lib/site"
 const footerLinks = [
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
+  { href: "/packages", label: "Packages" },
   { href: "/blog", label: "Notes" },
   { href: "/clients", label: "Clients" },
   { href: "/contact", label: "Contact" },

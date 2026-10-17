@@ -13,6 +13,7 @@ import { getBlobDeleteOptions, isBlobUrl } from "@/lib/blob"
 import { sendEmail } from "@/lib/email"
 import { enquiryAutoReplyEmail, enquiryNotificationEmail } from "@/lib/email-templates"
 import { addLead } from "@/lib/resend-contacts"
+import { ensureSchema } from "@/lib/db/migrate"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -152,12 +153,15 @@ const contactSchema = z.object({
   company: z.string().trim().max(160, "Please shorten the company name to 160 characters.").optional(),
   message: z.string().trim().min(10, "Please tell me a little more (at least 10 characters).").max(5000, "Please keep your message under 5,000 characters."),
   website: z.string().trim().max(200).optional(),
+  packageInterest: z.string().trim().max(60).optional(),
+  budget: z.string().trim().max(60).optional(),
+  timeline: z.string().trim().max(60).optional(),
 })
 export type ContactInput = z.input<typeof contactSchema>
 export type ContactResult = { ok: true } | { ok: false; error: string }
 
 // To Prajesh: the enquiry, with Reply going straight to the visitor.
-async function notifyNewEnquiry(data: { name: string; email: string; company?: string; message: string }) {
+async function notifyNewEnquiry(data: { name: string; email: string; company?: string; message: string; packageInterest?: string; budget?: string; timeline?: string }) {
   const result = await sendEmail({ to: process.env.CONTACT_NOTIFICATION_EMAIL || ADMIN_EMAIL, replyTo: data.email, ...enquiryNotificationEmail(data) })
   if (!result.ok) console.error("[contact] Notification email failed:", result.error)
 }
@@ -180,7 +184,8 @@ export async function submitContact(input: ContactInput): Promise<ContactResult>
     // Ignore an identical message sent twice within a minute (a double click), but keep follow-ups.
     const recent = await db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.email, data.email), eq(contacts.message, data.message), gte(contacts.createdAt, new Date(Date.now() - 60_000)))).limit(1)
     if (recent.length) return { ok: true }
-    await db.insert(contacts).values({ name: data.name, email: data.email, company: data.company, message: data.message })
+    await ensureSchema()
+    await db.insert(contacts).values({ name: data.name, email: data.email, company: data.company, message: data.message, packageInterest: data.packageInterest || null, budget: data.budget || null, timeline: data.timeline || null })
   } catch (error) {
     console.error("[contact] Could not save enquiry", error)
     return { ok: false, error: `Sorry, the message couldn't be sent right now. Please email me at ${ADMIN_EMAIL}.` }
@@ -190,12 +195,12 @@ export async function submitContact(input: ContactInput): Promise<ContactResult>
     await notifyNewEnquiry(data).catch((error) => console.error("[contact] Notification email failed", error))
     await sendEnquiryAutoReply(data).catch((error) => console.error("[contact] Auto-reply failed", error))
     // Every enquiry also becomes a contact in Resend's "Leads" segment.
-    const lead = await addLead({ email: data.email, name: data.name }).catch((error: unknown) => ({ ok: false as const, error: String(error) }))
+    const lead = await addLead({ email: data.email, name: data.name, packageInterest: data.packageInterest, budget: data.budget, timeline: data.timeline }).catch((error: unknown) => ({ ok: false as const, error: String(error) }))
     if (!lead.ok) console.error("[contact] Could not add the lead to Resend:", lead.error)
   })
   revalidatePath("/admin")
   return { ok: true }
 }
-export async function listContacts() { await requireAdmin(); return db.select().from(contacts).orderBy(desc(contacts.createdAt)) }
+export async function listContacts() { await requireAdmin(); await ensureSchema(); return db.select().from(contacts).orderBy(desc(contacts.createdAt)) }
 export async function updateContact(id: string, status: string, notes: string) { await requireAdmin(); await db.update(contacts).set({ status: z.enum(["new", "read", "replied", "archived"]).parse(status), notes: notes.trim(), updatedAt: new Date() }).where(eq(contacts.id, id)); revalidatePath("/admin") }
 export async function deleteContact(id: string) { await requireAdmin(); await db.delete(contacts).where(eq(contacts.id, id)); revalidatePath("/admin") }

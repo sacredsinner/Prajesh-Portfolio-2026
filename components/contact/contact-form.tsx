@@ -1,15 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { Send } from "lucide-react"
 import { submitContact } from "@/app/actions/cms"
 import { BOOKING_URL, CONTACT_EMAIL } from "@/lib/site"
+import { BUDGET_CHOICES, PACKAGE_CHOICES, TIMELINE_CHOICES } from "@/lib/packages"
+import { CURRENCIES, guessCurrency, type Currency } from "@/lib/money"
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [state, setState] = useState<"idle" | "success" | "error">("idle")
   const [error, setError] = useState("")
+  // Budget ranges follow the visitor's currency (Nepal → NPR, Australia → AUD, else USD).
+  const [currency, setCurrency] = useState<Currency>("USD")
+  useEffect(() => setCurrency(guessCurrency()), [])
+  // /contact?package=Identity preselects the package (linked from /packages).
+  const preselected = useSearchParams().get("package") ?? ""
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -25,6 +33,9 @@ export function ContactForm() {
         company: String(form.get("company") ?? "") || undefined,
         message: String(form.get("message") ?? ""),
         website: String(form.get("website") ?? ""),
+        packageInterest: String(form.get("packageInterest") ?? ""),
+        budget: String(form.get("budget") ?? ""),
+        timeline: String(form.get("timeline") ?? ""),
       })
       if (!result.ok) {
         setState("error")
@@ -79,6 +90,20 @@ export function ContactForm() {
               <Field id="name" label="Name" placeholder="Your name" autoComplete="name" minLength={2} maxLength={120} />
               <Field id="email" label="Email" type="email" placeholder="your@email.com" autoComplete="email" maxLength={200} />
               <Field id="company" label="Company" placeholder="Your company (optional)" autoComplete="organization" maxLength={160} required={false} />
+              <div className="grid gap-8 sm:grid-cols-2">
+                <Choice id="packageInterest" label="Interested in" options={PACKAGE_CHOICES} defaultValue={PACKAGE_CHOICES.includes(preselected) ? preselected : ""} />
+                <Choice id="timeline" label="Timeline" options={TIMELINE_CHOICES} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between gap-4">
+                  <label htmlFor="budget" className="block text-xs uppercase tracking-widest text-muted-foreground">Budget</label>
+                  <span className="flex gap-2 text-xs text-muted-foreground">{CURRENCIES.map((code) => <button key={code} type="button" onClick={() => setCurrency(code)} className={code === currency ? "underline underline-offset-4 text-foreground" : "hover:text-foreground"}>{code}</button>)}</span>
+                </div>
+                <select id="budget" name="budget" defaultValue="" className="w-full border-0 border-b border-input bg-transparent px-0 py-3 text-lg focus:border-foreground focus:outline-none">
+                  <option value="">Choose a range (optional)</option>
+                  {BUDGET_CHOICES[currency].map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              </div>
               <div className="space-y-2">
                 <label htmlFor="message" className="block text-xs uppercase tracking-widest text-muted-foreground">Message</label>
                 <textarea id="message" name="message" required minLength={10} maxLength={5000} rows={5} className="w-full resize-none border-0 border-b border-input bg-transparent px-0 py-3 text-lg focus:border-foreground focus:outline-none" placeholder="Tell me about your project..." />
@@ -98,6 +123,18 @@ export function ContactForm() {
         </motion.div>
       </div>
     </section>
+  )
+}
+
+function Choice({ id, label, options, defaultValue = "" }: { id: string; label: string; options: string[]; defaultValue?: string }) {
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="block text-xs uppercase tracking-widest text-muted-foreground">{label}</label>
+      <select id={id} name={id} defaultValue={defaultValue} className="w-full border-0 border-b border-input bg-transparent px-0 py-3 text-lg focus:border-foreground focus:outline-none">
+        <option value="">Choose (optional)</option>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </div>
   )
 }
 

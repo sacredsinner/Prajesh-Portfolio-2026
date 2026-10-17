@@ -34,6 +34,7 @@ type EmailMessage = {
   text: string
   html?: string
   replyTo?: string | string[]
+  attachments?: { filename: string; content: Buffer }[]
 }
 
 export type SendEmailResult = { ok: true; id: string | null } | { ok: false; error: string }
