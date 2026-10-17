@@ -5,9 +5,9 @@ import { ArrowRight } from "lucide-react"
 // headline is visible from the first paint instead of waiting for JavaScript.
 export function HeroSection() {
   return (
-    <section className="min-h-screen flex items-center pt-20">
+    <section className="min-h-screen flex items-center pt-20 text-center">
       <div className="page-container py-24 md:py-32">
-        <div className="max-w-4xl">
+        <div className="mx-auto max-w-4xl">
           <span className="rise-in block text-xs uppercase tracking-widest text-muted-foreground mb-6">
             Brand Identity Designer | Creative Strategist
           </span>
@@ -18,13 +18,13 @@ export function HeroSection() {
             Crafting Authentic Brand Identities That Resonate
           </h1>
           <p
-            className="rise-in mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed"
+            className="rise-in mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl"
             style={{ animationDelay: "160ms" }}
           >
             Hi, I&apos;m Prajesh — I turn ideas into distinctive brands through strategy, design, and meaningful visual identities.
           </p>
           <div
-            className="rise-in mt-10 flex flex-col sm:flex-row gap-4"
+            className="rise-in mt-10 flex flex-col justify-center gap-4 sm:flex-row"
             style={{ animationDelay: "260ms" }}
           >
             <Link
