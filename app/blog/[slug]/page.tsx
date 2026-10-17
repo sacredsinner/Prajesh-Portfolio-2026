@@ -71,7 +71,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
           <section aria-labelledby="share-heading" className="mt-16 border-t border-border pt-8">
             <h2 id="share-heading" className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Share this note</h2>
-            <ShareLinks className="mt-5" url={canonicalUrl(`/blog/${post.slug}`)} title={shareTitle(post.title)} summary={post.excerpt} contentType="note" />
+            <ShareLinks className="mt-5" url={canonicalUrl(`/blog/${post.slug}`)} title={shareTitle(post.title)} summary={post.excerpt} image={image} contentType="note" />
           </section>
         </article>
       </main>

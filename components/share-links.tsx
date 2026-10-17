@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Check, Link as LinkIcon, Share } from "lucide-react"
 import { SHARE_NETWORK_LABELS, shareHref, type ShareContent, type ShareNetwork } from "@/lib/share"
+import { SITE_URL } from "@/lib/site"
 
 // A row of share links in the mono system: hairline boxes, ink text, square
 // corners like the site's other outline buttons. Networks are plain names (like
@@ -11,8 +12,12 @@ import { SHARE_NETWORK_LABELS, shareHref, type ShareContent, type ShareNetwork }
 //
 // The links are plain anchors rendered on the server, so they work without
 // JavaScript. "Share…" opens the device's share sheet and only appears where
-// the browser has one (most phones, some desktop browsers); on a phone that's
-// also the way to Instagram, which has no share link for websites.
+// the browser has one (most phones, some desktop browsers).
+//
+// Instagram has no share link for websites, so "Instagram" works differently:
+// on a phone it opens the share sheet with the page (and the cover image when
+// there is one, so a project can go straight to a Story); elsewhere it copies
+// the link and asks the visitor to paste it into Instagram.
 
 const DEFAULT_NETWORKS: ShareNetwork[] = ["linkedin", "x", "facebook", "whatsapp", "email"]
 
@@ -65,9 +70,28 @@ export interface ShareLinksProps extends ShareContent {
   className?: string
 }
 
+// The cover as a file, for share sheets that accept one (phones). Nothing happens
+// on failure; the share goes ahead with just the link.
+async function imageFile(src: string) {
+  try {
+    // Our own images are fetched by path, so this also works on preview deployments.
+    const parsed = new URL(src, window.location.href)
+    const sameSite = parsed.hostname.replace(/^www\./, "") === new URL(SITE_URL).hostname.replace(/^www\./, "")
+    const response = await fetch(sameSite ? parsed.pathname + parsed.search : src)
+    if (!response.ok) return undefined
+    const blob = await response.blob()
+    if (!blob.type.startsWith("image/")) return undefined
+    const name = src.split("/").pop()?.split("?")[0] || "cover.jpg"
+    return new File([blob], name, { type: blob.type })
+  } catch {
+    return undefined
+  }
+}
+
 export function ShareLinks({ url, title, summary, image, networks = DEFAULT_NETWORKS, contentType, className }: ShareLinksProps) {
   const [canShare, setCanShare] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [hint, setHint] = useState("")
   const timer = useRef<number | undefined>(undefined)
 
   // Whether there's a share sheet is only known in the browser, so "Share…" appears after hydration.
@@ -87,7 +111,27 @@ export function ShareLinks({ url, title, summary, image, networks = DEFAULT_NETW
     track("copy_link", contentType, url)
     setCopied(true)
     window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => setCopied(false), 2000)
+    timer.current = window.setTimeout(() => {
+      setCopied(false)
+      setHint("")
+    }, 2000)
+  }
+
+  async function shareToInstagram() {
+    if (!canShare) {
+      await copyLink()
+      setHint("Link copied — paste it into your Instagram post or story.")
+      return
+    }
+    try {
+      const file = image ? await imageFile(image) : undefined
+      const withFile = file ? { title, text: `${title} ${url}`, files: [file] } : undefined
+      await navigator.share(withFile && navigator.canShare?.(withFile) ? withFile : { title, url })
+      track("instagram", contentType, url)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return
+      await copyLink()
+    }
   }
 
   async function openShareSheet() {
@@ -130,14 +174,19 @@ export function ShareLinks({ url, title, summary, image, networks = DEFAULT_NETW
           )
         })}
         <li>
+          <button type="button" onClick={shareToInstagram} className={item} aria-label={canShare ? "Share on Instagram" : "Share on Instagram (copies the link to paste)"}>
+            Instagram
+          </button>
+        </li>
+        <li>
           <button type="button" onClick={copyLink} className={item}>
             {copied ? "Copied" : "Copy link"}
             {copied ? <Check aria-hidden className={icon} /> : <LinkIcon aria-hidden className={icon} />}
           </button>
         </li>
       </ul>
-      <p role="status" className="sr-only">
-        {copied ? "Link copied" : ""}
+      <p role="status" className={hint ? "mt-3 text-sm text-muted-foreground" : "sr-only"}>
+        {hint || (copied ? "Link copied" : "")}
       </p>
     </div>
   )
