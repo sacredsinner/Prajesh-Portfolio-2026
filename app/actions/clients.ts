@@ -33,7 +33,16 @@ const clientSchema = z.object({
 })
 export type ClientInput = z.infer<typeof clientSchema>
 
-const uploadedLogosSchema = z.array(z.object({ name: z.string().trim().min(1).max(120), logoUrl: blobUrl, logoPathname: z.string().startsWith("clients/") })).min(1).max(50)
+const uploadedLogosSchema = z.array(z.object({ name: z.string().trim().min(1).transform((name) => name.slice(0, 120)), logoUrl: blobUrl, logoPathname: z.string().startsWith("clients/") })).min(1).max(50)
+
+// Blob URLs found in an upload payload that failed validation, so they can be removed.
+function uploadedBlobUrls(input: unknown) {
+  if (!Array.isArray(input)) return []
+  return input
+    .map((item) => (item && typeof item === "object" ? (item as { logoUrl?: unknown }).logoUrl : undefined))
+    .filter((url): url is string => typeof url === "string" && isBlobUrl(url))
+    .slice(0, 50)
+}
 
 function uniqueSlug(name: string, taken: Set<string>) {
   const root = makeSlug(name) || "client"
@@ -49,7 +58,11 @@ export async function listClients() { await requireAdmin(); return db.select().f
 export async function addClients(input: unknown): Promise<Result<Client[]>> {
   await requireAdmin()
   const parsed = uploadedLogosSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: "Some uploaded logos could not be verified. Please try again." }
+  if (!parsed.success) {
+    const urls = uploadedBlobUrls(input)
+    if (urls.length) await del(urls, getBlobDeleteOptions()).catch(() => undefined)
+    return { ok: false, error: "Some uploaded logos could not be verified, so they were removed. Please try again." }
+  }
   try {
     const existing = await db.select({ slug: clients.slug, sortOrder: clients.sortOrder }).from(clients)
     const taken = new Set(existing.map((row) => row.slug))

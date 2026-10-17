@@ -22,13 +22,15 @@ export async function generateMetadata({
     }
   }
 
-  const title = `${project.title} — Prajesh Shakya`
+  // The SEO fields in /admin win when they're filled in.
+  const title = row?.seoTitle?.trim() || `${project.title} — Prajesh Shakya`
+  const description = row?.seoDescription?.trim() || project.overview
   return {
     title,
-    description: project.overview,
+    description,
     alternates: { canonical: `/projects/${project.slug}` },
-    openGraph: { title, description: project.overview, images: [{ url: project.thumbnail }] },
-    twitter: { card: "summary_large_image", title, description: project.overview, images: [project.thumbnail] },
+    openGraph: { title, description, images: [{ url: project.thumbnail }] },
+    twitter: { card: "summary_large_image", title, description, images: [project.thumbnail] },
   }
 }
 

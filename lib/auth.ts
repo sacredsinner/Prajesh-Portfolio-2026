@@ -1,13 +1,13 @@
 import { betterAuth } from "better-auth"
 import { Pool } from "pg"
-import { pool } from "@/lib/db"
-import { Resend } from "resend"
+import { pgConnection } from "@/lib/db"
+import { sendEmail } from "@/lib/email"
 
 // Neon Auth stores Better Auth tables in the neon_auth schema. Keep a
 // dedicated pool for auth so the app's Drizzle pool can continue using public.
 const authPool = new Pool({
   // Use the unpooled connection for Better Auth's schema selection.
-  connectionString: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL,
+  ...pgConnection(process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL),
   options: "-c search_path=neon_auth,public",
 })
 
@@ -31,8 +31,6 @@ export const ADMIN_SIGNUP_OPEN = process.env.ALLOW_ADMIN_SIGNUP === "true"
 // Google sign-in appears on /admin once GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in Vercel.
 export const GOOGLE_SIGN_IN_ENABLED = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
-const resetEmailFrom = process.env.RESEND_FROM_EMAIL ?? "Portfolio Admin <onboarding@resend.dev>"
 const developmentOrigins = [
   "http://localhost:3000",
   process.env.V0_RUNTIME_URL,
@@ -59,24 +57,16 @@ export const auth = betterAuth({
     disableSignUp: !ADMIN_SIGNUP_OPEN,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
-      if (!resend) {
-        console.error("[v0] RESEND_API_KEY is not configured for password reset")
-        return
-      }
       const escapeHtml = (value: string) =>
         value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;")
       const safeUrl = escapeHtml(url)
-      const response = await resend.emails.send({
-        from: resetEmailFrom,
+      const result = await sendEmail({
         to: user.email,
         subject: "Reset your portfolio password",
         text: `Reset your password by opening this link: ${url}`,
         html: `<p>Reset your password by clicking the link below.</p><p><a href="${safeUrl}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
       })
-      if (response.error) {
-        console.error("[v0] Resend rejected password reset email", response.error)
-        throw new Error("Password reset email delivery failed")
-      }
+      if (!result.ok) throw new Error(`Password reset email delivery failed: ${result.error}`)
     },
   },
   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? {

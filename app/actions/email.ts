@@ -3,7 +3,7 @@
 import { headers } from "next/headers"
 import { z } from "zod"
 import { ADMIN_EMAIL, auth, isAdminUser } from "@/lib/auth"
-import { EMAIL_FROM, getResend } from "@/lib/email"
+import { sendEmail } from "@/lib/email"
 
 // A "use server" file may only export async functions. Exporting anything else
 // (it previously exported a plain array) makes every Server Action on /admin fail.
@@ -26,19 +26,8 @@ export async function sendAdminEmail(input: unknown): Promise<AdminEmailResult> 
   await requireAdmin()
   const parsed = emailSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: "Check the recipient, subject and message." }
-  const resend = getResend()
-  if (!resend) return { ok: false, error: "Email isn't set up yet. Add RESEND_API_KEY to the Vercel project." }
-
-  const response = await resend.emails.send({
-    from: EMAIL_FROM,
-    to: parsed.data.to,
-    replyTo: ADMIN_EMAIL,
-    subject: parsed.data.subject,
-    text: parsed.data.text,
-  })
-  if (response.error) {
-    console.error("[email] Admin email send failed", response.error)
-    return { ok: false, error: "Resend rejected the email. The test sender can only email your own address, so verify your domain in Resend and set RESEND_FROM_EMAIL." }
-  }
-  return { ok: true, id: response.data?.id ?? null }
+  // Sent from the site's domain; the client's reply goes to your Gmail.
+  const result = await sendEmail({ to: parsed.data.to, replyTo: ADMIN_EMAIL, subject: parsed.data.subject, text: parsed.data.text })
+  if (!result.ok) return { ok: false, error: `The email wasn't sent: ${result.error}` }
+  return { ok: true, id: result.id }
 }

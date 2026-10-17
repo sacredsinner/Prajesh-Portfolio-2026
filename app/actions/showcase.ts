@@ -32,7 +32,11 @@ export async function listShowcaseVideos() {
 export async function addShowcaseVideo(input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireAdmin()
   const parsed = uploadedVideoSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: "The uploaded video could not be verified. Please try again." }
+  if (!parsed.success) {
+    const url = input && typeof input === "object" ? (input as { url?: unknown }).url : undefined
+    if (typeof url === "string" && isBlobUrl(url)) await del(url, getBlobDeleteOptions()).catch(() => undefined)
+    return { ok: false, error: "The uploaded video could not be verified, so it was removed. Please try again." }
+  }
   const video = parsed.data
   try {
     await db.transaction(async (tx) => {

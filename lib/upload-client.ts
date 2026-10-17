@@ -11,6 +11,9 @@ export type UploadFolder = "portfolio" | "clients" | "portfolio/showcase"
 export type UploadedFile = { url: string; pathname: string; filename: string; contentType: string; size: number }
 
 const MB = 1024 * 1024
+// Must match the allow-lists in app/api/blob/upload/route.ts.
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/svg+xml"]
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"]
 const RESIZABLE = ["image/jpeg", "image/png", "image/webp"]
 const MAX_EDGE = 2400
 
@@ -20,12 +23,14 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) 
 
 // Large photos are scaled to 2400 px on the long edge and re-encoded, so a
 // 6 MB phone photo becomes a few hundred KB before it is stored and served.
+// Formats the site can't store (HEIC from an iPhone, TIFF, …) are converted when the browser can read them.
 async function shrinkImage(file: File): Promise<File> {
-  if (!RESIZABLE.includes(file.type) || typeof createImageBitmap !== "function") return file
+  const convert = !IMAGE_TYPES.includes(file.type)
+  if ((!convert && !RESIZABLE.includes(file.type)) || typeof createImageBitmap !== "function") return file
   try {
     const bitmap = await createImageBitmap(file)
     const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
-    if (scale === 1 && file.size <= 1.5 * MB) {
+    if (!convert && scale === 1 && file.size <= 1.5 * MB) {
       bitmap.close()
       return file
     }
@@ -38,8 +43,8 @@ async function shrinkImage(file: File): Promise<File> {
     bitmap.close()
     let blob = await canvasToBlob(canvas, "image/webp", 0.86)
     // Browsers that cannot encode WebP hand back a PNG; JPEG sources fall back to JPEG.
-    if (blob?.type !== "image/webp" && file.type === "image/jpeg") blob = await canvasToBlob(canvas, "image/jpeg", 0.86)
-    if (!blob || blob.size >= file.size) return file
+    if (blob?.type !== "image/webp" && (file.type === "image/jpeg" || convert)) blob = await canvasToBlob(canvas, "image/jpeg", 0.86)
+    if (!blob || (!convert && blob.size >= file.size)) return file
     const extension = blob.type === "image/webp" ? "webp" : blob.type === "image/jpeg" ? "jpg" : "png"
     return new File([blob], `${file.name.replace(/\.[^/.]+$/, "")}.${extension}`, { type: blob.type })
   } catch {
@@ -49,14 +54,19 @@ async function shrinkImage(file: File): Promise<File> {
 
 export async function uploadToBlob(file: File, folder: UploadFolder, onProgress?: (percentage: number) => void): Promise<UploadedFile> {
   const isVideo = folder === "portfolio/showcase"
-  if (isVideo ? !file.type.startsWith("video/") : !file.type.startsWith("image/")) {
-    throw new Error(`${file.name} is not ${isVideo ? "a video" : "an image"}.`)
+  // Some browsers give iPhone HEIC photos no type at all, so go by the extension too.
+  const looksLikeImage = file.type.startsWith("image/") || /\.(heic|heif|tiff?)$/i.test(file.name)
+  if (isVideo ? !VIDEO_TYPES.includes(file.type) : !looksLikeImage) {
+    throw new Error(isVideo ? `${file.name} isn't an MP4, WebM or MOV video.` : `${file.name} is not an image.`)
   }
   const prepared = isVideo ? file : await shrinkImage(file)
+  if (!isVideo && !IMAGE_TYPES.includes(prepared.type)) {
+    throw new Error(`${file.name} is in a format this browser can't convert. Save it as JPG or PNG and upload it again.`)
+  }
   const limit = isVideo ? 100 : 8
   if (prepared.size > limit * MB) throw new Error(`${file.name} is larger than ${limit}MB.`)
 
-  const safeName = prepared.name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "upload"
+  const safeName = prepared.name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/\.{2,}/g, ".").replace(/^[-.]+|-+$/g, "") || "upload"
   const blob = await upload(`${folder}/${Date.now()}-${safeName}`, prepared, {
     access: "public",
     handleUploadUrl: "/api/blob/upload",

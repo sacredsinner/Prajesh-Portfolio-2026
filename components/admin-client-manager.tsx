@@ -34,7 +34,7 @@ export function AdminClientManager({ initialClients }: { initialClients: Client[
       for (const [index, file] of files.entries()) {
         setStatus(`Uploading ${index + 1} of ${files.length}…`)
         const result = await uploadToBlob(file, "clients")
-        uploaded.push({ name: nameFromFilename(file.name), logoUrl: result.url, logoPathname: result.pathname })
+        uploaded.push({ name: nameFromFilename(file.name).slice(0, 120), logoUrl: result.url, logoPathname: result.pathname })
       }
       setStatus("Saving…")
       const saved = await addClients(uploaded)
@@ -83,7 +83,7 @@ export function AdminClientManager({ initialClients }: { initialClients: Client[
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {unnamed > 0 && (
         <p className="border border-border p-4 text-sm">
-          {unnamed === 1 ? "1 client still needs" : `${unnamed} clients still need`} a real name. Until then the site shows the filename as the client&apos;s name and logo description. Use Edit to fix them.
+          {`${unnamed === 1 ? "1 client still needs" : `${unnamed} clients still need`} a real name. Until then the site shows the filename as the client's name and logo description. Use Edit to fix them.`}
         </p>
       )}
       {editing && (
