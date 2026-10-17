@@ -6,7 +6,7 @@ import { convertQuoteToInvoice, deleteDocument, duplicateDocument, saveDocument,
 import { KIND_LABELS, STATUS_LABELS, addDays, displayStatus, documentTotals, formatDate, lineAmount, today, type BusinessSettings, type DisplayStatus, type DocumentKind, type InvoiceItem } from "@/lib/invoices"
 import { CURRENCIES, CURRENCY_LABELS, formatMoney, isCurrency, type Currency } from "@/lib/money"
 import { newId } from "@/lib/moodboards"
-import { ADD_ONS, ONGOING, PACKAGES } from "@/lib/packages"
+import { rateCard as buildRateCard, type Pricing } from "@/lib/packages"
 
 export type AdminDocument = {
   id: string
@@ -59,11 +59,6 @@ const labelClass = "grid gap-1.5 text-sm"
 const chip = (status: DisplayStatus) =>
   `inline-flex rounded-full px-2.5 py-0.5 text-xs ${status === "paid" || status === "accepted" ? "bg-foreground text-background" : status === "overdue" || status === "expired" ? "border border-destructive text-destructive" : status === "draft" ? "border border-dashed border-border text-muted-foreground" : "border border-border"}`
 
-const rateCard = (currency: Currency) => [
-  ...PACKAGES.map((item) => ({ label: `${item.name} package`, description: `${item.name} brand identity package: ${item.includes.join(", ").toLowerCase()}.`, price: item.from[currency] })),
-  ...ADD_ONS.map((item) => ({ label: item.name, description: item.name, price: item.from[currency] })),
-  ...ONGOING.map((item) => ({ label: `${item.name}${item.unit ? ` (${item.unit})` : ""}`, description: item.name, price: item.from[currency] })),
-]
 
 function emptyDraft(kind: DocumentKind, settings: BusinessSettings): Draft {
   const currency: Currency = "NPR"
@@ -105,7 +100,7 @@ function toDraft(doc: AdminDocument): Draft {
   }
 }
 
-export function InvoiceManager({ documents, settings, leads }: { documents: AdminDocument[]; settings: BusinessSettings; leads: Lead[] }) {
+export function InvoiceManager({ documents, settings, leads, pricing }: { documents: AdminDocument[]; settings: BusinessSettings; leads: Lead[]; pricing: Pricing }) {
   const router = useRouter()
   const [view, setView] = useState<"documents" | "settings">("documents")
   const [filter, setFilter] = useState<"all" | "quote" | "invoice" | "unpaid" | "paid">("all")
@@ -160,6 +155,7 @@ export function InvoiceManager({ documents, settings, leads }: { documents: Admi
         initial={editing}
         settings={settings}
         leads={leads}
+        pricing={pricing}
         onCancel={() => setEditing(null)}
         onSaved={(note) => {
           setEditing(null)
@@ -279,7 +275,8 @@ function SendPanel({ doc, onCancel, onSend }: { doc: AdminDocument; onCancel: ()
   )
 }
 
-function DocumentEditor({ initial, settings, leads, onCancel, onSaved }: { initial: Draft; settings: BusinessSettings; leads: Lead[]; onCancel: () => void; onSaved: (message: string) => void }) {
+function DocumentEditor({ initial, settings, leads, pricing, onCancel, onSaved }: { initial: Draft; settings: BusinessSettings; leads: Lead[]; pricing: Pricing; onCancel: () => void; onSaved: (message: string) => void }) {
+  const rateCard = (currency: Currency) => buildRateCard(pricing, currency)
   const [draft, setDraft] = useState<Draft>(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")

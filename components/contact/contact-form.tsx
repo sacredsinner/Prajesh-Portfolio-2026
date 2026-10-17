@@ -6,10 +6,12 @@ import { motion } from "framer-motion"
 import { Send } from "lucide-react"
 import { submitContact } from "@/app/actions/cms"
 import { BOOKING_URL, CONTACT_EMAIL } from "@/lib/site"
-import { BUDGET_CHOICES, PACKAGE_CHOICES, TIMELINE_CHOICES } from "@/lib/packages"
+import { TIMELINE_CHOICES } from "@/lib/packages"
 import { CURRENCIES, guessCurrency, type Currency } from "@/lib/money"
 
-export function ContactForm() {
+type Choices = { packages: string[]; budgets: Record<Currency, string[]> }
+
+export function ContactForm({ choices }: { choices: Choices }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [state, setState] = useState<"idle" | "success" | "error">("idle")
   const [error, setError] = useState("")
@@ -91,7 +93,7 @@ export function ContactForm() {
               <Field id="email" label="Email" type="email" placeholder="your@email.com" autoComplete="email" maxLength={200} />
               <Field id="company" label="Company" placeholder="Your company (optional)" autoComplete="organization" maxLength={160} required={false} />
               <div className="grid gap-8 sm:grid-cols-2">
-                <Choice id="packageInterest" label="Interested in" options={PACKAGE_CHOICES} defaultValue={PACKAGE_CHOICES.includes(preselected) ? preselected : ""} />
+                <Choice id="packageInterest" label="Interested in" options={choices.packages} defaultValue={choices.packages.includes(preselected) ? preselected : ""} />
                 <Choice id="timeline" label="Timeline" options={TIMELINE_CHOICES} />
               </div>
               <div className="space-y-2">
@@ -101,7 +103,7 @@ export function ContactForm() {
                 </div>
                 <select id="budget" name="budget" defaultValue="" className="w-full border-0 border-b border-input bg-transparent px-0 py-3 text-lg focus:border-foreground focus:outline-none">
                   <option value="">Choose a range (optional)</option>
-                  {BUDGET_CHOICES[currency].map((option) => <option key={option} value={option}>{option}</option>)}
+                  {choices.budgets[currency].map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
               </div>
               <div className="space-y-2">

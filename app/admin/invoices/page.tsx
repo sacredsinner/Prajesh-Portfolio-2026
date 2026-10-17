@@ -8,6 +8,7 @@ import { InvoiceManager } from "@/components/admin/invoice-manager"
 import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
 import { contacts } from "@/lib/db/schema"
+import { getPricing } from "@/lib/pricing"
 
 export const metadata: Metadata = { title: "Invoices · Content studio", robots: { index: false, follow: false } }
 
@@ -17,9 +18,10 @@ export default async function AdminInvoicesPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session || !isAdminUser(session.user)) redirect("/admin")
   await ensureSchema()
-  const [documents, settings, enquiries] = await Promise.all([
+  const [documents, settings, pricing, enquiries] = await Promise.all([
     listDocuments(),
     getInvoiceSettings(),
+    getPricing(),
     db.select({ name: contacts.name, email: contacts.email, company: contacts.company }).from(contacts).orderBy(desc(contacts.createdAt)).limit(200),
   ])
   // One entry per email address, newest first, to fill in a client's details.
@@ -34,7 +36,7 @@ export default async function AdminInvoicesPage() {
     <main className="min-h-screen bg-background px-4 py-8 sm:px-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <a href="/admin" className="text-xs uppercase tracking-widest hover:opacity-60">← Content studio</a>
-        <div className="mt-8"><InvoiceManager documents={documents} settings={settings} leads={leads} /></div>
+        <div className="mt-8"><InvoiceManager documents={documents} settings={settings} leads={leads} pricing={pricing} /></div>
       </div>
     </main>
   )

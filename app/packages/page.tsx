@@ -3,7 +3,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { PackagesView } from "@/components/packages/packages-view"
 import { JsonLd } from "@/components/json-ld"
-import { PACKAGES } from "@/lib/packages"
+import { visiblePackages } from "@/lib/packages"
+import { getPricing } from "@/lib/pricing"
 import { SITE_URL } from "@/lib/site"
 
 export const metadata: Metadata = {
@@ -12,12 +13,16 @@ export const metadata: Metadata = {
   alternates: { canonical: "/packages" },
 }
 
-export default function PackagesPage() {
+// Refreshed every 5 minutes, and immediately when packages are saved in /admin.
+export const revalidate = 300
+
+export default async function PackagesPage() {
+  const pricing = await getPricing()
   const schema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Brand identity packages",
-    itemListElement: PACKAGES.map((item, index) => ({
+    itemListElement: visiblePackages(pricing).map((item, index) => ({
       "@type": "Offer",
       position: index + 1,
       name: `${item.name} brand identity package`,
@@ -38,8 +43,8 @@ export default function PackagesPage() {
       <main className="page-container pb-24 pt-32">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Packages</p>
         <h1 className="mt-4 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight md:text-6xl">Three ways to build a brand worth remembering.</h1>
-        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">Every package starts with strategy and ends with an identity you can use everywhere. Prices are starting points; the proposal after our first call is exact.</p>
-        <div className="mt-12"><PackagesView /></div>
+        <p className="mt-6 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-muted-foreground">{pricing.intro}</p>
+        <div className="mt-12"><PackagesView pricing={pricing} /></div>
       </main>
       <Footer />
     </>
