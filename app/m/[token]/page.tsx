@@ -3,8 +3,8 @@ import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { and, asc, eq } from "drizzle-orm"
 import { BrandMark } from "@/components/brand-mark"
-import { MoodboardFeedback } from "@/components/moodboards/moodboard-feedback"
-import { MoodboardView } from "@/components/moodboards/moodboard-view"
+import { ClientBoard } from "@/components/moodboards/client-board"
+import { sectionsToCanvas } from "@/lib/canvas"
 import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
@@ -47,24 +47,8 @@ export default async function MoodboardPage({ params }: { params: Promise<{ toke
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">{row.clientName ? `For ${row.clientName}` : "Direction"}</p>
         <h1 className="mt-4 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight md:text-6xl">{row.title}</h1>
         {row.intro && <p className="mt-6 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-muted-foreground">{row.intro}</p>}
-        <div className="mt-16"><MoodboardView sections={row.sections} /></div>
-
-        <section className="mt-20 grid gap-10 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div>
-            <h2 className="font-serif text-3xl">Comments</h2>
-            {approved && <p className="mt-3 text-sm">Approved by <strong>{row.approvedBy}</strong>{row.approvedAt ? ` on ${when(row.approvedAt)}` : ""}.</p>}
-            <ol className="mt-6 space-y-4">
-              {comments.map((comment) => (
-                <li key={comment.id} className={`border-l pl-4 ${comment.fromClient ? "border-border" : "border-foreground"}`}>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">{comment.author}{comment.kind === "approval" ? " · approved" : comment.kind === "changes" ? " · requested changes" : ""} · {when(comment.createdAt)}</p>
-                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">{comment.body}</p>
-                </li>
-              ))}
-              {comments.length === 0 && <li className="text-sm text-muted-foreground">No comments yet.</li>}
-            </ol>
-          </div>
-          <MoodboardFeedback token={row.shareToken} approved={approved} clientName={row.clientName} />
-        </section>
+        {approved && <p className="mt-4 text-sm">Approved by <strong>{row.approvedBy}</strong>{row.approvedAt ? ` on ${when(row.approvedAt)}` : ""}.</p>}
+        <div className="mt-12"><ClientBoard canvas={row.canvas ?? sectionsToCanvas(row.sections)} comments={comments} token={row.shareToken} approved={approved} clientName={row.clientName} /></div>
       </div>
       <footer className="page-container border-t border-border py-8 text-xs text-muted-foreground"><p className="font-serif text-base italic text-foreground">Designed with intention.</p><p className="mt-2">This page is private to you. Please don&apos;t share the link.</p></footer>
     </main>

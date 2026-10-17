@@ -41,6 +41,16 @@ const STATEMENTS = [
     created_at timestamptz NOT NULL DEFAULT now()
   )`,
   `CREATE INDEX IF NOT EXISTS moodboard_comments_board_idx ON moodboard_comments (moodboard_id, created_at)`,
+  `ALTER TABLE moodboards ADD COLUMN IF NOT EXISTS canvas jsonb`,
+  `ALTER TABLE moodboard_comments ADD COLUMN IF NOT EXISTS item_id text`,
+  `CREATE TABLE IF NOT EXISTS moodboard_versions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    moodboard_id uuid NOT NULL REFERENCES moodboards(id) ON DELETE CASCADE,
+    canvas jsonb NOT NULL,
+    note text,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE INDEX IF NOT EXISTS moodboard_versions_board_idx ON moodboard_versions (moodboard_id, created_at DESC)`,
   `CREATE TABLE IF NOT EXISTS invoices (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     kind text NOT NULL,

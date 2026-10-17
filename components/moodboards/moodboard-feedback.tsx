@@ -7,7 +7,7 @@ import { sendMoodboardFeedback } from "@/app/actions/moodboards"
 const inputClass = "w-full border-0 border-b border-input bg-transparent px-0 py-3 text-base focus:border-foreground focus:outline-none"
 
 // Client feedback on a moodboard: a comment, "Approve this direction" or "Request changes".
-export function MoodboardFeedback({ token, approved, clientName }: { token: string; approved: boolean; clientName: string | null }) {
+export function MoodboardFeedback({ token, approved, clientName, itemId, itemLabel }: { token: string; approved: boolean; clientName: string | null; itemId?: string; itemLabel?: string }) {
   const router = useRouter()
   const [name, setName] = useState(clientName ?? "")
   const [body, setBody] = useState("")
@@ -21,7 +21,7 @@ export function MoodboardFeedback({ token, approved, clientName }: { token: stri
     setError("")
     setDone("")
     try {
-      const result = await sendMoodboardFeedback({ token, name, body, kind, website: (document.getElementById(`hp-${token}`) as HTMLInputElement | null)?.value ?? "" })
+      const result = await sendMoodboardFeedback({ token, name, body, kind, website: (document.getElementById(`hp-${token}`) as HTMLInputElement | null)?.value ?? "", itemId: kind === "comment" ? itemId : undefined })
       if (!result.ok) {
         setError(result.error)
         return
@@ -46,7 +46,7 @@ export function MoodboardFeedback({ token, approved, clientName }: { token: stri
           <input id={`name-${token}`} value={name} onChange={(e) => setName(e.target.value)} className={inputClass} maxLength={120} autoComplete="name" />
         </div>
         <div>
-          <label htmlFor={`body-${token}`} className="block text-xs uppercase tracking-widest text-muted-foreground">Comment</label>
+          <label htmlFor={`body-${token}`} className="block text-xs uppercase tracking-widest text-muted-foreground">Comment{itemLabel ? ` on “${itemLabel}”` : ""}</label>
           <textarea id={`body-${token}`} value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={2000} className={`${inputClass} resize-none`} placeholder="What do you like? What's not quite right?" />
         </div>
         <div aria-hidden="true" className="hidden"><input id={`hp-${token}`} type="text" tabIndex={-1} autoComplete="off" /></div>

@@ -1,5 +1,6 @@
 import { boolean, date, integer, jsonb, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import type { MoodboardSection } from "@/lib/moodboards"
+import type { Canvas } from "@/lib/canvas"
 import type { InvoiceItem } from "@/lib/invoices"
 
 export const user = pgTable("user", {
@@ -161,6 +162,7 @@ export const moodboards = pgTable("moodboards", {
   clientEmail: text("client_email"),
   intro: text("intro"),
   sections: jsonb("sections").$type<MoodboardSection[]>().notNull().default([]),
+  canvas: jsonb("canvas").$type<Canvas>(), // the infinite-canvas board; null for boards not yet converted
   shareToken: text("share_token").notNull().unique(),
   shared: boolean("shared").notNull().default(false),
   status: text("status").notNull().default("draft"), // draft | shared | changes | approved
@@ -178,6 +180,16 @@ export const moodboardComments = pgTable("moodboard_comments", {
   body: text("body").notNull(),
   fromClient: boolean("from_client").notNull().default(true),
   kind: text("kind").notNull().default("comment"), // comment | approval | changes
+  itemId: text("item_id"), // a canvas item the comment is pinned to
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+// Snapshots of a moodboard canvas (version history; the newest 30 are kept).
+export const moodboardVersions = pgTable("moodboard_versions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  moodboardId: uuid("moodboard_id").notNull().references(() => moodboards.id, { onDelete: "cascade" }),
+  canvas: jsonb("canvas").$type<Canvas>().notNull(),
+  note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
