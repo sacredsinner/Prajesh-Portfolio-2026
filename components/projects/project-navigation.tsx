@@ -13,7 +13,7 @@ interface ProjectNavigationProps {
 export function ProjectNavigation({ prev, next }: ProjectNavigationProps) {
   return (
     <section className="border-t border-border">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="w-full px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

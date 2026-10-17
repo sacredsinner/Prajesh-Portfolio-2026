@@ -37,7 +37,7 @@ function ContentBlock({ label, content, delay = 0 }: ContentBlockProps) {
 export function ProjectContent({ project }: ProjectContentProps) {
   return (
     <section className="border-t border-border">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="w-full px-6 lg:px-8">
         {project.overview && (
           <ContentBlock label="Overview" content={project.overview} />
         )}
