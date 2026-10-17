@@ -25,6 +25,7 @@ const shareImage = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Praje
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  alternates: { types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } },
   title: "Prajesh Shakya — Brand Identity Designer in Nepal",
   description: SITE_DESCRIPTION,
   generator: null,

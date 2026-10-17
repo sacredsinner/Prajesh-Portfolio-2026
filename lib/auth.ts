@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth"
 import { Pool } from "pg"
 import { pgConnection } from "@/lib/db"
 import { sendEmail } from "@/lib/email"
+import { passwordResetEmail } from "@/lib/email-templates"
 
 // Neon Auth stores Better Auth tables in the neon_auth schema. Keep a
 // dedicated pool for auth so the app's Drizzle pool can continue using public.
@@ -57,15 +58,7 @@ export const auth = betterAuth({
     disableSignUp: !ADMIN_SIGNUP_OPEN,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
-      const escapeHtml = (value: string) =>
-        value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;")
-      const safeUrl = escapeHtml(url)
-      const result = await sendEmail({
-        to: user.email,
-        subject: "Reset your portfolio password",
-        text: `Reset your password by opening this link: ${url}`,
-        html: `<p>Reset your password by clicking the link below.</p><p><a href="${safeUrl}">Reset password</a></p><p>This link expires soon. If you did not request this, you can ignore this email.</p>`,
-      })
+      const result = await sendEmail({ to: user.email, ...passwordResetEmail(url) })
       if (!result.ok) throw new Error(`Password reset email delivery failed: ${result.error}`)
     },
   },

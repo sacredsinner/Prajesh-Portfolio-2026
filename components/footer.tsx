@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { BrandMark } from "@/components/brand-mark"
+import { NewsletterForm } from "@/components/newsletter-form"
 import { CONTACT_EMAIL, SOCIAL_LINKS } from "@/lib/site"
 
 const footerLinks = [
@@ -10,7 +11,8 @@ const footerLinks = [
   { href: "/contact", label: "Contact" },
 ]
 
-export function Footer() {
+// `newsletter={false}` hides the sign-up (the /newsletter page has its own).
+export function Footer({ newsletter = true }: { newsletter?: boolean }) {
   return (
     <footer className="border-t border-border">
       <div className="page-container py-16">
@@ -21,7 +23,7 @@ export function Footer() {
               href="/"
               className="inline-flex items-center gap-3 hover:opacity-70 transition-opacity"
             >
-              <BrandMark idPrefix="footer-mark" className="h-8 w-auto" />
+              <BrandMark className="h-7 w-7" />
               <span className="text-[13px] font-semibold uppercase tracking-[0.3em]">Prajesh Shakya</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
@@ -72,6 +74,17 @@ export function Footer() {
             </ul>
           </div>
         </div>
+
+        {/* Newsletter */}
+        {newsletter && (
+          <div className="mt-16 grid grid-cols-1 gap-6 border-t border-border pt-10 md:grid-cols-2 md:items-end md:gap-12">
+            <div className="space-y-3">
+              <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Notes by email</h2>
+              <p className="max-w-sm font-serif text-2xl leading-snug">New thinking on brand strategy and identity, in your inbox.</p>
+            </div>
+            <NewsletterForm className="w-full min-w-0 md:max-w-md md:justify-self-end" />
+          </div>
+        )}
 
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">

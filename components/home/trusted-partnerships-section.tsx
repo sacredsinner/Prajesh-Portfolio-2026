@@ -18,8 +18,9 @@ export function TrustedPartnershipsSection({ clients }: { clients: Client[] }) {
       {clients.length > 0 ? (
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }} className="mt-12 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           {clients.slice(0, 12).map((client) => (
-            <motion.div key={client.id} variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }} transition={{ duration: 0.45 }} className="group flex aspect-[1.35] items-center justify-center border border-foreground/80 p-0 transition-colors hover:bg-foreground">
-              <img src={client.logoUrl} alt={needsClientName(client.name) ? "Client logo" : `${client.name} logo`} loading="lazy" className="mx-auto max-h-20 w-full object-contain object-center grayscale transition-all duration-300 group-hover:grayscale-0" />
+            // Logos are uploaded as 3:2 cards on white, so each tile is 3:2 and the logo fills it edge to edge.
+            <motion.div key={client.id} variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }} transition={{ duration: 0.45 }} className="group aspect-[3/2] overflow-hidden border border-foreground/80 bg-white p-3">
+              <img src={client.logoUrl} alt={needsClientName(client.name) ? "Client logo" : `${client.name} logo`} loading="lazy" className="h-full w-full object-contain grayscale transition duration-500 group-hover:scale-[1.04] group-hover:grayscale-0" />
             </motion.div>
           ))}
         </motion.div>

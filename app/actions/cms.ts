@@ -11,6 +11,8 @@ import { db } from "@/lib/db"
 import { blogPosts, contacts, projects, testimonials } from "@/lib/db/schema"
 import { getBlobDeleteOptions, isBlobUrl } from "@/lib/blob"
 import { sendEmail } from "@/lib/email"
+import { enquiryAutoReplyEmail, enquiryNotificationEmail } from "@/lib/email-templates"
+import { addLead } from "@/lib/resend-contacts"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -154,14 +156,19 @@ const contactSchema = z.object({
 export type ContactInput = z.input<typeof contactSchema>
 export type ContactResult = { ok: true } | { ok: false; error: string }
 
+// To Prajesh: the enquiry, with Reply going straight to the visitor.
 async function notifyNewEnquiry(data: { name: string; email: string; company?: string; message: string }) {
-  const result = await sendEmail({
-    to: process.env.CONTACT_NOTIFICATION_EMAIL ?? ADMIN_EMAIL,
-    replyTo: data.email,
-    subject: `New enquiry from ${data.name}${data.company ? ` (${data.company})` : ""}`,
-    text: [`Name: ${data.name}`, `Email: ${data.email}`, data.company ? `Company: ${data.company}` : null, "", data.message, "", "Reply to this email to answer them, or manage it in /admin."].filter((line) => line !== null).join("\n"),
-  })
+  const result = await sendEmail({ to: process.env.CONTACT_NOTIFICATION_EMAIL || ADMIN_EMAIL, replyTo: data.email, ...enquiryNotificationEmail(data) })
   if (!result.ok) console.error("[contact] Notification email failed:", result.error)
+}
+
+// To the visitor: a short "got it" with a copy of their message. Capped at two a day per
+// address, so the form can't be used to flood someone else's inbox.
+async function sendEnquiryAutoReply(data: { name: string; email: string; message: string }) {
+  const sentToday = await db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.email, data.email), gte(contacts.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)))).limit(3)
+  if (sentToday.length > 2) return
+  const result = await sendEmail({ to: data.email, replyTo: ADMIN_EMAIL, ...enquiryAutoReplyEmail(data) })
+  if (!result.ok) console.error("[contact] Auto-reply failed:", result.error)
 }
 
 export async function submitContact(input: ContactInput): Promise<ContactResult> {
@@ -178,8 +185,14 @@ export async function submitContact(input: ContactInput): Promise<ContactResult>
     console.error("[contact] Could not save enquiry", error)
     return { ok: false, error: `Sorry, the message couldn't be sent right now. Please email me at ${ADMIN_EMAIL}.` }
   }
-  // Send the notification after responding, so a slow or failed email never blocks the visitor.
-  after(() => notifyNewEnquiry(data).catch((error) => console.error("[contact] Notification email failed", error)))
+  // Send the emails after responding, so a slow or failed email never blocks the visitor.
+  after(async () => {
+    await notifyNewEnquiry(data).catch((error) => console.error("[contact] Notification email failed", error))
+    await sendEnquiryAutoReply(data).catch((error) => console.error("[contact] Auto-reply failed", error))
+    // Every enquiry also becomes a contact in Resend's "Leads" segment.
+    const lead = await addLead({ email: data.email, name: data.name }).catch((error: unknown) => ({ ok: false as const, error: String(error) }))
+    if (!lead.ok) console.error("[contact] Could not add the lead to Resend:", lead.error)
+  })
   revalidatePath("/admin")
   return { ok: true }
 }

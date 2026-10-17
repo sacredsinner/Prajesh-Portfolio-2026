@@ -31,16 +31,25 @@ export function AboutHero() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative aspect-[4/5] bg-muted"
+            className="relative aspect-[4/5] overflow-hidden bg-muted"
           >
-            <Image
-              src="/images/about-portrait.jpg"
-              alt="Prajesh Shakya"
-              fill
-              sizes="(min-width: 1024px) 50vw, 100vw"
-              className="object-cover grayscale"
-              priority
-            />
+            {/* The portrait starts black and white and slowly fades into full colour once it's on screen. */}
+            <motion.div
+              className="absolute inset-0 will-change-[filter]"
+              initial={{ filter: "grayscale(1)" }}
+              whileInView={{ filter: "grayscale(0)" }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 3.5, delay: 0.8, ease: [0.45, 0, 0.25, 1] }}
+            >
+              <Image
+                src="/images/about-portrait.jpg"
+                alt="Prajesh Shakya"
+                fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover"
+                priority
+              />
+            </motion.div>
           </motion.div>
         </div>
       </div>

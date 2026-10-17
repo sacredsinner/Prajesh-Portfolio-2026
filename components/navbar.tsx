@@ -63,7 +63,7 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-3 hover:opacity-70 transition-opacity"
           >
-            <BrandMark idPrefix="nav-mark" className="h-8 w-auto" />
+            <BrandMark className="h-7 w-7" />
             <span className="text-[13px] font-semibold uppercase tracking-[0.3em]">Prajesh Shakya</span>
           </Link>
 

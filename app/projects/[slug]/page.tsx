@@ -4,6 +4,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { EditorialCaseStudy } from "@/components/projects/editorial-case-study"
 import { getPublishedProject, getPublishedProjects, toProjectCard } from "@/lib/public-content"
+import { JsonLd, PERSON_ID, absoluteUrl, person } from "@/components/json-ld"
+import { SITE_URL } from "@/lib/site"
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>
@@ -51,8 +53,21 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const currentIndex = publicProjects.findIndex((p) => p.slug === slug)
   const nextProject = publicProjects[(currentIndex + 1) % publicProjects.length] ?? publicProjects[0]
 
+  const projectSchema = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: project.title,
+    description: row?.seoDescription?.trim() || project.overview || undefined,
+    url: `${SITE_URL}/projects/${project.slug}`,
+    image: [project.thumbnail, ...project.images].filter(Boolean).slice(0, 6).map(absoluteUrl),
+    genre: project.category,
+    dateCreated: /^\d{4}$/.test(project.year) ? project.year : undefined,
+    creator: { ...person, "@id": PERSON_ID },
+    ...(project.client ? { sourceOrganization: { "@type": "Organization", name: project.client } } : {}),
+  }
   return (
     <>
+      <JsonLd data={projectSchema} />
       <Navbar />
       <main className="pt-20">
         <EditorialCaseStudy project={project} nextProject={nextProject} />

@@ -7,7 +7,7 @@ import { getPublishedPosts } from "@/lib/public-content"
 export const metadata: Metadata = {
   title: "Brand Strategy Notes — Prajesh Shakya",
   description: "I write about brand strategy, identity design, and the thinking behind meaningful brands.",
-  alternates: { canonical: "/blog" },
+  alternates: { canonical: "/blog", types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } },
 }
 
 // Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.

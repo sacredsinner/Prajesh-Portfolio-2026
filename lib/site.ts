@@ -13,3 +13,6 @@ export const SOCIAL_LINKS = [
 ]
 
 export const CONTACT_EMAIL = "prajeshshakya@gmail.com"
+
+// Free 30-minute intro call (Cal.com). Shown on Contact, in the CTA block and in the enquiry auto-reply.
+export const BOOKING_URL = "https://cal.com/prajesh-shakya-zqhp5y/30min"

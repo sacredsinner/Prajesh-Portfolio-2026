@@ -5,6 +5,8 @@ import { Footer } from "@/components/footer"
 import { Markdown } from "@/components/markdown"
 import type { Metadata } from "next"
 import { getPublishedPost } from "@/lib/public-content"
+import { JsonLd, PERSON_ID, absoluteUrl, person } from "@/components/json-ld"
+import { SITE_URL } from "@/lib/site"
 
 // Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.
 export const revalidate = 300
@@ -20,8 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title,
     description,
     keywords: post.seoKeywords?.split(",").map((keyword) => keyword.trim()).filter(Boolean),
-    alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: { title, description, type: "article", publishedTime: post.publishedAt?.toISOString(), ...(image ? { images: [{ url: image }] } : {}) },
+    alternates: { canonical: `/blog/${post.slug}`, types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } },
+    openGraph: { title, description, type: "article", publishedTime: post.publishedAt?.toISOString(), modifiedTime: post.updatedAt?.toISOString(), authors: [post.author], tags: post.tags, ...(image ? { images: [{ url: image, width: 1200, height: 630, alt: post.title }] } : {}) },
+    twitter: { card: "summary_large_image", title, description, ...(image ? { images: [image] } : {}) },
   }
 }
 
@@ -30,8 +33,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = await getPublishedPost(slug)
   if (!post) notFound()
   const published = post.publishedAt ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" }).format(post.publishedAt) : null
+  const image = post.featuredImage && !post.featuredImage.startsWith("/placeholder") ? absoluteUrl(post.featuredImage) : undefined
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.seoDescription || post.excerpt,
+    url: `${SITE_URL}/blog/${post.slug}`,
+    mainEntityOfPage: `${SITE_URL}/blog/${post.slug}`,
+    ...(image ? { image } : {}),
+    datePublished: post.publishedAt?.toISOString(),
+    dateModified: post.updatedAt?.toISOString(),
+    articleSection: post.category,
+    keywords: post.tags?.join(", ") || undefined,
+    author: post.author === person.name ? person : { "@type": "Person", name: post.author },
+    publisher: { "@id": PERSON_ID },
+  }
   return (
     <>
+      <JsonLd data={articleSchema} />
       <Navbar />
       <main className="page-container pb-24 pt-32">
         <article className="max-w-3xl">

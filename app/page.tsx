@@ -9,9 +9,10 @@ import { ProcessSection } from "@/components/home/process-section"
 import { CTABlock } from "@/components/cta-block"
 import { TestimonialsSection } from "@/components/home/testimonials-section"
 import { TrustedPartnershipsSection } from "@/components/home/trusted-partnerships-section"
+import { JsonLd, siteSchema } from "@/components/json-ld"
 import { getActiveShowcaseVideo, getPublishedClients, getPublishedTestimonials, getPublishedProjects, toProjectCard } from "@/lib/public-content"
 
-export const metadata: Metadata = { alternates: { canonical: "/" } }
+export const metadata: Metadata = { alternates: { canonical: "/", types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } } }
 
 // Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.
 export const revalidate = 300
@@ -36,6 +37,7 @@ export default async function HomePage() {
   const projects = projectRows.map(toProjectCard)
   return (
     <>
+      <JsonLd data={siteSchema} />
       <Navbar />
       <main>
         <HeroSection />

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { Send } from "lucide-react"
 import { submitContact } from "@/app/actions/cms"
-import { CONTACT_EMAIL } from "@/lib/site"
+import { BOOKING_URL, CONTACT_EMAIL } from "@/lib/site"
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -61,13 +61,17 @@ export function ContactForm() {
               <span className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">Based in</span>
               <p className="text-lg">Kathmandu, Nepal</p>
             </div>
+            <div>
+              <span className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">Prefer to talk?</span>
+              <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="text-lg underline-offset-4 hover:underline">Book a free 30-minute call ↗</a>
+            </div>
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
           {state === "success" ? (
             <div className="space-y-4" role="status">
               <h2 className="font-serif text-2xl">Thank you.</h2>
-              <p className="text-muted-foreground">Your message has been sent. I&apos;ll be in touch soon.</p>
+              <p className="text-muted-foreground">Your message has been sent, and a copy is on its way to your inbox. I&apos;ll reply within one working day.</p>
               <button type="button" className="text-sm underline" onClick={() => setState("idle")}>Send another message</button>
             </div>
           ) : (

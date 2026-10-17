@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
+import { BOOKING_URL } from "@/lib/site"
 
 interface CTABlockProps {
   title?: string
@@ -33,13 +34,24 @@ export function CTABlock({
           <p className="mt-4 text-lg text-background/70 leading-relaxed">
             {description}
           </p>
-          <Link
-            href={buttonHref}
-            className="inline-flex items-center gap-2 mt-8 px-6 py-3 bg-background text-foreground text-sm tracking-wide hover:bg-background/90 transition-colors group"
-          >
-            {buttonText}
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link
+              href={buttonHref}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-background text-foreground text-sm tracking-wide hover:bg-background/90 transition-colors group"
+            >
+              {buttonText}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 border border-background/40 px-6 py-3 text-sm tracking-wide transition-colors hover:border-background group"
+            >
+              Book a free 30-min call
+              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </a>
+          </div>
         </motion.div>
       </div>
     </section>
