@@ -56,7 +56,7 @@ export function Navbar() {
           : "bg-transparent"
       )}
     >
-      <nav className="page-container font-serif" aria-label="Main">
+      <nav className="page-container" aria-label="Main">
         <div className="flex items-center justify-between h-20">
           {/* Logo: PS monogram + wordmark */}
           <Link
