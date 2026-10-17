@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import type { Project } from "@/components/project-card"
+import { ShareLinks, type ShareLinksProps } from "@/components/share-links"
 
 const ease = [0.16, 1, 0.3, 1] as const
 
@@ -12,11 +13,11 @@ function Reveal({ children, className = "" }: { children: React.ReactNode; class
   return <motion.div initial={reduced ? { opacity: 1 } : { opacity: 0, y: 24 }} whileInView={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.7, ease }} className={className}>{children}</motion.div>
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">[ {children} ]</h2>
+function Label({ children, id }: { children: React.ReactNode; id?: string }) {
+  return <h2 id={id} className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">[ {children} ]</h2>
 }
 
-export function EditorialCaseStudy({ project, nextProject }: { project: Project; nextProject: Project }) {
+export function EditorialCaseStudy({ project, nextProject, share }: { project: Project; nextProject: Project; share?: ShareLinksProps }) {
   const images = project.images?.filter(Boolean) ?? []
   return <article className="bg-background text-foreground">
     <header className="page-container pb-16 pt-20 md:pb-28 md:pt-32">
@@ -33,6 +34,7 @@ export function EditorialCaseStudy({ project, nextProject }: { project: Project;
     {images.slice(0, 2).map((image, index) => <Reveal key={image} className="page-container py-4 md:py-8"><Image src={image} alt={`${project.title} project detail ${index + 1}`} width={1800} height={1200} className="h-auto w-full object-cover" /></Reveal>)}
     <section className="mx-auto max-w-4xl px-6 py-24 text-center md:py-40 lg:px-8"><Label>Outcome</Label><p className="mt-8 font-serif text-3xl leading-tight md:text-6xl">{project.outcome || "A clear, memorable identity built to grow with the business."}</p></section>
     {images[2] && <Reveal className="relative mx-auto h-[65vh] max-w-7xl"><Image src={images[2]} alt={`${project.title} identity in context`} fill sizes="100vw" className="object-cover" /></Reveal>}
+    {share && <section aria-labelledby="share-heading" className="page-container grid gap-8 border-t border-border py-14 md:grid-cols-[0.8fr_1.6fr] md:items-center md:py-20"><Label id="share-heading">Share this project</Label><ShareLinks {...share} /></section>}
     <Link href={`/projects/${nextProject.slug}`} className="group block border-t border-border py-24 md:py-40"><div className="page-container"><Label>Next Project</Label><p className="mt-8 max-w-5xl font-serif text-[clamp(3rem,8vw,8rem)] uppercase leading-[0.85] tracking-[-0.05em] transition-transform duration-500 group-hover:translate-x-3">{nextProject.title}</p></div></Link>
   </article>
 }

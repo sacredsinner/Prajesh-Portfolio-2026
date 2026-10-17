@@ -36,6 +36,7 @@ export function BoardEditor({ board }: { board: Board }) {
   const [tool, setTool] = useState<"select" | "connect" | "pan">("select")
   const [snapOn, setSnapOn] = useState(true)
   const [panel, setPanel] = useState<"inspector" | "layers" | "comments" | "history" | null>("inspector")
+  const [panelOpen, setPanelOpen] = useState(false) // narrow screens only; the panel is always docked from lg up
   const [saveState, setSaveState] = useState<{ status: "saved" | "saving" | "error" | "dirty"; at?: string; error?: string }>({ status: "saved" })
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState("")
@@ -271,19 +272,20 @@ export function BoardEditor({ board }: { board: Board }) {
     <div className="flex h-[100dvh] flex-col bg-background text-foreground">
       <input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { const files = [...(e.target.files ?? [])]; e.target.value = ""; if (files.length) void addImages(files) }} />
       {/* Top bar */}
-      <header className="flex items-center gap-3 border-b border-border px-3 py-2 text-sm">
+      <header className="flex items-center gap-2 border-b border-border px-3 py-2 text-sm sm:gap-3">
         <Link href="/admin/moodboards" className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest hover:bg-secondary">← Moodboards</Link>
         <div className="min-w-0"><p className="truncate font-serif text-lg leading-tight">{board.title}</p><p className="text-[11px] text-muted-foreground">{board.clientName || "No client"} · {board.shared ? "link on" : "link off"}</p></div>
         <div className="ml-auto flex items-center gap-2">
           <span className={`text-xs ${saveState.status === "error" ? "text-destructive" : "text-muted-foreground"}`}>{saveState.status === "saved" ? (saveState.at ? `Saved ${new Date(saveState.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "Saved") : saveState.status === "saving" ? "Saving…" : saveState.status === "dirty" ? "Unsaved changes" : saveState.error}</span>
-          <button type="button" onClick={async () => { setSaveState((s) => ({ ...s, status: "saving" })); const r = await saveCanvas(board.id, canvas, "Manual save"); if (r.ok) { b.markSaved(); lastSnapshot.current = Date.now(); setSaveState({ status: "saved", at: r.savedAt }) } else setSaveState({ status: "error", error: r.error }) }} className="rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">Save version</button>
-          <a href={`/m/${board.shareToken}`} target="_blank" rel="noopener noreferrer" className="rounded-full bg-foreground px-3 py-1 text-xs text-background">Preview as client ↗</a>
+          <button type="button" onClick={async () => { setSaveState((s) => ({ ...s, status: "saving" })); const r = await saveCanvas(board.id, canvas, "Manual save"); if (r.ok) { b.markSaved(); lastSnapshot.current = Date.now(); setSaveState({ status: "saved", at: r.savedAt }) } else setSaveState({ status: "error", error: r.error }) }} className="whitespace-nowrap rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">Save version</button>
+          <a href={`/m/${board.shareToken}`} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap rounded-full bg-foreground px-3 py-1 text-xs text-background"><span className="hidden sm:inline">Preview as client</span><span className="sm:hidden">Preview</span> ↗</a>
+          <button type="button" onClick={() => setPanelOpen((o) => !o)} className="whitespace-nowrap rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary lg:hidden" aria-expanded={panelOpen}>{panelOpen ? "Close panel" : "Panel"}</button>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         {/* Tool rail */}
-        <aside className="flex w-14 flex-col items-center gap-1 border-r border-border py-2">
+        <aside className="flex w-14 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-border py-2">
           <Tool label="Select (V)" active={tool === "select"} onClick={() => setTool("select")}>↖</Tool>
           <Tool label="Pan (H / hold space)" active={tool === "pan"} onClick={() => setTool("pan")}>✋</Tool>
           <Tool label="Connect (C): drag from one item to another" active={tool === "connect"} onClick={() => setTool("connect")}>⤳</Tool>
@@ -334,8 +336,8 @@ export function BoardEditor({ board }: { board: Board }) {
           {message && <p role="alert" className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-destructive bg-background px-3 py-1 text-xs text-destructive">{message} <button type="button" onClick={() => setMessage("")} className="ml-2 underline">dismiss</button></p>}
         </div>
 
-        {/* Right panel */}
-        <aside className="flex w-72 flex-col border-l border-border">
+        {/* Right panel: docked on wide screens, a sheet over the stage on narrow ones */}
+        <aside className={`flex-col border-l border-border bg-background ${panelOpen ? "absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shadow-xl lg:static lg:max-w-none lg:shadow-none" : "hidden lg:flex lg:w-72"}`}>
           <div className="flex border-b border-border text-xs">
             {(["inspector", "layers", "comments", "history"] as const).map((key) => <button key={key} type="button" onClick={() => setPanel(panel === key ? null : key)} className={`flex-1 py-2 capitalize ${panel === key ? "bg-foreground text-background" : "hover:bg-secondary"}`}>{key === "comments" && board.comments.length ? `Comments (${board.comments.length})` : key}</button>)}
           </div>

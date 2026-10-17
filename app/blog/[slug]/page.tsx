@@ -6,7 +6,9 @@ import { Markdown } from "@/components/markdown"
 import type { Metadata } from "next"
 import { getPublishedPost } from "@/lib/public-content"
 import { JsonLd, PERSON_ID, absoluteUrl, person } from "@/components/json-ld"
-import { SITE_URL } from "@/lib/site"
+import { ShareLinks } from "@/components/share-links"
+import { canonicalUrl, shareTitle } from "@/lib/share"
+import { DEFAULT_SHARE_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site"
 
 // Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.
 export const revalidate = 300
@@ -18,13 +20,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = post.seoTitle || `${post.title} — Prajesh Shakya`
   const description = post.seoDescription || post.excerpt
   const image = post.featuredImage && !post.featuredImage.startsWith("/placeholder") ? post.featuredImage : undefined
+  // A page's openGraph replaces the layout's whole, so the site name and, for notes
+  // without a cover, the site's share image are set again here.
+  const shareImage = image ? { url: image, width: 1200, height: 630, alt: post.title } : DEFAULT_SHARE_IMAGE
   return {
     title,
     description,
     keywords: post.seoKeywords?.split(",").map((keyword) => keyword.trim()).filter(Boolean),
     alternates: { canonical: `/blog/${post.slug}`, types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } },
-    openGraph: { title, description, type: "article", publishedTime: post.publishedAt?.toISOString(), modifiedTime: post.updatedAt?.toISOString(), authors: [post.author], tags: post.tags, ...(image ? { images: [{ url: image, width: 1200, height: 630, alt: post.title }] } : {}) },
-    twitter: { card: "summary_large_image", title, description, ...(image ? { images: [image] } : {}) },
+    openGraph: { title, description, type: "article", url: `/blog/${post.slug}`, siteName: SITE_NAME, publishedTime: post.publishedAt?.toISOString(), modifiedTime: post.updatedAt?.toISOString(), authors: [post.author], tags: post.tags, images: [shareImage] },
+    twitter: { card: "summary_large_image", title, description, images: [shareImage.url] },
   }
 }
 
@@ -64,6 +69,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="mt-12 border-t border-border pt-10">
             <Markdown content={post.content} />
           </div>
+          <section aria-labelledby="share-heading" className="mt-16 border-t border-border pt-8">
+            <h2 id="share-heading" className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Share this note</h2>
+            <ShareLinks className="mt-5" url={canonicalUrl(`/blog/${post.slug}`)} title={shareTitle(post.title)} summary={post.excerpt} contentType="note" />
+          </section>
         </article>
       </main>
       <Footer />

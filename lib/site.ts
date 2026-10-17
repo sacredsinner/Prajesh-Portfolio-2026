@@ -7,6 +7,9 @@ export const SITE_NAME = "Prajesh Shakya"
 export const SITE_DESCRIPTION =
   "I help ambitious businesses build distinctive brand identities through strategy, design, and meaningful visual systems."
 
+// The site-wide link preview (public/og-image.jpg). Pages with their own image use that instead.
+export const DEFAULT_SHARE_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Prajesh Shakya — Brand Identity Designer" }
+
 export const SOCIAL_LINKS = [
   { href: "https://www.instagram.com/madebyprajesh/", label: "Instagram" },
   { href: "https://www.linkedin.com/in/prajeshshakya/", label: "LinkedIn" },

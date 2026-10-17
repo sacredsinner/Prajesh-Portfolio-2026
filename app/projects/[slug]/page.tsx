@@ -5,11 +5,16 @@ import { Footer } from "@/components/footer"
 import { EditorialCaseStudy } from "@/components/projects/editorial-case-study"
 import { getPublishedProject, getPublishedProjects, toProjectCard } from "@/lib/public-content"
 import { JsonLd, PERSON_ID, absoluteUrl, person } from "@/components/json-ld"
-import { SITE_URL } from "@/lib/site"
+import { canonicalUrl, shareTitle, type ShareNetwork } from "@/lib/share"
+import { DEFAULT_SHARE_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site"
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>
 }
+
+const SHARE_NETWORKS: ShareNetwork[] = ["linkedin", "x", "facebook", "whatsapp", "pinterest", "email"]
+
+const hasImage = (src: string) => Boolean(src) && !src.startsWith("/placeholder")
 
 export async function generateMetadata({
   params,
@@ -27,12 +32,14 @@ export async function generateMetadata({
   // The SEO fields in /admin win when they're filled in.
   const title = row?.seoTitle?.trim() || `${project.title} — Prajesh Shakya`
   const description = row?.seoDescription?.trim() || project.overview
+  // A page's openGraph replaces the layout's whole, so the site name is set again here.
+  const image = hasImage(project.thumbnail) ? { url: project.thumbnail, alt: project.title } : DEFAULT_SHARE_IMAGE
   return {
     title,
     description,
     alternates: { canonical: `/projects/${project.slug}` },
-    openGraph: { title, description, images: [{ url: project.thumbnail }] },
-    twitter: { card: "summary_large_image", title, description, images: [project.thumbnail] },
+    openGraph: { title, description, url: `/projects/${project.slug}`, siteName: SITE_NAME, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image.url] },
   }
 }
 
@@ -70,7 +77,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <JsonLd data={projectSchema} />
       <Navbar />
       <main className="pt-20">
-        <EditorialCaseStudy project={project} nextProject={nextProject} />
+        <EditorialCaseStudy
+          project={project}
+          nextProject={nextProject}
+          share={{
+            url: canonicalUrl(`/projects/${project.slug}`),
+            title: shareTitle(project.title, project.category),
+            summary: row?.seoDescription?.trim() || project.overview,
+            image: hasImage(project.thumbnail) ? absoluteUrl(project.thumbnail) : undefined,
+            networks: SHARE_NETWORKS,
+            contentType: "project",
+          }}
+        />
       </main>
       <Footer />
     </>

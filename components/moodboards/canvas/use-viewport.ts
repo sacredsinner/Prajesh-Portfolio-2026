@@ -34,7 +34,8 @@ export function useViewport(initial?: View) {
   const fitTo = useCallback((rect: Rect, padding = 64) => {
     const el = ref.current
     if (!el || rect.w <= 0 || rect.h <= 0) return
-    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min((el.clientWidth - padding * 2) / rect.w, (el.clientHeight - padding * 2) / rect.h, 1.5)))
+    const pad = Math.min(padding, el.clientWidth / 8, el.clientHeight / 8) // keep some canvas on narrow screens
+    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min((el.clientWidth - pad * 2) / rect.w, (el.clientHeight - pad * 2) / rect.h, 1.5)))
     setView({ scale, x: (el.clientWidth - rect.w * scale) / 2 - rect.x * scale, y: (el.clientHeight - rect.h * scale) / 2 - rect.y * scale })
   }, [])
 

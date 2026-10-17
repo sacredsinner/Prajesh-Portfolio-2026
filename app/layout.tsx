@@ -3,7 +3,7 @@ import { Instrument_Sans, Instrument_Serif } from "next/font/google"
 import Script from "next/script"
 import { Analytics } from "@vercel/analytics/next"
 import { MotionProvider } from "@/components/motion-provider"
-import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site"
+import { DEFAULT_SHARE_IMAGE, SITE_DESCRIPTION, SITE_URL } from "@/lib/site"
 import "./globals.css"
 
 // Brand typefaces: Instrument Serif for display, Instrument Sans for text.
@@ -21,7 +21,7 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 })
 
-const shareImage = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Prajesh Shakya — Brand Identity Designer" }
+const shareImage = DEFAULT_SHARE_IMAGE
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
