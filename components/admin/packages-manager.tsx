@@ -123,7 +123,7 @@ export function PackagesManager({ initial }: { initial: Pricing }) {
 
           {data.packages.map((item, index) => (
             <fieldset key={item.id} className={`grid gap-4 rounded-xl border p-4 ${item.popular ? "border-foreground" : "border-border"} ${item.hidden ? "opacity-60" : ""}`}>
-              <legend className="px-1 text-xs uppercase tracking-widest text-muted-foreground">Package {index + 1}{item.hidden ? " · hidden" : ""}</legend>
+              <legend className="px-1 text-xs uppercase tracking-widest text-muted-foreground">Package {index + 1}{item.hidden ? " · not published" : " · published"}</legend>
               <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
                 <label className={labelClass}>Name<input className={inputClass} value={item.name} onChange={(e) => setPackage(item.id, { name: e.target.value })} maxLength={60} required /></label>
                 <label className={labelClass}>Who it&apos;s for<input className={inputClass} value={item.audience} onChange={(e) => setPackage(item.id, { audience: e.target.value })} maxLength={200} /></label>
@@ -137,7 +137,7 @@ export function PackagesManager({ initial }: { initial: Pricing }) {
               <label className={labelClass}>What&apos;s included (one per line)<textarea className={inputClass} rows={Math.max(4, item.includes.length + 1)} value={item.includes.join("\n")} onChange={(e) => setPackage(item.id, { includes: e.target.value.split("\n") })} /></label>
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <label className="flex items-center gap-2"><input type="checkbox" checked={Boolean(item.popular)} onChange={(e) => set("packages", data.packages.map((p) => ({ ...p, popular: p.id === item.id ? e.target.checked : false })))} /> Most chosen (highlighted)</label>
-                <label className="flex items-center gap-2"><input type="checkbox" checked={!item.hidden} onChange={(e) => setPackage(item.id, { hidden: !e.target.checked })} /> Shown on the site</label>
+                <label className="flex items-center gap-2"><input type="checkbox" checked={!item.hidden} onChange={(e) => setPackage(item.id, { hidden: !e.target.checked })} /> Publish package on frontend</label>
                 <div className="ml-auto flex gap-1">
                   <button type="button" onClick={() => set("packages", move(data.packages, index, -1))} disabled={index === 0} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-30" aria-label="Move up">↑</button>
                   <button type="button" onClick={() => set("packages", move(data.packages, index, 1))} disabled={index === data.packages.length - 1} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-30" aria-label="Move down">↓</button>
