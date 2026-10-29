@@ -38,8 +38,6 @@ export const siteSchema = {
       address: { "@type": "PostalAddress", addressLocality: "Kathmandu", addressCountry: "NP" },
       areaServed: ["Nepal", "Australia", "Worldwide"],
       sameAs: SOCIAL_LINKS.map((link) => link.href),
-      priceRange: "$2,500–$11,000+",
-      hasOfferCatalog: { "@type": "OfferCatalog", name: "Brand identity services", itemListElement: ["Foundation Sprint", "Complete Visual System", "System & Governance", "90-Minute Brand Strategy Diagnostic"].map((name) => ({ "@type": "Offer", name })) },
     },
   ],
 }
