@@ -15,7 +15,7 @@ export const SOCIAL_LINKS = [
   { href: "https://www.linkedin.com/in/prajeshshakya/", label: "LinkedIn" },
 ]
 
-export const CONTACT_EMAIL = "prajeshshakya@gmail.com"
+export const CONTACT_EMAIL = "hello@shakyaprajesh.com.np"
 
 // Free 30-minute intro call (Cal.com). Shown on Contact, in the CTA block and in the enquiry auto-reply.
 export const BOOKING_URL = "https://cal.com/prajesh-shakya-zqhp5y/30min"

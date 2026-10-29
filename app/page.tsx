@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/home/hero-section"
+import { CommercialSystem } from "@/components/home/commercial-system"
 import { VideoShowcase } from "@/components/home/video-showcase"
 import { IntroSection } from "@/components/home/intro-section"
 import { SelectedWorkSection } from "@/components/home/selected-work-section"
@@ -41,6 +42,7 @@ export default async function HomePage() {
       <Navbar />
       <main>
         <HeroSection />
+        <CommercialSystem />
         <VideoShowcase video={showcaseVideo} />
         <IntroSection />
         <SelectedWorkSection projects={projects} />
