@@ -206,8 +206,13 @@ export function ChatWidget() {
     }
   }, [messages, isOpen, isStreaming])
 
-  // Hide the chat agent in admin CMS views
-  if (pathname?.startsWith("/admin")) {
+  // Hide the chat agent in admin CMS views, overview micro frontend, and studio tools
+  if (
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/overview") ||
+    pathname?.startsWith("/mobile") ||
+    pathname?.startsWith("/moodboard-designer")
+  ) {
     return null
   }
 
