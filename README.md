@@ -54,12 +54,7 @@ The visual language follows the **Prajesh Shakya Design System**:
 - **Workflow & Layout Controls**: Boxed, wide, and full-bleed width toggles, drag-and-drop reordering, copy/duplicate blocks, undo/redo (`Cmd+Z` / `Cmd+Shift+Z`), debounced autosave, and multi-device preview frames (Desktop 1440px, Tablet 768px, Mobile 375px).
 - **Metadata & Publishing Engine**: Project status states (`draft`, `published`, `scheduled`, `unlisted`), creative fields, tools used, client credits, licensing presets, SEO snippet validator, and accessibility checker.
 
-### 2. AI Moodboard Designer & Client Boards (`/moodboard-designer` & `/m/[token]`)
-- **Adobe Firefly-Inspired Moodboard Studio (`/moodboard-designer`)**:
-  - Infinite interactive canvas with smooth panning, zooming, and item transformation.
-  - Generative prompt builder with customizable photographic styles, lighting effects, artistic mediums, and compositional presets.
-  - Visual asset curation, reference image blending, and color palette extraction from canvas assets.
-  - High-resolution multi-format exports: single-sheet PNG, multi-page presentation PDF, and raw asset ZIP packages.
+### 2. Client Moodboards & Presentation Studio (`/m/[token]`)
 - **Client Collaboration Portal (`/m/[token]`)**:
   - Private tokenized links for zero-friction client review without requiring account registration.
   - Pin-point item commenting, revision request logs, and one-click milestone approval workflows.
@@ -136,7 +131,6 @@ The visual language follows the **Prajesh Shakya Design System**:
 │   │   ├── contact/               # Project inquiry form & discovery booking
 │   │   ├── promo/                 # 60 FPS Promo Video Studio & canvas exporter
 │   │   └── design-system/         # Live design system, tokens, and typographic scale
-│   ├── moodboard-designer/        # AI Moodboard Designer application (Firefly-style)
 │   ├── overview/                  # Mobile-first command center (MFE embeddable)
 │   ├── mobile/overview/           # Standalone route alias for mobile webviews
 │   ├── m/[token]/                 # Client private moodboard review & approval portal
@@ -151,7 +145,6 @@ The visual language follows the **Prajesh Shakya Design System**:
 │   │   └── clients/               # Partner client logos and showcase videos
 │   └── api/                       # API routes (Chat, Blob, Notion, Cron, Newsletter)
 ├── components/
-│   ├── moodboard-designer/        # Designer canvas, toolbar, presets & export modal
 │   ├── mobile-overview/           # MFE mobile shell, metrics cards, auth gate
 │   ├── chat/                      # "Praj" AI brand strategist floating widget
 │   ├── packages/                  # Pricing matrix, currency selector, add-on calculator

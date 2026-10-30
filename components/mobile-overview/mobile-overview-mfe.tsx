@@ -571,13 +571,13 @@ export function MobileOverviewMfe({ data, isAdmin = false, userEmail, isDemo = f
               {/* Quick Studio Fast Launcher */}
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <Link
-                  href="/moodboard-designer"
+                  href="/admin/moodboards"
                   className="flex items-center gap-2 p-3 rounded-xl bg-secondary/40 border border-border hover:bg-secondary transition-all active:scale-95"
                 >
                   <Palette className="h-4 w-4 text-foreground" />
                   <div className="text-left">
                     <p className="text-xs font-medium text-foreground">Moodboard Studio</p>
-                    <p className="text-[10px] text-muted-foreground">Create canvas</p>
+                    <p className="text-[10px] text-muted-foreground">Client canvas</p>
                   </div>
                 </Link>
 
@@ -819,7 +819,7 @@ export function MobileOverviewMfe({ data, isAdmin = false, userEmail, isDemo = f
                   </p>
                 </div>
                 <Link
-                  href="/moodboard-designer"
+                  href="/admin/moodboards"
                   className="px-2.5 py-1 rounded-full bg-foreground text-background text-xs font-medium flex items-center gap-1"
                 >
                   <Palette className="h-3 w-3" /> New
@@ -948,7 +948,7 @@ export function MobileOverviewMfe({ data, isAdmin = false, userEmail, isDemo = f
                 </button>
 
                 <Link
-                  href="/moodboard-designer"
+                  href="/admin/moodboards"
                   className="w-full flex items-center justify-between p-3.5 rounded-xl bg-secondary/40 border border-border hover:bg-secondary text-foreground text-left transition-all active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
@@ -956,7 +956,7 @@ export function MobileOverviewMfe({ data, isAdmin = false, userEmail, isDemo = f
                       <Palette className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-foreground">Moodboard Designer</p>
+                      <p className="text-xs font-medium text-foreground">Moodboard Studio</p>
                       <p className="text-[10px] text-muted-foreground">Craft visual client presentations</p>
                     </div>
                   </div>
