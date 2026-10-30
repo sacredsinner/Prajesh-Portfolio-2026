@@ -22,14 +22,24 @@ export function FloatingActionDock({
   approved?: boolean
 }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[1030] flex flex-col items-center gap-2 px-4">
+    <div
+      data-control="true"
+      className="pointer-events-none absolute inset-x-0 bottom-4 z-[1030] flex flex-col items-center gap-2 px-4"
+    >
       {/* Floating Control Capsule */}
-      <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border bg-background/95 p-1.5 shadow-2xl backdrop-blur-md transition-transform hover:scale-[1.01]">
+      <div
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border bg-background/95 p-1.5 shadow-2xl backdrop-blur-md transition-transform hover:scale-[1.01]"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Start Guided Tour */}
         <button
           type="button"
-          onClick={onStartPresentation}
-          className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition hover:opacity-90 active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation()
+            onStartPresentation()
+          }}
+          className="flex cursor-pointer items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition hover:opacity-90 active:scale-95"
           title="Start interactive pitch presentation"
         >
           <Play className="h-3.5 w-3.5 fill-current" />
@@ -41,8 +51,11 @@ export function FloatingActionDock({
         {/* View Comments Drawer */}
         <button
           type="button"
-          onClick={onToggleComments}
-          className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs text-foreground transition hover:bg-secondary active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleComments()
+          }}
+          className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-xs text-foreground transition hover:bg-secondary active:scale-95"
           title="View all discussion pins"
         >
           <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
@@ -57,8 +70,11 @@ export function FloatingActionDock({
         {/* Fit to View */}
         <button
           type="button"
-          onClick={onFitAll}
-          className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs text-foreground transition hover:bg-secondary active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation()
+            onFitAll()
+          }}
+          className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-xs text-foreground transition hover:bg-secondary active:scale-95"
           title="Fit whole moodboard to screen"
         >
           <Compass className="h-3.5 w-3.5 text-muted-foreground" />
@@ -68,8 +84,11 @@ export function FloatingActionDock({
         {/* Fullscreen Toggle */}
         <button
           type="button"
-          onClick={onToggleFullscreen}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleFullscreen()
+          }}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:scale-95"
           title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen mode"}
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen mode"}
         >
@@ -82,8 +101,11 @@ export function FloatingActionDock({
             <div className="hidden h-4 w-px bg-border sm:block" />
             <button
               type="button"
-              onClick={onOpenFeedback}
-              className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary active:scale-95 sm:flex"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenFeedback()
+              }}
+              className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary active:scale-95 sm:flex"
               title="Review & submit approval or changes"
             >
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />

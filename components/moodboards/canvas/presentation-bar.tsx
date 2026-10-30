@@ -104,14 +104,24 @@ export function PresentationBar({
   }, [activeSlideIndex])
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-[1040] flex flex-col items-center p-4">
+    <div
+      data-control="true"
+      className="pointer-events-none absolute inset-x-0 top-0 z-[1040] flex flex-col items-center p-4"
+    >
       {/* Top Banner Navigation Pill */}
-      <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-border bg-background/95 px-4 py-2 shadow-xl backdrop-blur-md transition-all sm:gap-4 sm:px-6">
+      <div
+        className="pointer-events-auto flex items-center gap-3 rounded-full border border-border bg-background/95 px-4 py-2 shadow-xl backdrop-blur-md transition-all sm:gap-4 sm:px-6"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Previous Button */}
         <button
           type="button"
-          onClick={handlePrev}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-secondary"
+          onClick={(e) => {
+            e.stopPropagation()
+            handlePrev()
+          }}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-foreground transition hover:bg-secondary active:scale-95"
           title="Previous slide (←)"
           aria-label="Previous slide"
         >
@@ -137,8 +147,11 @@ export function PresentationBar({
         {/* Next Button */}
         <button
           type="button"
-          onClick={handleNext}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-secondary"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleNext()
+          }}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-foreground transition hover:bg-secondary active:scale-95"
           title="Next slide (→ or Space)"
           aria-label="Next slide"
         >
@@ -152,8 +165,11 @@ export function PresentationBar({
           {/* Auto-play */}
           <button
             type="button"
-            onClick={() => setIsPlaying(!isPlaying)}
-            className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsPlaying(!isPlaying)
+            }}
+            className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition active:scale-95 ${
               isPlaying ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
             title={isPlaying ? "Pause auto-tour" : "Play auto-tour"}
@@ -164,8 +180,11 @@ export function PresentationBar({
           {/* Audio Narration */}
           <button
             type="button"
-            onClick={toggleSpeech}
-            className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleSpeech()
+            }}
+            className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition active:scale-95 ${
               isSpeaking ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
             title={isSpeaking ? "Mute audio narration" : "Listen to slide rationale"}
@@ -177,8 +196,11 @@ export function PresentationBar({
           {currentSlide?.notes && (
             <button
               type="button"
-              onClick={() => setShowNotes(!showNotes)}
-              className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowNotes(!showNotes)
+              }}
+              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition active:scale-95 ${
                 showNotes ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
               title="Presenter notes"
@@ -190,8 +212,11 @@ export function PresentationBar({
           {/* Exit Button */}
           <button
             type="button"
-            onClick={onExit}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              onExit()
+            }}
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:scale-95"
             title="Exit Presentation (Esc)"
             aria-label="Exit presentation"
           >
@@ -202,10 +227,21 @@ export function PresentationBar({
 
       {/* Speaker / Rationale Notes Card */}
       {showNotes && currentSlide?.notes && (
-        <div className="pointer-events-auto mt-3 max-w-lg rounded-xl border border-border bg-background/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-2">
+        <div
+          className="pointer-events-auto mt-3 max-w-lg rounded-xl border border-border bg-background/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-2"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             <span>Designer Notes & Intentions</span>
-            <button type="button" onClick={() => setShowNotes(false)} className="hover:text-foreground">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowNotes(false)
+              }}
+              className="cursor-pointer hover:text-foreground"
+            >
               ✕
             </button>
           </div>
