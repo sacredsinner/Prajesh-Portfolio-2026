@@ -101,8 +101,12 @@ export function ClientBoard({
   }, [canvas.items])
 
   const handleToggleFullscreen = useCallback(() => {
-    setIsFullscreen((prev) => !prev)
-  }, [])
+    setIsFullscreen((prev) => {
+      const next = !prev
+      setTimeout(() => stageControls.current?.fitItems(canvas.items, true), 150)
+      return next
+    })
+  }, [canvas.items])
 
   const handleOpenFeedback = useCallback(() => {
     document.getElementById("feedback-section")?.scrollIntoView({ behavior: "smooth" })
@@ -186,8 +190,11 @@ export function ClientBoard({
           {/* All Comments Slide-over Drawer */}
           {showAllCommentsDrawer && (
             <div
+              data-control="true"
               className="absolute bottom-4 right-4 top-4 z-[1050] flex w-80 max-w-[calc(100vw-32px)] flex-col rounded-2xl border border-border bg-background/95 p-5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-right-4 sm:w-96"
               onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
@@ -196,8 +203,11 @@ export function ClientBoard({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAllCommentsDrawer(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowAllCommentsDrawer(false)
+                  }}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:scale-95"
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" />
