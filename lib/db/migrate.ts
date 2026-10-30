@@ -6,6 +6,20 @@ import { pool } from "@/lib/db"
 // Every statement is idempotent (IF NOT EXISTS), runs in a single batched transaction, and is
 // serialised with an advisory lock, so concurrent cold starts cannot trip over each other.
 const STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS contacts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    email text NOT NULL,
+    company text,
+    message text NOT NULL,
+    status text NOT NULL DEFAULT 'new',
+    notes text,
+    package_interest text,
+    budget text,
+    timeline text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`,
   `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS package_interest text`,
   `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS budget text`,
   `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS timeline text`,

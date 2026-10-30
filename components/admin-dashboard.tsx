@@ -25,7 +25,7 @@ import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import type { Overview } from "@/lib/overview"
 import type { FeatureFlags } from "@/lib/feature-flags"
 import { replyToContact, sendAdminEmail, syncLeadsToResend } from "@/app/actions/email"
-import { RefreshCw, Search } from "lucide-react"
+import { Check, Copy, Download, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
 
 type Project = {
@@ -161,6 +161,10 @@ export function AdminDashboard({
 
   const [contactSearch, setContactSearch] = useState("")
   const [contactStatus, setContactStatus] = useState<"all" | "new" | "read" | "replied" | "archived">("all")
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null)
+  const [noteText, setNoteText] = useState<string>("")
+  const [savingNote, setSavingNote] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const [postSearch, setPostSearch] = useState("")
   const [postStatus, setPostStatus] = useState<"all" | "published" | "draft">("all")
@@ -274,6 +278,77 @@ export function AdminDashboard({
     } finally {
       setSyncingNotion(false)
     }
+  }
+
+  function handleContactReplied(contactId: string, replySubject: string) {
+    const stamp = new Date().toLocaleString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+    setContactsList((prev) =>
+      prev.map((c) => {
+        if (c.id !== contactId) return c
+        const newNotes = [c.notes?.trim(), `Replied ${stamp}: "${replySubject}"`].filter(Boolean).join("\n")
+        return {
+          ...c,
+          status: "replied",
+          notes: newNotes,
+        }
+      })
+    )
+    router.refresh()
+  }
+
+  async function handleSaveNotes(id: string) {
+    setSavingNote(true)
+    const target = contactsList.find((c) => c.id === id)
+    const newNotes = noteText.trim()
+    setContactsList((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, notes: newNotes } : c))
+    )
+    try {
+      await updateContact(id, target?.status || "new", newNotes)
+      toast.success("Notes saved")
+      setEditingNotesId(null)
+    } catch {
+      toast.error("Failed to save notes")
+      router.refresh()
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  function exportContactsToCsv() {
+    if (!contactsList.length) {
+      toast.error("No enquiries to export")
+      return
+    }
+    const headers = ["ID", "Name", "Email", "Company", "Status", "Package Interest", "Budget", "Timeline", "Date", "Notes", "Message"]
+    const rows = contactsList.map((c) => [
+      c.id,
+      `"${(c.name || "").replace(/"/g, '""')}"`,
+      `"${(c.email || "").replace(/"/g, '""')}"`,
+      `"${(c.company || "").replace(/"/g, '""')}"`,
+      c.status,
+      `"${(c.packageInterest || "").replace(/"/g, '""')}"`,
+      `"${(c.budget || "").replace(/"/g, '""')}"`,
+      `"${(c.timeline || "").replace(/"/g, '""')}"`,
+      `"${c.createdAt ? new Date(c.createdAt).toISOString() : ""}"`,
+      `"${(c.notes || "").replace(/"/g, '""')}"`,
+      `"${(c.message || "").replace(/"/g, '""')}"`,
+    ])
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `enquiries-${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success(`Exported ${contactsList.length} enquiries to CSV`)
   }
 
   // Filtered collections
@@ -803,6 +878,15 @@ export function AdminDashboard({
                       </span>
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={exportContactsToCsv}
+                    className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors inline-flex items-center gap-1.5 ml-1"
+                    title="Export enquiries to CSV"
+                  >
+                    <Download className="size-3" />
+                    <span>Export CSV</span>
+                  </button>
                 </div>
               </div>
 
@@ -813,8 +897,8 @@ export function AdminDashboard({
                     className="rounded-xl border border-border p-4 transition-colors hover:border-foreground/30"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h2 className="font-serif text-xl">
                             {contact.name}
                             {contact.company ? ` · ${contact.company}` : ""}
@@ -829,23 +913,110 @@ export function AdminDashboard({
                             {contact.status}
                           </span>
                         </div>
-                        <a href={`mailto:${contact.email}`} className="text-xs text-muted-foreground hover:underline">
-                          {contact.email}
-                        </a>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <a href={`mailto:${contact.email}`} className="text-foreground hover:underline">
+                            {contact.email}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(contact.email)
+                              setCopiedId(contact.id)
+                              toast.success("Email copied to clipboard")
+                              setTimeout(() => setCopiedId(null), 2000)
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] hover:text-foreground transition-colors"
+                            title="Copy email address"
+                          >
+                            {copiedId === contact.id ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+                            <span>{copiedId === contact.id ? "Copied" : "Copy"}</span>
+                          </button>
+                          {contact.createdAt && (
+                            <>
+                              <span>·</span>
+                              <span title={new Date(contact.createdAt).toISOString()}>
+                                {new Date(contact.createdAt).toLocaleDateString("en-AU", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
                         {(contact.packageInterest || contact.budget || contact.timeline) && (
                           <p className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">
                             {[contact.packageInterest, contact.budget, contact.timeline].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         <p className="mt-4 whitespace-pre-wrap text-sm leading-6">{contact.message}</p>
-                        {contact.notes && (
-                          <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-muted-foreground bg-secondary/50 p-2.5 rounded-lg">
-                            {contact.notes}
-                          </p>
-                        )}
+
+                        {/* Internal Notes View & Inline Editor */}
+                        <div className="mt-3">
+                          {editingNotesId === contact.id ? (
+                            <div className="rounded-lg border border-border bg-secondary/30 p-3">
+                              <label className="block text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
+                                Internal Notes
+                              </label>
+                              <textarea
+                                value={noteText}
+                                onChange={(e) => setNoteText(e.target.value)}
+                                rows={3}
+                                className="w-full rounded-md border border-border bg-background p-2 text-xs outline-none focus:border-foreground"
+                                placeholder="Add internal notes about this client enquiry..."
+                              />
+                              <div className="mt-2 flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={savingNote}
+                                  onClick={() => handleSaveNotes(contact.id)}
+                                  className="rounded bg-foreground px-3 py-1 text-xs text-background hover:opacity-90 disabled:opacity-50 transition-opacity"
+                                >
+                                  {savingNote ? "Saving…" : "Save note"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingNotesId(null)}
+                                  className="text-xs text-muted-foreground hover:underline"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start justify-between gap-2">
+                              {contact.notes ? (
+                                <p className="flex-1 whitespace-pre-wrap text-xs leading-5 text-muted-foreground bg-secondary/50 p-2.5 rounded-lg">
+                                  {contact.notes}
+                                </p>
+                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingNotesId(contact.id)
+                                  setNoteText(contact.notes ?? "")
+                                }}
+                                className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 shrink-0 self-center"
+                              >
+                                {contact.notes ? "Edit note" : "+ Add internal note"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <Link
+                          href={`/admin/invoices?new=true&name=${encodeURIComponent(contact.name)}&email=${encodeURIComponent(contact.email)}${contact.company ? `&company=${encodeURIComponent(contact.company)}` : ""}`}
+                          className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                          title="Generate quote or invoice for this contact"
+                        >
+                          Invoice / Quote
+                        </Link>
+
                         <button
                           onClick={() => setReplyingTo(replyingTo === contact.id ? null : contact.id)}
                           className="rounded-lg bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition-opacity"
@@ -892,7 +1063,11 @@ export function AdminDashboard({
                     </div>
 
                     {replyingTo === contact.id && (
-                      <ContactReply contact={contact} onClose={() => setReplyingTo(null)} />
+                      <ContactReply
+                        contact={contact}
+                        onClose={() => setReplyingTo(null)}
+                        onReplied={handleContactReplied}
+                      />
                     )}
                   </article>
                 ))}
@@ -1072,8 +1247,16 @@ function PostEditor({
   )
 }
 
-function ContactReply({ contact, onClose }: { contact: Contact; onClose: () => void }) {
-  const [subject, setSubject] = useState(`Re: your enquiry on prajeshshakya.com`)
+function ContactReply({
+  contact,
+  onClose,
+  onReplied,
+}: {
+  contact: Contact
+  onClose: () => void
+  onReplied?: (contactId: string, replySubject: string) => void
+}) {
+  const [subject, setSubject] = useState(`Re: your enquiry on shakyaprajesh.com.np`)
   const [body, setBody] = useState(
     `Hi ${contact.name.split(" ")[0]},\n\nThanks for reaching out! I'd love to learn more about your project.\n\nBest,\nPrajesh`
   )
@@ -1092,6 +1275,7 @@ function ContactReply({ contact, onClose }: { contact: Contact; onClose: () => v
         return
       }
       toast.success("Reply sent successfully!")
+      onReplied?.(contact.id, subject)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send the reply. Check your Resend API key and network connection.")

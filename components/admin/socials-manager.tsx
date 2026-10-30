@@ -14,18 +14,23 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Radio,
   Layers,
-  Settings2,
-  ArrowUpRight,
   ImageIcon,
   X,
-  Share2,
+  AlertCircle,
+  Key,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import {
   createSocialPost,
   deleteSocialPost,
   publishSocialPostNow,
+  syncPostToBufferAction,
+  saveBufferTokenAction,
+  disconnectBufferTokenAction,
+  refreshBufferChannelsAction,
+  fetchSocials,
   addSocialIdea,
   deleteSocialIdea,
   generateAiHooks,
@@ -115,6 +120,13 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   const [data, setData] = React.useState<SocialsData>(initial)
   const [selectedChannelId, setSelectedChannelId] = React.useState<string>("all")
   const [activeTab, setActiveTab] = React.useState<BufferSubTab>("queue")
+
+  // Token input & connection state
+  const [tokenInput, setTokenInput] = React.useState("")
+  const [showTokenSecret, setShowTokenSecret] = React.useState(false)
+  const [isConnectingToken, setIsConnectingToken] = React.useState(false)
+  const [isRefreshingChannels, setIsRefreshingChannels] = React.useState(false)
+  const [syncingPostId, setSyncingPostId] = React.useState<string | null>(null)
 
   // Connected-only filter: removes disconnected platforms from the platform view
   const connectedChannels = React.useMemo(
@@ -238,9 +250,14 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
       })
 
       if (res.ok && res.post) {
-        toast.success(
-          publishNow ? "Post published via Buffer!" : asDraft ? "Saved to drafts" : "Added to Buffer queue!"
-        )
+        if (res.bufferSynced) {
+          toast.success(res.bufferMessage || "Sent to Buffer!")
+        } else if (res.bufferError) {
+          toast.error(res.bufferMessage || res.bufferError, { duration: 6000 })
+        } else {
+          toast.info(res.bufferMessage || "Saved to local studio draft.")
+        }
+
         setData((prev) => ({ ...prev, posts: [res.post!, ...prev.posts] }))
         setPostContent("")
         setMediaUrl("")
@@ -261,13 +278,38 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     }
   }
 
+  // Handle Sync Post to Buffer
+  const handleSyncPostToBuffer = async (postId: string) => {
+    setSyncingPostId(postId)
+    const tid = toast.loading("Sending post to Buffer.com...")
+    try {
+      const res = await syncPostToBufferAction(postId)
+      if (res.ok) {
+        toast.success(res.bufferMessage || "Post successfully sent to Buffer!", { id: tid })
+        const refreshed = await fetchSocials()
+        setData(refreshed)
+        router.refresh()
+      } else {
+        toast.error(res.error || "Buffer rejected the post.", { id: tid, duration: 6000 })
+      }
+    } catch {
+      toast.error("Error sending to Buffer.", { id: tid })
+    } finally {
+      setSyncingPostId(null)
+    }
+  }
+
   // Handle Publish Now
   const handlePublishNow = async (id: string) => {
     const loadingToast = toast.loading("Publishing to Buffer...")
     try {
       const res = await publishSocialPostNow(id)
       if (res.ok) {
-        toast.success("Post published!", { id: loadingToast })
+        if (res.bufferSynced) {
+          toast.success(res.bufferMessage || "Post published to Buffer!", { id: loadingToast })
+        } else {
+          toast.info(res.bufferMessage || "Marked published locally.", { id: loadingToast })
+        }
         setData((prev) => ({
           ...prev,
           posts: prev.posts.map((p) =>
@@ -347,6 +389,73 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     }
   }
 
+  // Connect Buffer Token Action
+  const handleConnectBufferToken = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!tokenInput.trim()) {
+      toast.error("Please enter your Buffer Access Token.")
+      return
+    }
+
+    setIsConnectingToken(true)
+    const tid = toast.loading("Verifying token with Buffer.com...")
+    try {
+      const res = await saveBufferTokenAction(tokenInput.trim())
+      if (res.ok) {
+        toast.success(
+          `Connected to Buffer! Synced ${res.channelsCount || 0} active channel(s).`,
+          { id: tid }
+        )
+        setTokenInput("")
+        const refreshed = await fetchSocials()
+        setData(refreshed)
+        router.refresh()
+      } else {
+        toast.error(res.error || "Failed to verify Buffer token.", { id: tid, duration: 6000 })
+      }
+    } catch {
+      toast.error("An error occurred while connecting to Buffer.", { id: tid })
+    } finally {
+      setIsConnectingToken(false)
+    }
+  }
+
+  // Disconnect Buffer Token Action
+  const handleDisconnectBufferToken = async () => {
+    if (!confirm("Are you sure you want to disconnect your Buffer API token?")) return
+    const tid = toast.loading("Disconnecting Buffer...")
+    try {
+      await disconnectBufferTokenAction()
+      toast.success("Buffer disconnected.", { id: tid })
+      const refreshed = await fetchSocials()
+      setData(refreshed)
+      router.refresh()
+    } catch {
+      toast.error("Error disconnecting Buffer.", { id: tid })
+    }
+  }
+
+  // Refresh Channels Action
+  const handleRefreshChannels = async () => {
+    setIsRefreshingChannels(true)
+    const tid = toast.loading("Refreshing channels from Buffer...")
+    try {
+      const res = await refreshBufferChannelsAction()
+      if (res.ok) {
+        toast.success(`Synced channels updated (${res.channelsCount || 0} active).`, { id: tid })
+        const refreshed = await fetchSocials()
+        setData(refreshed)
+        router.refresh()
+      } else {
+        toast.error(res.error || "Failed to refresh channels from Buffer.", { id: tid })
+      }
+    } catch {
+      toast.error("Error refreshing channels.", { id: tid })
+    } finally {
+      setIsRefreshingChannels(false)
+    }
+  }
+
   const copyMcpConfig = () => {
     const code = JSON.stringify(
       {
@@ -378,7 +487,12 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
             <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               Connected Channels
             </p>
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" title="Connected" />
+            <span
+              className={`size-2 rounded-full ${
+                data.hasToken ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+              }`}
+              title={data.hasToken ? "Buffer Connected" : "Buffer Disconnected"}
+            />
           </div>
 
           {/* All Channels Option */}
@@ -400,7 +514,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
             <span className="text-[11px] opacity-70">{queueCount}</span>
           </button>
 
-          {/* Connected Channel List (Disconnected channels are removed) */}
+          {/* Connected Channel List */}
           {connectedChannels.map((chan) => {
             const conf = PLATFORM_CONFIG[chan.platform]
             const isSelected = selectedChannelId === chan.id
@@ -437,24 +551,36 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
           })}
         </div>
 
-        {/* Buffer MCP Mini Footer Card */}
+        {/* Buffer Status Card */}
         <div className="rounded-xl border border-border/60 bg-secondary/20 p-3 space-y-2 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 font-medium text-foreground">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Buffer MCP</span>
+              <span
+                className={`size-2 rounded-full ${
+                  data.hasToken ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`}
+              />
+              <span>Buffer API</span>
             </div>
-            <span className="text-[10px] text-emerald-500 font-mono">Active</span>
+            <span
+              className={`text-[10px] font-mono ${
+                data.hasToken ? "text-emerald-500" : "text-amber-500"
+              }`}
+            >
+              {data.hasToken ? "Connected" : "Disconnected"}
+            </span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Connected via <code className="text-foreground">mcp.buffer.com</code>
+            {data.hasToken
+              ? "Live sync active with Buffer.com"
+              : "Token required to sync live with Buffer.com"}
           </p>
           <button
             type="button"
             onClick={() => setActiveTab("settings")}
             className="w-full text-left text-[11px] text-muted-foreground hover:text-foreground underline pt-1"
           >
-            Manage MCP & API Settings →
+            {data.hasToken ? "Manage Token & Channels →" : "Connect Buffer Token →"}
           </button>
         </div>
       </aside>
@@ -463,13 +589,13 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
       <main className="flex-1 space-y-4 min-w-0">
         {/* Top Header & Sub-Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/40 pb-3">
-          {/* Sub-tabs: Queue, Drafts, Sent */}
-          <div className="flex items-center gap-1.5">
+          {/* Sub-tabs: Queue, Drafts, Sent, Settings */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {[
               { id: "queue", label: "Queue", count: queueCount },
               { id: "drafts", label: "Drafts", count: draftsCount },
               { id: "sent", label: "Sent", count: sentCount },
-              { id: "settings", label: "Settings & MCP" },
+              { id: "settings", label: "Settings & Token" },
             ].map((tab) => {
               const isActive = activeTab === tab.id
               return (
@@ -512,7 +638,26 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         {/* ── BUFFER COMPOSER (Expandable Box) ── */}
         {composerExpanded && (
           <div className="rounded-xl border border-border bg-card p-4 space-y-3.5 transition-all shadow-sm">
-            {/* Top: Channels to Publish to (Only connected platforms) */}
+            {/* Warning banner if Buffer is not connected */}
+            {!data.hasToken && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0 text-amber-500" />
+                  <span>
+                    <strong>Buffer Disconnected:</strong> Posts will save locally in Studio. Connect your Buffer API token in Settings to sync with Buffer.com.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("settings")}
+                  className="shrink-0 rounded bg-amber-500 px-2.5 py-1 text-[11px] font-medium text-black hover:bg-amber-400"
+                >
+                  Connect Token →
+                </button>
+              </div>
+            )}
+
+            {/* Top: Channels to Publish to */}
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] text-muted-foreground mr-1">Post to:</span>
               {availablePlatforms.map((platform) => {
@@ -579,44 +724,39 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 <button
                   type="button"
                   onClick={() => setMediaUrl("")}
-                  className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  title="Remove attachment"
+                  className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  title="Remove image"
                 >
                   <X className="size-4" />
                 </button>
               </div>
             )}
 
-            {/* Manual Media URL Input (Optional) */}
-            {showMediaInput && !mediaUrl && (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={mediaUrl}
-                    onChange={(e) => setMediaUrl(e.target.value)}
-                    placeholder="Paste image URL (e.g. /images/generated-social-visual.jpg)..."
-                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-foreground"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMediaUrl("")
-                      setShowMediaInput(false)
-                    }}
-                    className="text-muted-foreground hover:text-foreground p-1"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </div>
+            {/* Custom URL Input Drawer */}
+            {showMediaInput && (
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/30 p-2">
+                <input
+                  type="url"
+                  placeholder="Paste image URL (e.g. https://... or /images/...)..."
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                  className="flex-1 rounded border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMediaInput(false)}
+                  className="rounded px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Done
+                </button>
               </div>
             )}
 
-            {/* Nano Banana Image Generator Drawer */}
+            {/* Nano Banana Visual Studio */}
             {showImageGen && (
-              <div className="rounded-lg border border-border bg-secondary/30 p-3.5 space-y-3">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
                     <Sparkles className="size-3.5 text-amber-400" />
                     <span>Nano Banana Visual Studio</span>
                     <span className="rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-1.5 py-0.2 text-[10px] font-mono">
@@ -655,7 +795,11 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                         className="group flex flex-col rounded-md border border-border bg-background p-1.5 text-left transition-all hover:border-foreground/30 hover:bg-secondary/40"
                       >
                         <div className="aspect-video w-full rounded overflow-hidden bg-secondary mb-1">
-                          <img src={item.url} alt={item.name} className="size-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                          <img
+                            src={item.url}
+                            alt={item.name}
+                            className="size-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
                         </div>
                         <span className="text-[11px] font-medium truncate leading-tight">{item.name}</span>
                         <span className="text-[9px] text-muted-foreground font-mono">{item.tag}</span>
@@ -664,7 +808,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                   </div>
                 </div>
 
-                {/* Custom AI Prompt Generation (Ultra-Fast) */}
+                {/* Custom AI Prompt Generation */}
                 <form onSubmit={handleGenerateImage} className="space-y-2 pt-2 border-t border-border/40">
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] font-medium text-muted-foreground">
@@ -754,49 +898,57 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     type="text"
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="Topic (e.g. Design token ROI)..."
-                    className="flex-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-foreground"
+                    placeholder="Topic (e.g. Design token architecture, client onboarding)..."
+                    className="flex-1 rounded border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-foreground"
                   />
                   <button
                     type="submit"
                     disabled={isGeneratingHooks}
-                    className="flex items-center gap-1 rounded-md bg-foreground px-3 py-1 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded bg-foreground px-3 py-1 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
                   >
                     {isGeneratingHooks ? (
                       <RefreshCw className="size-3 animate-spin" />
                     ) : (
                       <Sparkles className="size-3" />
                     )}
-                    <span>Generate</span>
+                    <span>{isGeneratingHooks ? "Writing..." : "Generate"}</span>
                   </button>
                 </form>
 
-                <div className="grid gap-1.5 max-h-48 overflow-y-auto pt-1">
+                <div className="space-y-1.5 pt-1">
                   {hooksList.map((hook, idx) => (
-                    <button
+                    <div
                       key={idx}
-                      type="button"
-                      onClick={() => {
-                        setPostContent(hook)
-                        toast.success("Hook applied to post!")
-                      }}
-                      className="text-left rounded border border-border/60 bg-background/60 p-2 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                      className="group flex items-start justify-between gap-2 rounded border border-border/50 bg-background/50 p-2 text-xs transition-colors hover:border-foreground/30 hover:bg-background"
                     >
-                      &ldquo;{hook}&rdquo;
-                    </button>
+                      <p className="flex-1 leading-relaxed text-muted-foreground group-hover:text-foreground">
+                        {hook}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPostContent(hook)
+                          toast.success("Applied to composer!")
+                        }}
+                        className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-foreground hover:text-background"
+                      >
+                        Use
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Composer Footer Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40">
-              <div className="flex items-center gap-2">
+            {/* Bottom Bar: Attachments & Publishing Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40 pt-3">
+              {/* Media & AI triggers */}
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
                   onClick={() => {
                     setShowImageGen((prev) => !prev)
-                    if (!imagePrompt && postContent) setImagePrompt(postContent)
+                    setShowAiPanel(false)
                   }}
                   className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
                     showImageGen || mediaUrl
@@ -825,6 +977,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 </button>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -890,8 +1043,8 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                         className="group flex flex-col sm:flex-row sm:items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-foreground/20"
                       >
                         <div className="space-y-2 flex-1 min-w-0">
-                          {/* Time & Channels */}
-                          <div className="flex items-center gap-2">
+                          {/* Time, Channels & Buffer Status */}
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="flex items-center gap-1 rounded bg-secondary px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
                               <Clock className="size-2.5" />
                               {post.scheduledFor
@@ -915,6 +1068,18 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                                 </span>
                               )
                             })}
+
+                            {/* Buffer Sync Status Badge */}
+                            {post.bufferUpdateId ? (
+                              <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
+                                <Check className="size-2.5" />
+                                <span>Buffer Synced</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground border border-border">
+                                <span>Studio Only</span>
+                              </span>
+                            )}
                           </div>
 
                           {/* Message Body */}
@@ -932,10 +1097,34 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                               </span>
                             </div>
                           )}
+
+                          {/* Buffer Sync Error Banner */}
+                          {post.bufferError && (
+                            <div className="flex items-center gap-1 text-[11px] text-destructive pt-1">
+                              <AlertCircle className="size-3 shrink-0" />
+                              <span className="truncate">Buffer Error: {post.bufferError}</span>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Hover Actions */}
-                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
+                          {/* Sync to Buffer button if not yet synced */}
+                          {!post.bufferUpdateId && (
+                            <button
+                              type="button"
+                              disabled={syncingPostId === post.id}
+                              onClick={() => handleSyncPostToBuffer(post.id)}
+                              className="flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium hover:bg-foreground hover:text-background transition-colors"
+                              title="Send to Buffer.com"
+                            >
+                              <RefreshCw
+                                className={`size-3 ${syncingPostId === post.id ? "animate-spin" : ""}`}
+                              />
+                              <span>Sync to Buffer</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => handlePublishNow(post.id)}
@@ -976,16 +1165,24 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                   className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4"
                 >
                   <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       {post.platforms.map((p) => {
                         const conf = PLATFORM_CONFIG[p]
                         return (
-                          <span key={p} className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
+                          <span
+                            key={p}
+                            className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase"
+                          >
                             {conf ? <conf.icon className="size-2.5" /> : null}
                             <span>{p}</span>
                           </span>
                         )
                       })}
+                      {post.bufferUpdateId ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.2 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
+                          <Check className="size-2" /> Buffer Synced
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-sm leading-relaxed">{post.content}</p>
                     {post.mediaUrl && (
@@ -995,6 +1192,17 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {!post.bufferUpdateId && (
+                      <button
+                        type="button"
+                        disabled={syncingPostId === post.id}
+                        onClick={() => handleSyncPostToBuffer(post.id)}
+                        className="rounded border border-border px-2.5 py-1 text-xs hover:bg-secondary flex items-center gap-1"
+                      >
+                        <RefreshCw className={`size-3 ${syncingPostId === post.id ? "animate-spin" : ""}`} />
+                        <span>Push to Buffer</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -1039,6 +1247,11 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                       <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
                         Published
                       </span>
+                      {post.bufferUpdateId && (
+                        <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground border border-border">
+                          Buffer: {post.bufferUpdateId}
+                        </span>
+                      )}
                       {post.publishedAt && (
                         <span className="text-[11px] text-muted-foreground font-mono">
                           {new Intl.DateTimeFormat("en-GB", {
@@ -1070,42 +1283,207 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
           </div>
         )}
 
-        {/* 4. SETTINGS & MCP TAB */}
+        {/* 4. SETTINGS & BUFFER CONNECTION TAB */}
         {activeTab === "settings" && (
-          <div className="space-y-4 max-w-2xl">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="space-y-5 max-w-2xl">
+            {/* Card 1: Buffer Account Connection */}
+            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold">Buffer API Connection</h3>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border ${
+                        data.hasToken
+                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                      }`}
+                    >
+                      <span
+                        className={`size-1.5 rounded-full ${
+                          data.hasToken ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                        }`}
+                      />
+                      <span>{data.hasToken ? "Connected" : "Not Connected"}</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Connect your Buffer Access Token to push queued posts directly to Buffer.com and publish live.
+                  </p>
+                </div>
+
+                {data.hasToken && (
+                  <button
+                    type="button"
+                    onClick={handleDisconnectBufferToken}
+                    className="self-start sm:self-auto rounded-lg border border-destructive/30 px-3 py-1 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    Disconnect
+                  </button>
+                )}
+              </div>
+
+              {data.hasToken ? (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-3">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-mono uppercase text-muted-foreground">
+                        Active Access Token
+                      </span>
+                      <p className="font-mono text-xs font-medium text-foreground">
+                        {data.tokenMasked || "••••••••••••••••••••••••••••••••"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isRefreshingChannels}
+                      onClick={handleRefreshChannels}
+                      className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-secondary transition-colors"
+                    >
+                      <RefreshCw className={`size-3 ${isRefreshingChannels ? "animate-spin" : ""}`} />
+                      <span>{isRefreshingChannels ? "Syncing..." : "Sync Channels"}</span>
+                    </button>
+                  </div>
+
+                  {/* Connected Profiles List */}
+                  <div className="space-y-1.5 pt-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Synced Buffer Channels ({connectedChannels.length}):
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {connectedChannels.map((c) => {
+                        const conf = PLATFORM_CONFIG[c.platform]
+                        return (
+                          <div
+                            key={c.id}
+                            className="flex items-center justify-between rounded-lg border border-border bg-background/50 p-2.5 text-xs"
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <div className="size-5 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                                {conf ? <conf.icon className="size-3" /> : null}
+                              </div>
+                              <div className="truncate">
+                                <p className="font-medium truncate">{c.name}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono truncate">{c.handle}</p>
+                              </div>
+                            </div>
+                            <span className="text-emerald-500 shrink-0 text-[10px] font-mono flex items-center gap-1">
+                              <Check className="size-3" /> Active
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleConnectBufferToken} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">Buffer Access Token</label>
+                    <div className="relative">
+                      <input
+                        type={showTokenSecret ? "text" : "password"}
+                        value={tokenInput}
+                        onChange={(e) => setTokenInput(e.target.value)}
+                        placeholder="Paste Buffer Access Token (e.g. 1/0a8f... or Bearer token)"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs pr-10 font-mono outline-none focus:border-foreground transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowTokenSecret((prev) => !prev)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showTokenSecret ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                    <button
+                      type="submit"
+                      disabled={isConnectingToken || !tokenInput.trim()}
+                      className="flex items-center justify-center gap-1.5 rounded-lg bg-foreground px-4 py-2 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                      {isConnectingToken ? (
+                        <RefreshCw className="size-3 animate-spin" />
+                      ) : (
+                        <Key className="size-3" />
+                      )}
+                      <span>{isConnectingToken ? "Verifying with Buffer..." : "Connect & Sync Channels"}</span>
+                    </button>
+
+                    <a
+                      href="https://publish.buffer.com/settings/api"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline self-start sm:self-auto"
+                    >
+                      <span>Get token from Buffer.com</span>
+                      <ExternalLink className="size-3" />
+                    </a>
+                  </div>
+
+                  {/* Step-by-step instructions box */}
+                  <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 space-y-1.5 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">How to get your Buffer API token:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-[11px] leading-relaxed">
+                      <li>
+                        Log in to your account at{" "}
+                        <a
+                          href="https://buffer.com"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline text-foreground"
+                        >
+                          buffer.com
+                        </a>
+                        .
+                      </li>
+                      <li>
+                        Go to{" "}
+                        <a
+                          href="https://publish.buffer.com/settings/api"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline text-foreground"
+                        >
+                          publish.buffer.com/settings/api
+                        </a>
+                        .
+                      </li>
+                      <li>
+                        Create or copy your <strong>Access Token</strong>.
+                      </li>
+                      <li>
+                        Paste it above and click <strong>Connect & Sync Channels</strong>.
+                      </li>
+                    </ol>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Card 2: Buffer MCP Configuration */}
+            <div className="rounded-xl border border-border bg-card p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium">Buffer MCP Server</h3>
+                  <h3 className="text-sm font-semibold">Buffer MCP Server</h3>
                   <p className="text-xs text-muted-foreground">
-                    Connects AI coding assistants directly to your social queue.
+                    Enables Cursor and Antigravity agents to draft and schedule posts via Model Context Protocol.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={copyMcpConfig}
-                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1 text-xs font-medium hover:bg-secondary"
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary transition-colors"
                 >
                   {copiedMcp ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
-                  <span>{copiedMcp ? "Copied" : "Copy Config"}</span>
+                  <span>{copiedMcp ? "Copied" : "Copy MCP Config"}</span>
                 </button>
               </div>
 
               <div className="rounded-lg border border-border bg-secondary/30 p-3 font-mono text-xs">
                 Endpoint: {data.bufferEndpoint}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <h3 className="text-sm font-medium">Buffer Direct API Token (Optional)</h3>
-              <p className="text-xs text-muted-foreground">
-                Set <code className="text-foreground">BUFFER_ACCESS_TOKEN</code> in your <code className="text-foreground">.env.local</code> if using standalone API requests.
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs text-muted-foreground">
-                  Status: Connected via Buffer MCP
-                </span>
               </div>
             </div>
           </div>

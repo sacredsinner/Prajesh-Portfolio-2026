@@ -342,7 +342,7 @@ export async function submitContact(input: ContactInput): Promise<ContactResult>
   return { ok: true }
 }
 export async function listContacts() { await requireAdmin(); await ensureSchema(); return db.select().from(contacts).orderBy(desc(contacts.createdAt)) }
-export async function updateContact(id: string, status: string, notes: string) { await requireAdmin(); await db.update(contacts).set({ status: z.enum(["new", "read", "replied", "archived"]).parse(status), notes: notes.trim(), updatedAt: new Date() }).where(eq(contacts.id, id)); revalidatePath("/admin") }
+export async function updateContact(id: string, status: string, notes?: string | null) { await requireAdmin(); await db.update(contacts).set({ status: z.enum(["new", "read", "replied", "archived"]).parse(status), notes: (notes ?? "").trim(), updatedAt: new Date() }).where(eq(contacts.id, id)); revalidatePath("/admin") }
 export async function deleteContact(id: string) { await requireAdmin(); await db.delete(contacts).where(eq(contacts.id, id)); revalidatePath("/admin") }
 
 export async function seedDemoProjects(): Promise<{ ok: true; count: number } | { ok: false; error: string }> {

@@ -109,10 +109,10 @@ export function enquiryNotificationEmail(data: { name: string; email: string; co
     kicker: "New enquiry",
     heading: data.company ? `${data.name}, ${data.company}` : data.name,
     bodyHtml: detailsBlock(rows) + textToHtml(data.message),
-    cta: { label: "Open the content studio", url: `${SITE_URL}/admin` },
+    cta: { label: "Open in Content Studio", url: `${SITE_URL}/admin?tab=contacts` },
     afterHtml: `<p style="${smallStyle}">Reply to this email to answer ${escapeHtml(firstName(data.name))} directly, or use Reply on the enquiry in the content studio.</p>`,
   })
-  const text = [`New enquiry from ${data.name}`, `Email: ${data.email}`, data.company ? `Company: ${data.company}` : null, data.packageInterest ? `Interested in: ${data.packageInterest}` : null, data.budget ? `Budget: ${data.budget}` : null, data.timeline ? `Timeline: ${data.timeline}` : null, "", data.message, "", `Reply to this email to answer them, or open ${SITE_URL}/admin.`].filter((line) => line !== null).join("\n")
+  const text = [`New enquiry from ${data.name}`, `Email: ${data.email}`, data.company ? `Company: ${data.company}` : null, data.packageInterest ? `Interested in: ${data.packageInterest}` : null, data.budget ? `Budget: ${data.budget}` : null, data.timeline ? `Timeline: ${data.timeline}` : null, "", data.message, "", `Reply to this email to answer them, or open ${SITE_URL}/admin?tab=contacts.`].filter((line) => line !== null).join("\n")
   return { subject, html, text }
 }
 

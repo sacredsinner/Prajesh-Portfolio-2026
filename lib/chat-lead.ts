@@ -132,7 +132,7 @@ export async function detectAndSaveChatLead(messages: any[]) {
       kicker: "Praj AI Chat Lead",
       heading: `New Lead: ${capitalizedName}`,
       bodyHtml: detailsBlock(rows) + textToHtml(fullMessage),
-      cta: { label: "View in Content Studio", url: `${SITE_URL}/admin` },
+      cta: { label: "View in Content Studio", url: `${SITE_URL}/admin?tab=contacts` },
     })
 
     await sendEmail({
@@ -140,7 +140,7 @@ export async function detectAndSaveChatLead(messages: any[]) {
       replyTo: email || recipient,
       subject: `New Lead from Praj AI Chat: ${capitalizedName}${phone ? ` (${phone})` : ""}`,
       html: emailHtml,
-      text: `New lead from Praj AI Chat:\nName: ${capitalizedName}\nEmail: ${email || "N/A"}\nPhone: ${phone || "N/A"}\n\n${fullMessage}\n\nManage in Content Studio: ${SITE_URL}/admin`,
+      text: `New lead from Praj AI Chat:\nName: ${capitalizedName}\nEmail: ${email || "N/A"}\nPhone: ${phone || "N/A"}\n\n${fullMessage}\n\nManage in Content Studio: ${SITE_URL}/admin?tab=contacts`,
     }).catch((err) => console.error("[praj-lead] Email notification failed:", err))
 
     // 3. Add to Resend audience if an email exists

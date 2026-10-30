@@ -7,6 +7,8 @@ import {
   getSocials,
   saveSocials,
   pushToBufferApi,
+  fetchBufferProfiles,
+  getRawBufferToken,
   generateNanoBananaImage,
   type SocialPost,
   type SocialIdea,
@@ -33,7 +35,14 @@ export async function createSocialPost(input: {
   publishNow?: boolean
   scheduledFor?: string
   mediaUrl?: string
-}): Promise<{ ok: boolean; error?: string; post?: SocialPost }> {
+}): Promise<{
+  ok: boolean
+  error?: string
+  post?: SocialPost
+  bufferSynced?: boolean
+  bufferMessage?: string
+  bufferError?: string
+}> {
   await requireAdmin()
 
   if (!input.content.trim()) {
@@ -45,28 +54,48 @@ export async function createSocialPost(input: {
 
   const data = await getSocials()
   let bufferUpdateId: string | undefined
+  let bufferSynced = false
+  let bufferMessage = ""
+  let bufferError: string | undefined
 
-  // If buffer token is present and user requested live publish/schedule
+  // If buffer token is present and user requested live publish or schedule
   if (data.hasToken) {
-    const res = await pushToBufferApi(input.content, ["default"], {
+    const res = await pushToBufferApi(input.content, input.platforms, {
       now: input.publishNow,
       scheduled_at: input.scheduledFor,
       mediaUrl: input.mediaUrl,
     })
-    if (res.ok && res.updateId) {
-      bufferUpdateId = res.updateId
+
+    if (res.ok && res.updateIds && res.updateIds.length > 0) {
+      bufferUpdateId = res.updateIds[0]
+      bufferSynced = true
+      bufferMessage = input.publishNow
+        ? "Post published live to Buffer!"
+        : "Post added to your Buffer queue!"
+    } else {
+      bufferSynced = false
+      bufferError = res.error || "Buffer rejected the request."
+      bufferMessage = `Post saved in studio, but Buffer returned: ${bufferError}`
     }
+  } else {
+    bufferSynced = false
+    bufferMessage = "Post saved locally in Studio. Connect Buffer in Settings to push to Buffer.com."
   }
 
   const newPost: SocialPost = {
     id: `post-${Date.now()}`,
     content: input.content.trim(),
     platforms: input.platforms,
-    status: input.publishNow ? "published" : input.scheduledFor ? "scheduled" : "queued",
+    status: input.publishNow && bufferSynced
+      ? "published"
+      : input.scheduledFor
+      ? "scheduled"
+      : "queued",
     scheduledFor: input.scheduledFor,
-    publishedAt: input.publishNow ? new Date().toISOString() : undefined,
+    publishedAt: input.publishNow && bufferSynced ? new Date().toISOString() : undefined,
     mediaUrl: input.mediaUrl?.trim() || undefined,
     bufferUpdateId,
+    bufferError,
     createdAt: new Date().toISOString(),
   }
 
@@ -74,7 +103,13 @@ export async function createSocialPost(input: {
   await saveSocials({ posts: updatedPosts })
 
   revalidatePath("/admin/socials")
-  return { ok: true, post: newPost }
+  return {
+    ok: true,
+    post: newPost,
+    bufferSynced,
+    bufferMessage,
+    bufferError,
+  }
 }
 
 export async function deleteSocialPost(id: string): Promise<{ ok: boolean; error?: string }> {
@@ -86,22 +121,213 @@ export async function deleteSocialPost(id: string): Promise<{ ok: boolean; error
   return { ok: true }
 }
 
-export async function publishSocialPostNow(id: string): Promise<{ ok: boolean; error?: string }> {
+export async function publishSocialPostNow(id: string): Promise<{
+  ok: boolean
+  error?: string
+  bufferSynced?: boolean
+  bufferMessage?: string
+}> {
   await requireAdmin()
   const data = await getSocials()
   const target = data.posts.find((p) => p.id === id)
   if (!target) return { ok: false, error: "Post not found." }
 
+  let bufferSynced = false
+  let bufferMessage = ""
+  let bufferError: string | undefined
+
   if (data.hasToken) {
-    await pushToBufferApi(target.content, ["default"], { now: true, mediaUrl: target.mediaUrl })
+    const res = await pushToBufferApi(target.content, target.platforms, {
+      now: true,
+      mediaUrl: target.mediaUrl,
+    })
+
+    if (res.ok) {
+      bufferSynced = true
+      bufferMessage = "Post published live to Buffer!"
+    } else {
+      bufferError = res.error
+      bufferMessage = `Marked published locally, but Buffer returned: ${res.error}`
+    }
+  } else {
+    bufferMessage = "Marked published locally. Connect Buffer in Settings to publish live."
   }
 
   const updatedPosts = data.posts.map((p) =>
-    p.id === id ? { ...p, status: "published" as const, publishedAt: new Date().toISOString() } : p
+    p.id === id
+      ? {
+          ...p,
+          status: "published" as const,
+          publishedAt: new Date().toISOString(),
+          bufferError,
+        }
+      : p
   )
   await saveSocials({ posts: updatedPosts })
   revalidatePath("/admin/socials")
+  return { ok: true, bufferSynced, bufferMessage }
+}
+
+export async function syncPostToBufferAction(id: string): Promise<{
+  ok: boolean
+  error?: string
+  bufferMessage?: string
+}> {
+  await requireAdmin()
+  const data = await getSocials()
+  const target = data.posts.find((p) => p.id === id)
+  if (!target) return { ok: false, error: "Post not found." }
+
+  if (!data.hasToken) {
+    return {
+      ok: false,
+      error: "Buffer Access Token is not configured. Go to the Settings tab to connect your token.",
+    }
+  }
+
+  const res = await pushToBufferApi(target.content, target.platforms, {
+    now: target.status === "published",
+    scheduled_at: target.scheduledFor,
+    mediaUrl: target.mediaUrl,
+  })
+
+  if (res.ok && res.updateIds && res.updateIds.length > 0) {
+    const updatedPosts = data.posts.map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            bufferUpdateId: res.updateIds![0],
+            bufferError: undefined,
+            status: target.status === "published" ? ("published" as const) : ("queued" as const),
+          }
+        : p
+    )
+    await saveSocials({ posts: updatedPosts })
+    revalidatePath("/admin/socials")
+    return {
+      ok: true,
+      bufferMessage:
+        target.status === "published"
+          ? "Published live to Buffer!"
+          : "Added to your Buffer queue!",
+    }
+  } else {
+    const error = res.error || "Buffer rejected the request."
+    const updatedPosts = data.posts.map((p) =>
+      p.id === id ? { ...p, bufferError: error } : p
+    )
+    await saveSocials({ posts: updatedPosts })
+    revalidatePath("/admin/socials")
+    return { ok: false, error }
+  }
+}
+
+export async function saveBufferTokenAction(token: string): Promise<{
+  ok: boolean
+  error?: string
+  channelsCount?: number
+}> {
+  await requireAdmin()
+  const cleanToken = token.trim()
+  if (!cleanToken) {
+    return { ok: false, error: "Please enter a valid Buffer Access Token." }
+  }
+
+  // 1. Verify token by fetching profiles
+  const check = await fetchBufferProfiles(cleanToken)
+  if (!check.ok) {
+    return {
+      ok: false,
+      error: check.error || "Invalid Buffer Access Token. Please verify and try again.",
+    }
+  }
+
+  // 2. Fetch current socials
+  const data = await getSocials()
+
+  // 3. Map Buffer channels
+  const currentChannels = [...data.channels]
+  const bufferChannels = check.channels || []
+
+  const updatedChannels = currentChannels.map((c) => {
+    const match = bufferChannels.find(
+      (b) =>
+        b.service === c.platform ||
+        (c.platform === "twitter" && (b.service === "x" || b.service === "twitter"))
+    )
+    if (match) {
+      return {
+        ...c,
+        bufferProfileId: match.id,
+        name: match.name || c.name,
+        handle: match.name ? (match.name.startsWith("@") ? match.name : `@${match.name}`) : c.handle,
+        connected: true,
+      }
+    }
+    return c
+  })
+
+  // 4. Save token and updated channels
+  await saveSocials({
+    token: cleanToken,
+    channels: updatedChannels,
+    bufferConnected: true,
+  })
+
+  revalidatePath("/admin/socials")
+  return { ok: true, channelsCount: bufferChannels.length }
+}
+
+export async function disconnectBufferTokenAction(): Promise<{ ok: boolean }> {
+  await requireAdmin()
+  await saveSocials({
+    token: "",
+    bufferConnected: false,
+  })
+  revalidatePath("/admin/socials")
   return { ok: true }
+}
+
+export async function refreshBufferChannelsAction(): Promise<{
+  ok: boolean
+  error?: string
+  channelsCount?: number
+}> {
+  await requireAdmin()
+  const token = await getRawBufferToken()
+  if (!token) {
+    return { ok: false, error: "No Buffer token is configured." }
+  }
+
+  const check = await fetchBufferProfiles(token)
+  if (!check.ok) {
+    return { ok: false, error: check.error || "Failed to contact Buffer API." }
+  }
+
+  const data = await getSocials()
+  const bufferChannels = check.channels || []
+
+  const updatedChannels = data.channels.map((c) => {
+    const match = bufferChannels.find(
+      (b) =>
+        b.service === c.platform ||
+        (c.platform === "twitter" && (b.service === "x" || b.service === "twitter"))
+    )
+    if (match) {
+      return {
+        ...c,
+        bufferProfileId: match.id,
+        name: match.name || c.name,
+        handle: match.name ? (match.name.startsWith("@") ? match.name : `@${match.name}`) : c.handle,
+        connected: true,
+      }
+    }
+    return c
+  })
+
+  await saveSocials({ channels: updatedChannels })
+  revalidatePath("/admin/socials")
+  return { ok: true, channelsCount: bufferChannels.length }
 }
 
 export async function addSocialIdea(
@@ -238,5 +464,3 @@ export async function generateSocialImageAction(input: {
   }
   return generateNanoBananaImage(input.prompt.trim(), { aspectRatio: input.aspectRatio })
 }
-
-

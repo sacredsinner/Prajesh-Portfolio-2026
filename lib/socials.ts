@@ -17,6 +17,7 @@ export interface SocialChannel {
   avatarUrl?: string
   connected: boolean
   queueCount: number
+  bufferProfileId?: string
 }
 
 export interface SocialPost {
@@ -28,6 +29,7 @@ export interface SocialPost {
   publishedAt?: string
   mediaUrl?: string
   bufferUpdateId?: string
+  bufferError?: string
   createdAt: string
 }
 
@@ -42,6 +44,7 @@ export interface SocialIdea {
 export interface SocialsData {
   bufferEndpoint: string
   hasToken: boolean
+  tokenMasked?: string
   bufferConnected: boolean
   channels: SocialChannel[]
   posts: SocialPost[]
@@ -136,9 +139,33 @@ const DEFAULT_IDEAS: SocialIdea[] = [
 ]
 
 export const BUFFER_MCP_URL = "https://mcp.buffer.com/mcp"
+const STATE_FILE = path.join(process.cwd(), "data", "socials-state.json")
 
-export async function getSocials(): Promise<SocialsData> {
-  const envToken = process.env.BUFFER_ACCESS_TOKEN?.trim() || ""
+function readLocalFallback(): (Partial<SocialsData> & { token?: string }) | null {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      const content = fs.readFileSync(STATE_FILE, "utf-8")
+      return JSON.parse(content)
+    }
+  } catch (e) {
+    console.error("[socials] Could not read local fallback file:", e)
+  }
+  return null
+}
+
+function writeLocalFallback(data: SocialsData & { token?: string }) {
+  try {
+    const dir = path.dirname(STATE_FILE)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(STATE_FILE, JSON.stringify(data, null, 2), "utf-8")
+  } catch (e) {
+    console.error("[socials] Could not write local fallback file:", e)
+  }
+}
+
+export async function getRawBufferToken(): Promise<string> {
+  const envToken = process.env.BUFFER_ACCESS_TOKEN?.trim()
+  if (envToken) return envToken
 
   try {
     await ensureSchema()
@@ -148,70 +175,355 @@ export async function getSocials(): Promise<SocialsData> {
       .where(eq(siteSettings.key, "socials"))
       .limit(1)
 
-    const saved = (row?.value && typeof row.value === "object" ? row.value : {}) as Partial<SocialsData>
+    const saved = (row?.value && typeof row.value === "object" ? row.value : {}) as Record<string, any>
+    if (saved.token && typeof saved.token === "string" && saved.token.trim()) {
+      return saved.token.trim()
+    }
+  } catch {
+    // If DB is offline, read from local fallback file
+  }
 
-    return {
-      bufferEndpoint: BUFFER_MCP_URL,
-      hasToken: Boolean(envToken || (saved as { token?: string }).token),
-      bufferConnected: saved.bufferConnected ?? true,
-      channels: saved.channels && saved.channels.length > 0 ? saved.channels : DEFAULT_CHANNELS,
-      posts: saved.posts && saved.posts.length > 0 ? saved.posts : DEFAULT_POSTS,
-      ideas: saved.ideas && saved.ideas.length > 0 ? saved.ideas : DEFAULT_IDEAS,
-      autoShortenLinks: saved.autoShortenLinks ?? true,
-      defaultScheduleTime: saved.defaultScheduleTime ?? "17:00",
-      timezone: saved.timezone ?? "Asia/Kathmandu",
+  const fallback = readLocalFallback()
+  if (fallback?.token && typeof fallback.token === "string" && fallback.token.trim()) {
+    return fallback.token.trim()
+  }
+
+  return ""
+}
+
+export async function getSocials(): Promise<SocialsData> {
+  const rawToken = await getRawBufferToken()
+
+  let savedData: (Partial<SocialsData> & { token?: string }) | null = null
+
+  try {
+    await ensureSchema()
+    const [row] = await db
+      .select()
+      .from(siteSettings)
+      .where(eq(siteSettings.key, "socials"))
+      .limit(1)
+
+    if (row?.value && typeof row.value === "object") {
+      savedData = row.value as Partial<SocialsData> & { token?: string }
     }
   } catch (err) {
-    console.error("[socials] Could not load socials from siteSettings:", err)
+    // DB offline, fall through to local fallback
+  }
+
+  if (!savedData) {
+    savedData = readLocalFallback()
+  }
+
+  const saved = savedData || {}
+  const hasToken = Boolean(rawToken)
+  const tokenMasked = rawToken
+    ? `${rawToken.slice(0, 4)}••••${rawToken.slice(-4)}`
+    : undefined
+
+  return {
+    bufferEndpoint: BUFFER_MCP_URL,
+    hasToken,
+    tokenMasked,
+    bufferConnected: saved.bufferConnected ?? hasToken,
+    channels: saved.channels && saved.channels.length > 0 ? saved.channels : DEFAULT_CHANNELS,
+    posts: saved.posts && saved.posts.length > 0 ? saved.posts : DEFAULT_POSTS,
+    ideas: saved.ideas && saved.ideas.length > 0 ? saved.ideas : DEFAULT_IDEAS,
+    autoShortenLinks: saved.autoShortenLinks ?? true,
+    defaultScheduleTime: saved.defaultScheduleTime ?? "17:00",
+    timezone: saved.timezone ?? "Asia/Kathmandu",
+  }
+}
+
+export async function saveSocials(data: Partial<SocialsData & { token?: string }>): Promise<void> {
+  const current = await getSocials()
+  const rawToken = await getRawBufferToken()
+
+  const updated: SocialsData & { token?: string } = {
+    ...current,
+    ...data,
+    token: data.token !== undefined ? data.token : rawToken,
+  }
+
+  // Always persist to local fallback file for offline resilience
+  writeLocalFallback(updated)
+
+  // Also persist to DB if configured
+  try {
+    await ensureSchema()
+    await db
+      .insert(siteSettings)
+      .values({
+        key: "socials",
+        value: updated,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: {
+          value: updated,
+          updatedAt: new Date(),
+        },
+      })
+  } catch (err) {
+    console.warn("[socials] Saved to local fallback (DB unavailable):", err)
+  }
+}
+
+export interface BufferChannelProfile {
+  id: string
+  service: string
+  name: string
+  avatar?: string
+}
+
+export interface BufferFetchResult {
+  ok: boolean
+  source?: "graphql" | "rest"
+  channels?: BufferChannelProfile[]
+  error?: string
+}
+
+// Fetches real connected channels from Buffer via GraphQL or REST API
+export async function fetchBufferProfiles(token: string): Promise<BufferFetchResult> {
+  const cleanToken = token.trim()
+  if (!cleanToken) {
+    return { ok: false, error: "Access token is empty." }
+  }
+
+  // 1. Try modern GraphQL API
+  try {
+    const orgQuery = {
+      query: `query GetAccount {
+        account {
+          id
+          name
+          organizations {
+            id
+            name
+          }
+        }
+      }`,
+    }
+
+    const orgRes = await fetch("https://api.buffer.com", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${cleanToken}`,
+      },
+      body: JSON.stringify(orgQuery),
+    })
+
+    if (orgRes.ok) {
+      const orgJson = await orgRes.json()
+      const orgs = orgJson.data?.account?.organizations
+      if (Array.isArray(orgs) && orgs.length > 0) {
+        const orgId = orgs[0].id
+        const chQuery = {
+          query: `query GetOrgChannels($input: ChannelsInput!) {
+            channels(input: $input) {
+              id
+              name
+              displayName
+              service
+              avatar
+              isDisconnected
+            }
+          }`,
+          variables: {
+            input: {
+              organizationId: orgId,
+            },
+          },
+        }
+
+        const chRes = await fetch("https://api.buffer.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${cleanToken}`,
+          },
+          body: JSON.stringify(chQuery),
+        })
+
+        if (chRes.ok) {
+          const chJson = await chRes.json()
+          const channelsList = chJson.data?.channels
+          if (Array.isArray(channelsList) && channelsList.length > 0) {
+            const mapped: BufferChannelProfile[] = channelsList
+              .filter((c: any) => !c.isDisconnected)
+              .map((c: any) => ({
+                id: c.id,
+                service: String(c.service || "").toLowerCase(),
+                name: c.displayName || c.name || c.service,
+                avatar: c.avatar,
+              }))
+            return { ok: true, source: "graphql", channels: mapped }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[buffer] GraphQL profiles fetch error:", err)
+  }
+
+  // 2. Fallback to Legacy REST API
+  try {
+    const restRes = await fetch(
+      `https://api.bufferapp.com/1/profiles.json?access_token=${encodeURIComponent(cleanToken)}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      }
+    )
+
+    const json = await restRes.json()
+    if (restRes.ok && Array.isArray(json)) {
+      const mapped: BufferChannelProfile[] = json.map((p: any) => ({
+        id: p.id,
+        service: String(p.service || "").toLowerCase(),
+        name: p.formatted_username || p.formatted_service || p.service,
+        avatar: p.avatar || p.avatar_https,
+      }))
+      return { ok: true, source: "rest", channels: mapped }
+    } else {
+      const errMsg = json?.message || json?.error || `Buffer returned HTTP ${restRes.status}`
+      return { ok: false, error: errMsg }
+    }
+  } catch (err) {
     return {
-      bufferEndpoint: BUFFER_MCP_URL,
-      hasToken: Boolean(envToken),
-      bufferConnected: true,
-      channels: DEFAULT_CHANNELS,
-      posts: DEFAULT_POSTS,
-      ideas: DEFAULT_IDEAS,
-      autoShortenLinks: true,
-      defaultScheduleTime: "17:00",
-      timezone: "Asia/Kathmandu",
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error contacting Buffer API",
     }
   }
 }
 
-export async function saveSocials(data: Partial<SocialsData>): Promise<void> {
-  await ensureSchema()
-  const current = await getSocials()
-  const updated: SocialsData = {
-    ...current,
-    ...data,
-  }
-
-  await db
-    .insert(siteSettings)
-    .values({
-      key: "socials",
-      value: updated,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: siteSettings.key,
-      set: {
-        value: updated,
-        updatedAt: new Date(),
-      },
-    })
-}
-
-// Optional Buffer API Client: can create posts if live credentials exist
+// Dispatches a post directly to Buffer via GraphQL or REST using real channel IDs
 export async function pushToBufferApi(
   text: string,
-  profileIds: string[],
-  options: { now?: boolean; scheduled_at?: string; mediaUrl?: string } = {}
-): Promise<{ ok: boolean; updateId?: string; error?: string }> {
-  const token = process.env.BUFFER_ACCESS_TOKEN?.trim()
+  targetPlatforms: SocialPlatform[],
+  options: {
+    now?: boolean
+    scheduled_at?: string
+    mediaUrl?: string
+    draft?: boolean
+  } = {}
+): Promise<{ ok: boolean; updateIds?: string[]; error?: string }> {
+  const token = await getRawBufferToken()
   if (!token) {
-    return { ok: false, error: "BUFFER_ACCESS_TOKEN is not configured in .env.local" }
+    return {
+      ok: false,
+      error: "Buffer Access Token is not configured. Connect your token in Settings to sync.",
+    }
   }
 
+  // 1. Get channel IDs for target platforms
+  const socials = await getSocials()
+  const matchedIds: string[] = []
+
+  for (const plat of targetPlatforms) {
+    const chan = socials.channels.find(
+      (c) => c.connected && (c.platform === plat || (plat === "twitter" && (c.platform as any) === "x"))
+    )
+    if (chan?.bufferProfileId) {
+      matchedIds.push(chan.bufferProfileId)
+    }
+  }
+
+  // If cached channels don't have bufferProfileIds yet, fetch from Buffer directly
+  if (matchedIds.length === 0) {
+    const profResult = await fetchBufferProfiles(token)
+    if (profResult.ok && profResult.channels) {
+      for (const plat of targetPlatforms) {
+        const found = profResult.channels.find(
+          (c) =>
+            c.service === plat ||
+            (plat === "twitter" && (c.service === "x" || c.service === "twitter"))
+        )
+        if (found) {
+          matchedIds.push(found.id)
+        }
+      }
+    }
+  }
+
+  if (matchedIds.length === 0) {
+    return {
+      ok: false,
+      error: `No matching Buffer channel found for [${targetPlatforms.join(", ")}]. Please make sure these channels are connected in your Buffer dashboard.`,
+    }
+  }
+
+  // 2. Dispatch via GraphQL createPost for each channel
+  const updateIds: string[] = []
+  let anySuccess = false
+  let lastError = ""
+
+  for (const channelId of matchedIds) {
+    try {
+      const mode = options.now ? "shareNow" : options.draft ? "saveDraft" : "addToQueue"
+      const schedulingType = options.scheduled_at ? "customScheduled" : "automatic"
+
+      const gqlMutation = {
+        query: `mutation CreatePost($input: CreatePostInput!) {
+          createPost(input: $input) {
+            ... on PostActionSuccess {
+              post {
+                id
+                text
+                status
+              }
+            }
+            ... on MutationError {
+              message
+            }
+          }
+        }`,
+        variables: {
+          input: {
+            channelId,
+            text,
+            mode,
+            schedulingType,
+            dueAt: options.scheduled_at,
+            saveToDraft: Boolean(options.draft),
+            assets: options.mediaUrl ? [{ url: options.mediaUrl }] : undefined,
+          },
+        },
+      }
+
+      const res = await fetch("https://api.buffer.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(gqlMutation),
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        const post = json.data?.createPost?.post
+        const errorMsg = json.data?.createPost?.message || json.errors?.[0]?.message
+        if (post?.id) {
+          updateIds.push(post.id)
+          anySuccess = true
+          continue
+        } else if (errorMsg) {
+          lastError = errorMsg
+        }
+      }
+    } catch (err) {
+      console.warn("[buffer] GraphQL createPost failed for channel", channelId, err)
+    }
+  }
+
+  if (anySuccess) {
+    return { ok: true, updateIds }
+  }
+
+  // 3. Fallback to Legacy REST API updates/create.json
   try {
     const formData = new URLSearchParams()
     formData.append("access_token", token)
@@ -220,12 +532,13 @@ export async function pushToBufferApi(
       formData.append("now", "true")
     }
     if (options.scheduled_at) {
-      formData.append("scheduled_at", options.scheduled_at)
+      const unixSec = Math.floor(new Date(options.scheduled_at).getTime() / 1000)
+      formData.append("scheduled_at", String(unixSec))
     }
     if (options.mediaUrl) {
       formData.append("media[photo]", options.mediaUrl)
     }
-    for (const pid of profileIds) {
+    for (const pid of matchedIds) {
       formData.append("profile_ids[]", pid)
     }
 
@@ -236,15 +549,17 @@ export async function pushToBufferApi(
     })
 
     const result = await res.json()
-    if (!res.ok || !result.success) {
-      return { ok: false, error: result.message || "Failed to post via Buffer API" }
+    if (res.ok && result.success) {
+      const restIds = (result.updates || []).map((u: any) => u.id).filter(Boolean)
+      return { ok: true, updateIds: restIds.length > 0 ? restIds : [result.buffer_id || "buf-success"] }
+    } else {
+      lastError = result.message || lastError || "Failed to post via Buffer API"
     }
-
-    return { ok: true, updateId: result.updates?.[0]?.id }
   } catch (error) {
-    console.error("[buffer] API request failed:", error)
-    return { ok: false, error: error instanceof Error ? error.message : "Network error" }
+    lastError = error instanceof Error ? error.message : "Network error"
   }
+
+  return { ok: false, error: lastError || "Could not publish post to Buffer." }
 }
 
 export const NANO_BANANA_PRESETS = [
@@ -288,14 +603,14 @@ export async function generateNanoBananaImage(
               {
                 parts: [
                   {
-                    text: `Generate a high quality, professional editorial luxury social media graphic, high resolution, minimalist aesthetic: ${prompt}. Aspect ratio: ${options.aspectRatio || "16:9"}.`
-                  }
-                ]
-              }
+                    text: `Generate a high quality, professional editorial luxury social media graphic, high resolution, minimalist aesthetic: ${prompt}. Aspect ratio: ${options.aspectRatio || "16:9"}.`,
+                  },
+                ],
+              },
             ],
             generationConfig: {
-              responseModalities: ["TEXT", "IMAGE"]
-            }
+              responseModalities: ["TEXT", "IMAGE"],
+            },
           }),
         }
       )
@@ -310,7 +625,7 @@ export async function generateNanoBananaImage(
         fs.writeFileSync(filePath, buffer)
         return { ok: true, imageUrl: publicUrl }
       }
-    } catch (err) {
+    } catch {
       console.warn("[socials] Nano Banana API response took too long or timed out. Applying fast high-res asset.")
     }
   }
@@ -338,5 +653,3 @@ export async function generateNanoBananaImage(
 
   return { ok: true, imageUrl: "/images/generated-social-visual.jpg" }
 }
-
-
