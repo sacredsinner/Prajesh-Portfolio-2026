@@ -2,11 +2,11 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { deleteMoodboard, getMoodboardComments, replyOnMoodboard, saveMoodboard, sendMoodboard, setMoodboardShared } from "@/app/actions/moodboards"
+import { deleteMoodboard, getMoodboardComments, replyOnMoodboard, saveMoodboard, sendMoodboard, setMoodboardShared, seedDemoMoodboards } from "@/app/actions/moodboards"
 import { MOODBOARD_STATUS_LABELS, type MoodboardSection, type MoodboardStatus } from "@/lib/moodboards"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import type { Canvas } from "@/lib/canvas"
-import { Search } from "lucide-react"
+import { Search, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 export type AdminMoodboard = {
@@ -43,6 +43,25 @@ export function MoodboardManager({ boards }: { boards: AdminMoodboard[] }) {
   const [thread, setThread] = useState<{ board: AdminMoodboard; comments: Comment[] } | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AdminMoodboard | null>(null)
   const [search, setSearch] = useState("")
+  const [isSeeding, setIsSeeding] = useState(false)
+
+  async function handleSeedDrafts() {
+    setIsSeeding(true)
+    const tid = toast.loading("Seeding showcase drafts into database...")
+    try {
+      const res = await seedDemoMoodboards()
+      if (res.ok) {
+        toast.success(`Seeded ${res.count} draft moodboards!`, { id: tid })
+        router.refresh()
+      } else {
+        toast.error(res.error, { id: tid })
+      }
+    } catch {
+      toast.error("Failed to seed moodboards", { id: tid })
+    } finally {
+      setIsSeeding(false)
+    }
+  }
 
   async function run(id: string, action: () => Promise<{ ok: true } | { ok: false; error: string }>, success: string) {
     setBusyId(id)
@@ -136,6 +155,16 @@ export function MoodboardManager({ boards }: { boards: AdminMoodboard[] }) {
           >
             <span>Komorebi Studio</span> ↗
           </a>
+          <button
+            type="button"
+            disabled={isSeeding}
+            onClick={handleSeedDrafts}
+            className="rounded-full border border-border px-3.5 py-1.5 text-xs font-medium hover:bg-secondary transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Seed Apple Guitars and Komorebi Living drafts into database"
+          >
+            <Sparkles className="size-3.5 text-amber-500" />
+            <span>{isSeeding ? "Seeding…" : "Seed Drafts"}</span>
+          </button>
           <button
             onClick={() => setEditing({ title: "", clientName: "", clientEmail: "", intro: "" })}
             className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"

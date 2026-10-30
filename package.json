@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "seed": "tsx scripts/seed-projects.ts",
+    "seed:moodboards": "tsx scripts/seed-moodboards.ts",
     "migrate:invoices": "tsx scripts/migrate-invoices.ts"
   },
   "dependencies": {

@@ -16,6 +16,8 @@ import type { MoodboardSection } from "@/lib/moodboards"
 import { sectionsToCanvas, type Canvas } from "@/lib/canvas"
 import { SITE_URL } from "@/lib/site"
 import { AI_ENABLED, describeImage, type ImageInsight } from "@/lib/ai"
+import { APPLE_GUITAR_CANVAS, APPLE_GUITAR_COMMENTS, APPLE_GUITAR_MOODBOARD } from "@/lib/apple-guitars-board"
+import { DEMO_CANVAS, DEMO_COMMENTS, DEMO_MOODBOARD } from "@/lib/demo-board"
 
 // A "use server" file may only export async functions (and types).
 
@@ -262,4 +264,100 @@ export async function getVersion(id: string): Promise<Canvas | null> {
   await requireAdmin()
   const [row] = await db.select({ canvas: moodboardVersions.canvas }).from(moodboardVersions).where(eq(moodboardVersions.id, z.string().uuid().parse(id))).limit(1)
   return row?.canvas ?? null
+}
+
+export async function seedDemoMoodboards(): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  await requireAdmin()
+  await ensureSchema()
+  try {
+    const seedBoards = [
+      {
+        title: APPLE_GUITAR_MOODBOARD.title,
+        clientName: APPLE_GUITAR_MOODBOARD.clientName,
+        clientEmail: APPLE_GUITAR_MOODBOARD.clientEmail,
+        intro: APPLE_GUITAR_MOODBOARD.intro,
+        shareToken: "apple-guitars-draft",
+        shared: true,
+        status: "draft" as const,
+        canvas: APPLE_GUITAR_CANVAS,
+        comments: APPLE_GUITAR_COMMENTS,
+      },
+      {
+        title: DEMO_MOODBOARD.title,
+        clientName: DEMO_MOODBOARD.clientName,
+        clientEmail: DEMO_MOODBOARD.clientEmail,
+        intro: DEMO_MOODBOARD.intro,
+        shareToken: "komorebi-living-draft",
+        shared: true,
+        status: "draft" as const,
+        canvas: DEMO_CANVAS,
+        comments: DEMO_COMMENTS,
+      },
+    ]
+
+    let count = 0
+    for (const b of seedBoards) {
+      const [existing] = await db.select().from(moodboards).where(eq(moodboards.shareToken, b.shareToken)).limit(1)
+      let boardId = existing?.id
+
+      if (existing) {
+        await db
+          .update(moodboards)
+          .set({
+            title: b.title,
+            clientName: b.clientName,
+            clientEmail: b.clientEmail,
+            intro: b.intro,
+            canvas: b.canvas,
+            status: b.status,
+            updatedAt: new Date(),
+          })
+          .where(eq(moodboards.id, existing.id))
+      } else {
+        const [inserted] = await db
+          .insert(moodboards)
+          .values({
+            title: b.title,
+            clientName: b.clientName,
+            clientEmail: b.clientEmail,
+            intro: b.intro,
+            shareToken: b.shareToken,
+            shared: b.shared,
+            status: b.status,
+            canvas: b.canvas,
+            sections: [],
+          })
+          .returning({ id: moodboards.id })
+        boardId = inserted.id
+      }
+
+      if (boardId) {
+        const [existingComments] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(moodboardComments)
+          .where(eq(moodboardComments.moodboardId, boardId))
+
+        if ((existingComments?.count ?? 0) === 0) {
+          for (const c of b.comments) {
+            await db.insert(moodboardComments).values({
+              moodboardId: boardId,
+              author: c.author,
+              body: c.body,
+              fromClient: c.fromClient,
+              kind: c.kind,
+              itemId: c.itemId,
+              createdAt: c.createdAt,
+            })
+          }
+        }
+        count++
+      }
+    }
+
+    revalidatePath("/admin/moodboards")
+    return { ok: true, count }
+  } catch (error) {
+    console.error("[moodboards] Could not seed moodboards", error)
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to seed moodboards" }
+  }
 }
