@@ -13,6 +13,7 @@ import {
   saveProject,
   saveTestimonial,
   seedDemoProjects,
+  syncNotionNotesAction,
   updateContact,
 } from "@/app/actions/cms"
 import { uploadToBlob } from "@/lib/upload-client"
@@ -23,7 +24,7 @@ import { AdminHeader, type AdminSection } from "@/components/admin/admin-header"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import type { Overview } from "@/lib/overview"
 import { replyToContact, sendAdminEmail, syncLeadsToResend } from "@/app/actions/email"
-import { Search } from "lucide-react"
+import { RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
 
 type Project = {
@@ -249,6 +250,28 @@ export function AdminDashboard({
     }
   }
 
+  const [syncingNotion, setSyncingNotion] = useState(false)
+  async function handleSyncNotion() {
+    setSyncingNotion(true)
+    const toastId = toast.loading("Syncing notes from Notion…")
+    try {
+      const res = await syncNotionNotesAction()
+      if (res.ok) {
+        toast.success(
+          `Notion sync complete: ${res.added} added, ${res.updated} updated (${res.total} total)`,
+          { id: toastId }
+        )
+        router.refresh()
+      } else {
+        toast.error(res.errors?.[0] || "Failed to sync notes from Notion", { id: toastId })
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Could not sync from Notion. Check your API credentials.", { id: toastId })
+    } finally {
+      setSyncingNotion(false)
+    }
+  }
+
   // Filtered collections
   const filteredProjects = useMemo(() => {
     return projectsList.filter((p) => {
@@ -314,30 +337,41 @@ export function AdminDashboard({
       )}
 
       {tab === "posts" && (
-        <button
-          onClick={() => {
-            setEditingPost({
-              id: "",
-              slug: "",
-              title: "",
-              excerpt: "",
-              content: "",
-              category: "Brand Strategy",
-              featuredImage: "/placeholder.jpg",
-              author: user.name,
-              tags: [],
-              published: false,
-              publishedAt: null,
-              seoTitle: "",
-              seoDescription: "",
-              seoKeywords: "",
-              featured: false,
-            })
-          }}
-          className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"
-        >
-          Create note
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncNotion}
+            disabled={syncingNotion}
+            className="flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50 transition-colors"
+            title="Sync notes from Notion database"
+          >
+            <RefreshCw className={`size-3.5 ${syncingNotion ? "animate-spin" : ""}`} />
+            <span>{syncingNotion ? "Syncing…" : "Sync from Notion"}</span>
+          </button>
+          <button
+            onClick={() => {
+              setEditingPost({
+                id: "",
+                slug: "",
+                title: "",
+                excerpt: "",
+                content: "",
+                category: "Brand Strategy",
+                featuredImage: "/placeholder.jpg",
+                author: user.name,
+                tags: [],
+                published: false,
+                publishedAt: null,
+                seoTitle: "",
+                seoDescription: "",
+                seoKeywords: "",
+                featured: false,
+              })
+            }}
+            className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"
+          >
+            Create note
+          </button>
+        </div>
       )}
 
       {tab === "testimonials" && !editingTestimonial && (
@@ -621,17 +655,34 @@ export function AdminDashboard({
 
                 {filteredPosts.length === 0 && (
                   <div className="rounded-xl border border-dashed border-border p-8 text-center">
-                    <p className="text-sm text-muted-foreground">No notes match your filter or search.</p>
-                    {(postSearch || postStatus !== "all") && (
-                      <button
-                        onClick={() => {
-                          setPostSearch("")
-                          setPostStatus("all")
-                        }}
-                        className="mt-2 text-xs underline underline-offset-4"
-                      >
-                        Clear filters
-                      </button>
+                    <p className="text-sm text-muted-foreground">
+                      {postsList.length === 0
+                        ? "No notes found in database."
+                        : "No notes match your filter or search."}
+                    </p>
+                    {postsList.length === 0 ? (
+                      <div className="mt-4 flex items-center justify-center gap-3">
+                        <button
+                          onClick={handleSyncNotion}
+                          disabled={syncingNotion}
+                          className="flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                          <RefreshCw className={`size-3.5 ${syncingNotion ? "animate-spin" : ""}`} />
+                          <span>{syncingNotion ? "Syncing…" : "Sync from Notion"}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      (postSearch || postStatus !== "all") && (
+                        <button
+                          onClick={() => {
+                            setPostSearch("")
+                            setPostStatus("all")
+                          }}
+                          className="mt-2 text-xs underline underline-offset-4"
+                        >
+                          Clear filters
+                        </button>
+                      )
                     )}
                   </div>
                 )}

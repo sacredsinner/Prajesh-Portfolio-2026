@@ -281,6 +281,12 @@ export async function savePost(input: PostInput & { id?: string }): Promise<Save
 }
 export async function deletePost(id: string) { await requireAdmin(); const [removed] = await db.delete(blogPosts).where(eq(blogPosts.id, id)).returning(); revalidatePublicSite(); if (removed) await deleteBlobs([removed.featuredImage]) }
 
+export async function syncNotionNotesAction() {
+  await requireAdmin()
+  const { syncNotionNotesToDatabase } = await import("@/lib/notion")
+  return syncNotionNotesToDatabase()
+}
+
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name.").max(120, "Please shorten your name to 120 characters."),
   email: z.string().trim().email("Please enter a valid email address.").max(200, "Please use a shorter email address."),
