@@ -408,7 +408,13 @@ export function AdminDashboard({
         />
 
         <div className="mt-6">
-          {tab === "overview" && <OverviewPanel data={overview} onOpenContacts={() => go("contacts")} />}
+          {tab === "overview" && (
+            <OverviewPanel
+              data={overview}
+              onOpenContacts={() => go("contacts")}
+              onNavigate={go}
+            />
+          )}
           {tab === "email" && <EmailComposer contacts={contactsList} onMessage={(msg) => toast.info(msg)} />}
 
           {/* PROJECTS TAB */}

@@ -4,6 +4,7 @@ import Script from "next/script"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { MotionProvider } from "@/components/motion-provider"
+import { ChatWidget } from "@/components/chat/chat-widget"
 import { DEFAULT_SHARE_IMAGE, SITE_DESCRIPTION, SITE_URL } from "@/lib/site"
 import "./globals.css"
 
@@ -76,7 +77,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${instrumentSans.variable} ${instrumentSerif.variable} bg-background`}>
       <body className="font-sans antialiased">
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          {children}
+          <ChatWidget />
+        </MotionProvider>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-HCW8V0E4QD" strategy="lazyOnload" />
         <Script id="google-analytics" strategy="lazyOnload">
           {`window.dataLayer = window.dataLayer || [];

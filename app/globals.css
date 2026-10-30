@@ -153,8 +153,39 @@
   }
 }
 
-/* Hero text renders immediately for fast First Contentful Paint and LCP,
-   then progressively enhances via GSAP entrance in components/home/hero-motion.tsx */
+/* Hero entrance animations: pure GPU-composited CSS, zero-JS overhead for instant LCP and 0ms TBT */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.hero-animate-kicker {
+  animation: hero-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-animate-title {
+  animation: hero-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+}
+
+.hero-animate-fade {
+  animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-animate-kicker,
+  .hero-animate-title,
+  .hero-animate-fade {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html {
