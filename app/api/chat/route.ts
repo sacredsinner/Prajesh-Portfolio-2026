@@ -1,6 +1,7 @@
 import { google } from "@ai-sdk/google"
 import { streamText, convertToModelMessages } from "ai"
 import { BOOKING_URL, CONTACT_EMAIL, SITE_URL } from "@/lib/site"
+import { detectAndSaveChatLead } from "@/lib/chat-lead"
 
 export const maxDuration = 60
 
@@ -230,6 +231,11 @@ export async function POST(req: Request) {
         headers: { "Content-Type": "application/json" },
       })
     }
+
+    // Automatically detect and save any shared email or phone number in background
+    detectAndSaveChatLead(messages).catch((err) =>
+      console.error("[praj-chat] Error checking lead:", err)
+    )
 
     let modelMessages
     try {
