@@ -68,8 +68,8 @@ export function ProjectCard({ project, index = 0, variant = "standard" }: Projec
       className="group relative flex flex-col"
     >
       <Link href={`/projects/${project.slug}`} className="flex flex-col h-full">
-        {/* Media Container */}
-        <div className="relative aspect-[16/11] w-full overflow-hidden rounded-2xl bg-secondary/40 shadow-sm transition-shadow duration-300 group-hover:shadow-xl">
+        {/* Media Container - Sharp Corners (no round corner) */}
+        <div className="relative aspect-[16/11] w-full overflow-hidden border border-border/40 bg-secondary/20">
           <Image
             src={project.thumbnail || "/placeholder.jpg"}
             alt={project.title}
@@ -82,15 +82,15 @@ export function ProjectCard({ project, index = 0, variant = "standard" }: Projec
           {/* Gradient Tint Overlay on Hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          {/* Top Floating Badge (Discipline) */}
+          {/* Top Floating Badge (Discipline) - Sharp */}
           <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5">
-            <span className="rounded-full bg-background/90 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-foreground backdrop-blur-md transition-transform duration-300 group-hover:scale-105">
+            <span className="border border-border/80 bg-background/95 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-foreground backdrop-blur-md transition-transform duration-300 group-hover:scale-105">
               {creativeDiscipline}
             </span>
           </div>
 
-          {/* Floating Arrow Pill (Appears on Hover) */}
-          <div className="absolute right-3.5 top-3.5 flex size-9 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 shadow-md backdrop-blur-md transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
+          {/* Floating Arrow (Appears on Hover) - Sharp */}
+          <div className="absolute right-3.5 top-3.5 flex size-8 items-center justify-center border border-border/80 bg-background/95 text-foreground opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100">
             <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </div>
 
@@ -133,13 +133,13 @@ export function ProjectCard({ project, index = 0, variant = "standard" }: Projec
             ) : null}
           </div>
 
-          {/* Creative Fields tags (secondary preview) */}
+          {/* Creative Fields tags (secondary preview) - Sharp */}
           {project.creativeFields && project.creativeFields.length > 1 && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {project.creativeFields.slice(0, 3).map((field) => (
                 <span
                   key={field}
-                  className="rounded-md border border-border/60 bg-secondary/30 px-2 py-0.5 text-[10px] text-muted-foreground"
+                  className="border border-border/60 bg-secondary/30 px-2 py-0.5 text-[10px] text-muted-foreground"
                 >
                   {field}
                 </span>
@@ -167,7 +167,7 @@ export function ProjectCardLarge({ project }: ProjectCardProps) {
       className="group relative block w-full"
     >
       <Link href={`/projects/${project.slug}`} className="block">
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-3xl bg-secondary/50 shadow-md transition-shadow duration-500 group-hover:shadow-2xl">
+        <div className="relative aspect-[16/9] w-full overflow-hidden border border-border/40 bg-secondary/50">
           <Image
             src={project.thumbnail || "/placeholder.jpg"}
             alt={project.title}
@@ -179,7 +179,7 @@ export function ProjectCardLarge({ project }: ProjectCardProps) {
 
           {/* Top Badge */}
           <div className="absolute left-6 top-6">
-            <span className="rounded-full bg-background/90 px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider text-foreground backdrop-blur-md">
+            <span className="border border-border/80 bg-background/95 px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider text-foreground backdrop-blur-md">
               Featured Case Study · {creativeDiscipline}
             </span>
           </div>

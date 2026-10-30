@@ -21,11 +21,11 @@ export function ProjectHero({ project }: ProjectHeroProps) {
         >
           <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
             <span>{project.category}</span>
-            <span className="w-1 h-1 bg-muted-foreground rounded-full" />
+            <span className="size-1 bg-muted-foreground" />
             <span>{project.year}</span>
             {project.client && (
               <>
-                <span className="w-1 h-1 bg-muted-foreground rounded-full" />
+                <span className="size-1 bg-muted-foreground" />
                 <span>{project.client}</span>
               </>
             )}

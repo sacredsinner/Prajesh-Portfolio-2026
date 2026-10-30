@@ -109,7 +109,7 @@ export function BlockCaseStudy({ project, nextProject, share }: { project: Proje
                   <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Tools & Software</dt>
                   <dd className="mt-2 flex flex-wrap gap-2">
                     {tools.map((tool) => (
-                      <span key={tool} className="rounded-full border border-border bg-secondary/40 px-3 py-1 text-xs">
+                      <span key={tool} className="border border-border bg-secondary/40 px-3 py-1 text-xs">
                         {tool}
                       </span>
                     ))}
@@ -136,7 +136,7 @@ export function BlockCaseStudy({ project, nextProject, share }: { project: Proje
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             {team.map((member, i) => (
-              <div key={i} className="rounded-xl border border-border p-4">
+              <div key={i} className="border border-border p-4">
                 <p className="font-medium">{member.name}</p>
                 <p className="text-xs text-muted-foreground">{member.role}</p>
                 {member.url && (
@@ -226,7 +226,7 @@ function SingleImageBlock({ block }: { block: Extract<ProjectBlock, { type: "ima
   if (!block.url) return null
   return (
     <figure className={getWidthClass(block.width)}>
-      <div className="relative overflow-hidden rounded-xl bg-secondary/50 shadow-sm">
+      <div className="relative overflow-hidden border border-border/40 bg-secondary/20">
         <img
           src={block.url}
           alt={block.alt || block.caption || "Project imagery"}
@@ -260,7 +260,7 @@ function ImageGridBlockView({ block }: { block: Extract<ProjectBlock, { type: "i
     <div className={getWidthClass(block.width)}>
       <div className={`grid ${gridCols} ${gapClass}`}>
         {images.map((img) => (
-          <figure key={img.id} className="group relative overflow-hidden rounded-xl bg-secondary/50">
+          <figure key={img.id} className="group relative overflow-hidden border border-border/40 bg-secondary/20">
             <img
               src={img.url}
               alt={img.alt || img.caption || "Grid detail"}
@@ -290,7 +290,7 @@ function CarouselBlockView({ block }: { block: Extract<ProjectBlock, { type: "ca
 
   return (
     <div className={getWidthClass(block.width)}>
-      <div className="relative overflow-hidden rounded-xl bg-secondary/50 shadow-sm">
+      <div className="relative overflow-hidden border border-border/40 bg-secondary/20">
         <div className="relative aspect-[16/10] w-full">
           <img
             src={slides[index].url}
@@ -303,24 +303,24 @@ function CarouselBlockView({ block }: { block: Extract<ProjectBlock, { type: "ca
             <button
               onClick={prev}
               aria-label="Previous slide"
-              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-2.5 shadow backdrop-blur transition-all hover:bg-background"
+              className="absolute left-4 top-1/2 -translate-y-1/2 border border-border bg-background/90 p-2.5 backdrop-blur transition-all hover:bg-background"
             >
               <ChevronLeft className="size-5" />
             </button>
             <button
               onClick={next}
               aria-label="Next slide"
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-2.5 shadow backdrop-blur transition-all hover:bg-background"
+              className="absolute right-4 top-1/2 -translate-y-1/2 border border-border bg-background/90 p-2.5 backdrop-blur transition-all hover:bg-background"
             >
               <ChevronRight className="size-5" />
             </button>
-            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-background/80 px-3 py-1.5 backdrop-blur">
+            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 border border-border bg-background/90 px-3 py-1.5 backdrop-blur">
               {slides.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setIndex(i)}
                   aria-label={`Slide ${i + 1}`}
-                  className={`size-2 rounded-full transition-all ${
+                  className={`size-2 transition-all ${
                     index === i ? "w-5 bg-foreground" : "bg-muted-foreground/40"
                   }`}
                 />
@@ -366,7 +366,7 @@ function VideoBlockView({ block }: { block: Extract<ProjectBlock, { type: "video
 
   return (
     <div className={getWidthClass(block.width)}>
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary/50 shadow-sm">
+      <div className="relative aspect-video overflow-hidden border border-border/40 bg-secondary/20">
         {isEmbed ? (
           <iframe
             src={getEmbedUrl(block.url)}
@@ -479,7 +479,7 @@ function QuoteBlockView({ block }: { block: Extract<ProjectBlock, { type: "quote
               <img
                 src={block.avatarUrl}
                 alt={block.citation || "Avatar"}
-                className="size-8 rounded-full object-cover"
+                className="size-8 border border-border object-cover"
               />
             )}
             <div>
@@ -507,9 +507,9 @@ function DividerBlockView({ block }: { block: Extract<ProjectBlock, { type: "div
   if (block.style === "dots")
     return (
       <div className={`flex items-center justify-center gap-2 ${spacingClass}`}>
-        <span className="size-1.5 rounded-full bg-muted-foreground/50" />
-        <span className="size-1.5 rounded-full bg-muted-foreground/50" />
-        <span className="size-1.5 rounded-full bg-muted-foreground/50" />
+        <span className="size-1.5 bg-muted-foreground/50" />
+        <span className="size-1.5 bg-muted-foreground/50" />
+        <span className="size-1.5 bg-muted-foreground/50" />
       </div>
     )
 
@@ -523,7 +523,7 @@ function DividerBlockView({ block }: { block: Extract<ProjectBlock, { type: "div
 function EmbedBlockView({ block }: { block: Extract<ProjectBlock, { type: "embed" }> }) {
   return (
     <div className={getWidthClass(block.width)}>
-      <div className="relative aspect-video overflow-hidden rounded-xl border border-border bg-secondary/30">
+      <div className="relative aspect-video overflow-hidden border border-border bg-secondary/30">
         {block.html ? (
           <div
             className="h-full w-full"
@@ -576,7 +576,7 @@ function BeforeAfterBlockView({ block }: { block: Extract<ProjectBlock, { type: 
         onTouchStart={() => setIsDragging(true)}
         onTouchEnd={() => setIsDragging(false)}
         onTouchMove={handleTouchMove}
-        className="group relative aspect-[16/10] w-full cursor-ew-resize select-none overflow-hidden rounded-xl bg-secondary/50 shadow-sm"
+        className="group relative aspect-[16/10] w-full cursor-ew-resize select-none overflow-hidden border border-border/40 bg-secondary/20"
       >
         {/* After image (background) */}
         <img
@@ -585,7 +585,7 @@ function BeforeAfterBlockView({ block }: { block: Extract<ProjectBlock, { type: 
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
         {block.afterLabel && (
-          <span className="absolute bottom-4 right-4 rounded-md bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur">
+          <span className="absolute bottom-4 right-4 border border-border/60 bg-background/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider backdrop-blur">
             {block.afterLabel}
           </span>
         )}
@@ -602,7 +602,7 @@ function BeforeAfterBlockView({ block }: { block: Extract<ProjectBlock, { type: 
             style={{ width: containerRef.current ? `${containerRef.current.clientWidth}px` : "100%" }}
           />
           {block.beforeLabel && (
-            <span className="absolute bottom-4 left-4 rounded-md bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur">
+            <span className="absolute bottom-4 left-4 border border-border/60 bg-background/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider backdrop-blur">
               {block.beforeLabel}
             </span>
           )}
@@ -613,7 +613,7 @@ function BeforeAfterBlockView({ block }: { block: Extract<ProjectBlock, { type: 
           className="absolute bottom-0 top-0 w-0.5 bg-background shadow-lg"
           style={{ left: `${sliderPos}%` }}
         >
-          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-background p-2 shadow-xl">
+          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 border border-border bg-background p-2 shadow-sm">
             <div className="flex size-4 items-center justify-between text-muted-foreground">
               <ChevronLeft className="size-3" />
               <ChevronRight className="size-3" />
@@ -630,14 +630,14 @@ function GifBlockView({ block }: { block: Extract<ProjectBlock, { type: "gif" }>
   if (!block.url) return null
   return (
     <figure className={getWidthClass(block.width)}>
-      <div className="relative overflow-hidden rounded-xl bg-secondary/50 shadow-sm">
+      <div className="relative overflow-hidden border border-border/40 bg-secondary/20">
         <img
           src={block.url}
           alt={block.alt || block.caption || "Animated sequence"}
           className="h-auto w-full object-cover"
           loading="lazy"
         />
-        <div className="absolute bottom-3 left-3 rounded bg-background/80 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest backdrop-blur">
+        <div className="absolute bottom-3 left-3 border border-border/60 bg-background/90 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest backdrop-blur">
           GIF
         </div>
       </div>
@@ -653,9 +653,9 @@ function GifBlockView({ block }: { block: Extract<ProjectBlock, { type: "gif" }>
 function PdfBlockView({ block }: { block: Extract<ProjectBlock, { type: "pdf" }> }) {
   return (
     <div className={getWidthClass(block.width)}>
-      <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-secondary/20 p-6 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-start justify-between gap-4 border border-border bg-secondary/20 p-6 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
-          <div className="flex size-12 items-center justify-center rounded-lg bg-foreground text-background">
+          <div className="flex size-12 items-center justify-center border border-border bg-foreground text-background">
             <FileText className="size-6" />
           </div>
           <div>
@@ -670,7 +670,7 @@ function PdfBlockView({ block }: { block: Extract<ProjectBlock, { type: "pdf" }>
           target="_blank"
           rel="noreferrer"
           download
-          className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          className="inline-flex items-center gap-2 bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
         >
           <Download className="size-4" /> Download PDF
         </a>
@@ -686,7 +686,7 @@ function FigmaBlockView({ block }: { block: Extract<ProjectBlock, { type: "figma
 
   return (
     <div className={getWidthClass(block.width)}>
-      <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-secondary/30 shadow-sm">
+      <div className="relative aspect-[16/10] overflow-hidden border border-border bg-secondary/30">
         <iframe
           src={iframeSrc}
           title={block.prototypeTitle || "Figma Prototype"}
@@ -714,7 +714,7 @@ function CustomHtmlBlockView({ block }: { block: Extract<ProjectBlock, { type: "
   return (
     <div className={getWidthClass(block.width)}>
       <div
-        className="overflow-hidden rounded-xl"
+        className="overflow-hidden border border-border/40"
         dangerouslySetInnerHTML={{ __html: block.code }}
       />
       {block.caption && (
