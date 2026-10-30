@@ -144,6 +144,31 @@ export async function saveSocialSettings(settings: {
   return { ok: true }
 }
 
+export async function toggleChannelConnected(channelId: string): Promise<{ ok: boolean; connected?: boolean }> {
+  await requireAdmin()
+  const data = await getSocials()
+  let nextState = true
+  const updatedChannels = data.channels.map((chan) => {
+    if (chan.id === channelId) {
+      nextState = !chan.connected
+      return { ...chan, connected: nextState }
+    }
+    return chan
+  })
+  await saveSocials({ channels: updatedChannels })
+  revalidatePath("/admin/socials")
+  return { ok: true, connected: nextState }
+}
+
+export async function setAllChannelsConnected(connected: boolean = true): Promise<{ ok: boolean }> {
+  await requireAdmin()
+  const data = await getSocials()
+  const updatedChannels = data.channels.map((chan) => ({ ...chan, connected }))
+  await saveSocials({ channels: updatedChannels, bufferConnected: connected })
+  revalidatePath("/admin/socials")
+  return { ok: true }
+}
+
 export async function generateAiHooks(
   topic?: string,
   angle?: "hot-take" | "case-study" | "tip" | "story" | "launch" | "all"

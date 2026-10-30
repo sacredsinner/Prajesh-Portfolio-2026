@@ -40,6 +40,7 @@ export interface SocialIdea {
 export interface SocialsData {
   bufferEndpoint: string
   hasToken: boolean
+  bufferConnected: boolean
   channels: SocialChannel[]
   posts: SocialPost[]
   ideas: SocialIdea[]
@@ -68,6 +69,15 @@ const DEFAULT_CHANNELS: SocialChannel[] = [
     queueCount: 1,
   },
   {
+    id: "chan-ig",
+    platform: "instagram",
+    name: "Prajesh Shakya",
+    handle: "@shakyaprajesh",
+    avatarUrl: "/images/prajesh-avatar.jpg",
+    connected: true,
+    queueCount: 2,
+  },
+  {
     id: "chan-threads",
     platform: "threads",
     name: "Prajesh Shakya",
@@ -80,8 +90,8 @@ const DEFAULT_CHANNELS: SocialChannel[] = [
     platform: "bluesky",
     name: "Prajesh Shakya",
     handle: "shakyaprajesh.bsky.social",
-    connected: false,
-    queueCount: 0,
+    connected: true,
+    queueCount: 1,
   },
 ]
 
@@ -147,6 +157,7 @@ export async function getSocials(): Promise<SocialsData> {
     return {
       bufferEndpoint: BUFFER_MCP_URL,
       hasToken: Boolean(envToken || (saved as { token?: string }).token),
+      bufferConnected: saved.bufferConnected ?? true,
       channels: saved.channels && saved.channels.length > 0 ? saved.channels : DEFAULT_CHANNELS,
       posts: saved.posts && saved.posts.length > 0 ? saved.posts : DEFAULT_POSTS,
       ideas: saved.ideas && saved.ideas.length > 0 ? saved.ideas : DEFAULT_IDEAS,
@@ -159,6 +170,7 @@ export async function getSocials(): Promise<SocialsData> {
     return {
       bufferEndpoint: BUFFER_MCP_URL,
       hasToken: Boolean(envToken),
+      bufferConnected: true,
       channels: DEFAULT_CHANNELS,
       posts: DEFAULT_POSTS,
       ideas: DEFAULT_IDEAS,
