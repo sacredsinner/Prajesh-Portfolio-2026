@@ -153,21 +153,8 @@
   }
 }
 
-/* The hero text waits for its GSAP entrance (components/home/hero-motion.tsx),
-   so it doesn't flash before animating. If scripts are slow or blocked, it
-   appears anyway after 2.5s. Reduced motion shows it straight away. */
-@media (prefers-reduced-motion: no-preference) {
-  .hero-motion {
-    visibility: hidden;
-    animation: hero-motion-fallback 0s 2.5s forwards;
-  }
-}
-
-@keyframes hero-motion-fallback {
-  to {
-    visibility: visible;
-  }
-}
+/* Hero text renders immediately for fast First Contentful Paint and LCP,
+   then progressively enhances via GSAP entrance in components/home/hero-motion.tsx */
 
 @media (prefers-reduced-motion: reduce) {
   html {

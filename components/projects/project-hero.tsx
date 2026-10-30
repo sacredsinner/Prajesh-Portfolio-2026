@@ -46,6 +46,7 @@ export function ProjectHero({ project }: ProjectHeroProps) {
             src={project.thumbnail}
             alt={project.title}
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />

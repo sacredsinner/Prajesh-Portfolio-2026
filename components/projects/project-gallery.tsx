@@ -42,6 +42,7 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
                 src={image}
                 alt={`${project.title} - Image ${index + 1}`}
                 fill
+                sizes="(max-width: 1024px) 100vw, 1200px"
                 className="object-cover"
               />
             </motion.div>
