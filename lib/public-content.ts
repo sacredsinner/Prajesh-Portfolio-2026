@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { blogPosts, clients, projects, showcaseVideos, testimonials } from "@/lib/db/schema"
 
@@ -49,7 +49,11 @@ export async function getPublishedTestimonials() {
 
 export async function getPublishedProjects() {
   try {
-    return await db.select().from(projects).orderBy(desc(projects.featured), desc(projects.updatedAt), desc(projects.createdAt))
+    return await db
+      .select()
+      .from(projects)
+      .where(or(eq(projects.status, "published"), sql`${projects.status} IS NULL`))
+      .orderBy(desc(projects.featured), desc(projects.updatedAt), desc(projects.createdAt))
   } catch (error) {
     logUnavailable("projects", error)
     return []
@@ -89,17 +93,35 @@ export type PublicProject = Awaited<ReturnType<typeof getPublishedProjects>>[num
 
 export function toProjectCard(project: PublicProject) {
   return {
+    id: project.id,
     slug: project.slug,
     title: project.title,
+    subtitle: project.subtitle ?? "",
+    status: project.status ?? "published",
     category: project.category,
     year: project.year,
     client: project.client ?? "",
+    role: project.role ?? "",
     thumbnail: project.thumbnail,
+    coverCrop: project.coverCrop ?? null,
     overview: project.overview ?? "",
     problem: project.problem ?? "",
     approach: project.approach ?? "",
     solution: project.solution ?? "",
     outcome: project.outcome ?? "",
     images: Array.isArray(project.images) ? project.images.filter((image): image is string => typeof image === "string") : [],
+    creativeFields: Array.isArray(project.creativeFields) ? project.creativeFields : [],
+    tags: Array.isArray(project.tags) ? project.tags : [],
+    toolsUsed: Array.isArray(project.toolsUsed) ? project.toolsUsed : [],
+    team: Array.isArray(project.team) ? project.team : [],
+    industries: Array.isArray(project.industries) ? project.industries : [],
+    license: project.license ?? "",
+    copyright: project.copyright ?? "",
+    blocks: Array.isArray(project.blocks) ? project.blocks : [],
+    assets: Array.isArray(project.assets) ? project.assets : [],
+    analytics: project.analytics ?? { views: 0, appreciations: 0, saves: 0, comments: 0 },
+    seoTitle: project.seoTitle ?? "",
+    seoDescription: project.seoDescription ?? "",
+    ogImage: project.ogImage ?? "",
   }
 }

@@ -72,7 +72,39 @@ function toImageUrl(value: unknown) {
 const slug = z.string().trim().min(1, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens")
 const optionalText = z.string().trim().nullable().optional()
 const imagePath = z.string().trim().min(1, "Upload an image").refine((value) => value.startsWith("/") || value.startsWith("https://") || value.startsWith("http://"), "Use a valid image URL")
-const projectSchema = z.object({ slug, title: z.string().trim().min(1, "Title is required"), category: z.string().trim().min(1, "Category is required"), year: z.string().trim().min(1, "Year is required"), thumbnail: imagePath, client: optionalText, overview: optionalText, problem: optionalText, approach: optionalText, solution: optionalText, outcome: optionalText, images: z.array(imagePath).default([]), featured: z.boolean().default(false), seoTitle: optionalText, seoDescription: optionalText })
+const projectSchema = z.object({
+  slug,
+  title: z.string().trim().min(1, "Title is required"),
+  subtitle: optionalText,
+  status: z.enum(["draft", "published", "scheduled", "unlisted"]).default("published"),
+  scheduledAt: z.union([z.coerce.date(), z.string()]).nullable().optional(),
+  category: z.string().trim().min(1, "Category is required"),
+  year: z.string().trim().min(1, "Year is required"),
+  thumbnail: z.string().trim().default("/placeholder.jpg"),
+  coverCrop: z.any().nullable().optional(),
+  client: optionalText,
+  role: optionalText,
+  overview: optionalText,
+  problem: optionalText,
+  approach: optionalText,
+  solution: optionalText,
+  outcome: optionalText,
+  images: z.array(z.string()).default([]),
+  creativeFields: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
+  toolsUsed: z.array(z.string()).default([]),
+  team: z.array(z.object({ name: z.string(), role: z.string(), url: z.string().optional() })).default([]),
+  industries: z.array(z.string()).default([]),
+  license: optionalText,
+  copyright: optionalText,
+  blocks: z.array(z.any()).default([]),
+  assets: z.array(z.any()).default([]),
+  analytics: z.any().optional(),
+  featured: z.boolean().default(false),
+  seoTitle: optionalText,
+  seoDescription: optionalText,
+  ogImage: optionalText,
+})
 export type ProjectInput = z.input<typeof projectSchema>
 const testimonialSchema = z.object({ quote: z.string().trim().min(10, "Write at least 10 characters"), clientName: z.string().trim().min(2, "Enter the client's name"), clientRole: optionalText, company: optionalText, avatarUrl: imagePath.nullable().optional(), featured: z.boolean().default(false), published: z.boolean().default(true), sortOrder: z.coerce.number().int().default(0) })
 export type TestimonialInput = z.input<typeof testimonialSchema>
@@ -97,12 +129,21 @@ export async function saveTestimonial(input: TestimonialInput & { id?: string })
 }
 export async function deleteTestimonial(id: string) { await requireAdmin(); await db.delete(testimonials).where(eq(testimonials.id, id)); revalidatePublicSite() }
 
-export async function listProjects() { await requireAdmin(); return db.select().from(projects).orderBy(desc(projects.createdAt)) }
+export async function listProjects() { await requireAdmin(); await ensureSchema(); return db.select().from(projects).orderBy(desc(projects.createdAt)) }
+
+export async function getProject(id: string) {
+  await requireAdmin()
+  await ensureSchema()
+  const rows = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
+  return rows[0] ?? null
+}
+
 export async function saveProject(input: ProjectInput & { id?: string }): Promise<SaveResult> {
   await requireAdmin()
+  await ensureSchema()
   const parsed = projectSchema.safeParse({
     ...input,
-    thumbnail: toImageUrl(input.thumbnail),
+    thumbnail: toImageUrl(input.thumbnail) || "/placeholder.jpg",
     images: (input.images ?? []).map(toImageUrl).filter(Boolean),
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.path[0] === "thumbnail" ? "Upload a thumbnail image before saving." : describeIssue(parsed.error) }
@@ -110,7 +151,11 @@ export async function saveProject(input: ProjectInput & { id?: string }): Promis
   try {
     const clash = await db.select({ id: projects.id }).from(projects).where(eq(projects.slug, data.slug)).limit(1)
     if (clash[0] && clash[0].id !== input.id) return { ok: false, error: `Another project already uses the address /projects/${data.slug}. Change the slug.` }
-    const values = { ...data, updatedAt: new Date() }
+    const values = {
+      ...data,
+      scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
+      updatedAt: new Date(),
+    }
     const saved = input.id
       ? await db.update(projects).set(values).where(eq(projects.id, input.id)).returning()
       : await db.insert(projects).values(values).returning()
@@ -123,6 +168,57 @@ export async function saveProject(input: ProjectInput & { id?: string }): Promis
     return { ok: false, error: "Could not save the project. Please try again." }
   }
 }
+
+export async function duplicateProject(id: string): Promise<SaveResult> {
+  await requireAdmin()
+  await ensureSchema()
+  const rows = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
+  const source = rows[0]
+  if (!source) return { ok: false, error: "Source project not found" }
+
+  const baseSlug = `${source.slug}-copy`
+  let newSlug = baseSlug
+  let count = 1
+  while (true) {
+    const existing = await db.select({ id: projects.id }).from(projects).where(eq(projects.slug, newSlug)).limit(1)
+    if (!existing.length) break
+    count++
+    newSlug = `${baseSlug}-${count}`
+  }
+
+  const { id: _, createdAt: __, updatedAt: ___, ...rest } = source
+  const [cloned] = await db.insert(projects).values({
+    ...rest,
+    slug: newSlug,
+    title: `${source.title} (Copy)`,
+    status: "draft",
+    featured: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }).returning()
+
+  revalidatePublicSite()
+  return { ok: true, id: cloned.id }
+}
+
+export async function updateProjectStatus(id: string, status: "draft" | "published" | "scheduled" | "unlisted", scheduledAt?: string | null): Promise<SaveResult> {
+  await requireAdmin()
+  await ensureSchema()
+  try {
+    const [saved] = await db.update(projects).set({
+      status,
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      updatedAt: new Date(),
+    }).where(eq(projects.id, id)).returning()
+    if (!saved) return { ok: false, error: "Project not found" }
+    revalidatePublicSite()
+    return { ok: true, id: saved.id }
+  } catch (error) {
+    console.error("[cms] Could not update project status", error)
+    return { ok: false, error: "Failed to update project status." }
+  }
+}
+
 export async function deleteProject(id: string) { await requireAdmin(); const [removed] = await db.delete(projects).where(eq(projects.id, id)).returning(); revalidatePublicSite(); if (removed) await deleteBlobs([removed.thumbnail, ...(removed.images ?? [])]) }
 
 export async function listPosts() { await requireAdmin(); return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)) }

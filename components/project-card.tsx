@@ -4,20 +4,39 @@ import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import type { ProjectBlock, ProjectAsset, ProjectAnalytics, ProjectTeamMember, ProjectCoverCrop } from "@/lib/project-editor-types"
 
 export interface Project {
+  id?: string
   slug: string
   title: string
+  subtitle?: string
+  status?: string
   category: string
   year: string
   thumbnail: string
+  coverCrop?: ProjectCoverCrop | null
   client?: string
+  role?: string
   overview?: string
   problem?: string
   approach?: string
   solution?: string
   outcome?: string
   images?: string[]
+  creativeFields?: string[]
+  tags?: string[]
+  toolsUsed?: string[]
+  team?: ProjectTeamMember[]
+  industries?: string[]
+  license?: string
+  copyright?: string
+  blocks?: ProjectBlock[]
+  assets?: ProjectAsset[]
+  analytics?: ProjectAnalytics
+  seoTitle?: string
+  seoDescription?: string
+  ogImage?: string
 }
 
 interface ProjectCardProps {
@@ -34,7 +53,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
       <Link href={`/projects/${project.slug}`} className="group block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted mb-4">
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted mb-4 rounded-xl">
           <Image
             src={project.thumbnail}
             alt={project.title}
@@ -62,7 +81,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
 export function ProjectCardLarge({ project }: ProjectCardProps) {
   return (
     <Link href={`/projects/${project.slug}`} className="group block">
-      <div className="relative aspect-[16/9] overflow-hidden bg-muted mb-6">
+      <div className="relative aspect-[16/9] overflow-hidden bg-muted mb-6 rounded-xl">
         <Image
           src={project.thumbnail}
           alt={project.title}

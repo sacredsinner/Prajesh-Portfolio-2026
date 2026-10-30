@@ -113,6 +113,22 @@ const STATEMENTS = [
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
   )`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS subtitle text`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published'`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS scheduled_at timestamptz`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS role text`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS creative_fields jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS tags jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS tools_used jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS team jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS industries jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS license text`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS copyright text`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS blocks jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS assets jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS analytics jsonb NOT NULL DEFAULT '{"views":0,"appreciations":0,"saves":0,"comments":0}'::jsonb`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS og_image text`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS cover_crop jsonb`,
 ]
 
 let ready: Promise<void> | null = null

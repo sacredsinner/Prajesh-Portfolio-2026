@@ -2,6 +2,7 @@ import { boolean, date, integer, jsonb, numeric, pgTable, text, timestamp, uuid 
 import type { MoodboardSection } from "@/lib/moodboards"
 import type { Canvas } from "@/lib/canvas"
 import type { InvoiceItem } from "@/lib/invoices"
+import type { ProjectBlock, ProjectAsset, ProjectAnalytics, ProjectTeamMember, ProjectCoverCrop } from "@/lib/project-editor-types"
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -53,21 +54,37 @@ export const projects = pgTable("projects", {
   id: uuid("id").defaultRandom().primaryKey(),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  status: text("status").notNull().default("published"), // draft | published | scheduled | unlisted
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
   category: text("category").notNull(),
   year: text("year").notNull(),
   thumbnail: text("thumbnail").notNull(),
+  coverCrop: jsonb("cover_crop").$type<ProjectCoverCrop>(),
   client: text("client"),
+  role: text("role"),
   overview: text("overview"),
   problem: text("problem"),
   approach: text("approach"),
   solution: text("solution"),
   outcome: text("outcome"),
   images: jsonb("images").$type<string[]>().notNull().default([]),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  creativeFields: jsonb("creative_fields").$type<string[]>().notNull().default([]),
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
+  toolsUsed: jsonb("tools_used").$type<string[]>().notNull().default([]),
+  team: jsonb("team").$type<ProjectTeamMember[]>().notNull().default([]),
+  industries: jsonb("industries").$type<string[]>().notNull().default([]),
+  license: text("license"),
+  copyright: text("copyright"),
+  blocks: jsonb("blocks").$type<ProjectBlock[]>().notNull().default([]),
+  assets: jsonb("assets").$type<ProjectAsset[]>().notNull().default([]),
+  analytics: jsonb("analytics").$type<ProjectAnalytics>().notNull().default({ views: 0, appreciations: 0, saves: 0, comments: 0 }),
   featured: boolean("featured").notNull().default(false),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
+  ogImage: text("og_image"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
 export const contacts = pgTable("contacts", {
