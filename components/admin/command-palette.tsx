@@ -25,9 +25,12 @@ import {
   Package,
   Send,
   PlusCircle,
+  Sparkles,
   ExternalLink,
   LogOut,
 } from "lucide-react"
+import { toast } from "sonner"
+import { seedDemoProjects } from "@/app/actions/cms"
 
 interface CommandPaletteProps {
   open?: boolean
@@ -160,6 +163,29 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
         <CommandSeparator />
 
         <CommandGroup heading="Quick Actions">
+          <CommandItem
+            onSelect={() =>
+              runCommand(async () => {
+                const toastId = toast.loading("Seeding 4 demo projects…")
+                try {
+                  const res = await seedDemoProjects()
+                  if (res.ok) {
+                    toast.success(`Successfully seeded ${res.count} demo projects!`, { id: toastId })
+                    router.push("/admin?tab=projects")
+                    router.refresh()
+                  } else {
+                    toast.error(res.error, { id: toastId })
+                  }
+                } catch {
+                  toast.error("Could not seed projects. Check database connection.", { id: toastId })
+                }
+              })
+            }
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Sparkles className="size-4" />
+            <span>Seed 4 Demo Projects</span>
+          </CommandItem>
           <CommandItem
             onSelect={() => runCommand(() => router.push("/admin/projects/new"))}
             className="flex items-center gap-2 cursor-pointer"

@@ -12,6 +12,7 @@ import {
   savePost,
   saveProject,
   saveTestimonial,
+  seedDemoProjects,
   updateContact,
 } from "@/app/actions/cms"
 import { uploadToBlob } from "@/lib/upload-client"
@@ -229,6 +230,25 @@ export function AdminDashboard({
     }
   }
 
+  const [seeding, setSeeding] = useState(false)
+  async function handleSeedDemoProjects() {
+    setSeeding(true)
+    const toastId = toast.loading("Seeding 4 demo projects…")
+    try {
+      const res = await seedDemoProjects()
+      if (res.ok) {
+        toast.success(`Successfully seeded ${res.count} demo projects!`, { id: toastId })
+        router.refresh()
+      } else {
+        toast.error(res.error, { id: toastId })
+      }
+    } catch {
+      toast.error("Could not seed projects. Check database connection.", { id: toastId })
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   // Filtered collections
   const filteredProjects = useMemo(() => {
     return projectsList.filter((p) => {
@@ -275,12 +295,22 @@ export function AdminDashboard({
   const actionNode = (
     <>
       {tab === "projects" && (
-        <Link
-          href="/admin/projects/new"
-          className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"
-        >
-          Create project
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSeedDemoProjects}
+            disabled={seeding}
+            className="rounded-full border border-border px-3.5 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50 transition-colors"
+            title="Seed 4 rich demo projects into the database"
+          >
+            {seeding ? "Seeding…" : "Seed 4 Demo Projects"}
+          </button>
+          <Link
+            href="/admin/projects/new"
+            className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"
+          >
+            Create project
+          </Link>
+        </div>
       )}
 
       {tab === "posts" && (
@@ -460,17 +490,39 @@ export function AdminDashboard({
 
                 {filteredProjects.length === 0 && (
                   <div className="rounded-xl border border-dashed border-border p-8 text-center">
-                    <p className="text-sm text-muted-foreground">No projects match your filter or search.</p>
-                    {(projectSearch || projectStatus !== "all") && (
-                      <button
-                        onClick={() => {
-                          setProjectSearch("")
-                          setProjectStatus("all")
-                        }}
-                        className="mt-2 text-xs underline underline-offset-4"
-                      >
-                        Clear filters
-                      </button>
+                    <p className="text-sm text-muted-foreground">
+                      {projectsList.length === 0
+                        ? "No projects found in database."
+                        : "No projects match your filter or search."}
+                    </p>
+                    {projectsList.length === 0 ? (
+                      <div className="mt-4 flex items-center justify-center gap-3">
+                        <button
+                          onClick={handleSeedDemoProjects}
+                          disabled={seeding}
+                          className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                          {seeding ? "Seeding…" : "Seed 4 Demo Projects"}
+                        </button>
+                        <Link
+                          href="/admin/projects/new"
+                          className="rounded-full border border-border px-4 py-1.5 text-xs font-medium hover:bg-secondary transition-colors"
+                        >
+                          Create first project
+                        </Link>
+                      </div>
+                    ) : (
+                      (projectSearch || projectStatus !== "all") && (
+                        <button
+                          onClick={() => {
+                            setProjectSearch("")
+                            setProjectStatus("all")
+                          }}
+                          className="mt-2 text-xs underline underline-offset-4"
+                        >
+                          Clear filters
+                        </button>
+                      )
                     )}
                   </div>
                 )}

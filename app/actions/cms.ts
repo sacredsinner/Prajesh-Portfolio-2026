@@ -14,6 +14,7 @@ import { sendEmail } from "@/lib/email"
 import { enquiryAutoReplyEmail, enquiryNotificationEmail } from "@/lib/email-templates"
 import { addLead } from "@/lib/resend-contacts"
 import { ensureSchema } from "@/lib/db/migrate"
+import { DEMO_PROJECTS } from "@/lib/demo-projects"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -337,3 +338,55 @@ export async function submitContact(input: ContactInput): Promise<ContactResult>
 export async function listContacts() { await requireAdmin(); await ensureSchema(); return db.select().from(contacts).orderBy(desc(contacts.createdAt)) }
 export async function updateContact(id: string, status: string, notes: string) { await requireAdmin(); await db.update(contacts).set({ status: z.enum(["new", "read", "replied", "archived"]).parse(status), notes: notes.trim(), updatedAt: new Date() }).where(eq(contacts.id, id)); revalidatePath("/admin") }
 export async function deleteContact(id: string) { await requireAdmin(); await db.delete(contacts).where(eq(contacts.id, id)); revalidatePath("/admin") }
+
+export async function seedDemoProjects(): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  await requireAdmin()
+  await ensureSchema()
+  try {
+    let count = 0
+    for (const item of DEMO_PROJECTS) {
+      await db
+        .insert(projects)
+        .values({
+          ...item,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: projects.slug,
+          set: {
+            title: item.title,
+            subtitle: item.subtitle,
+            category: item.category,
+            year: item.year,
+            thumbnail: item.thumbnail,
+            client: item.client,
+            role: item.role,
+            overview: item.overview,
+            problem: item.problem,
+            approach: item.approach,
+            solution: item.solution,
+            outcome: item.outcome,
+            images: item.images,
+            creativeFields: item.creativeFields,
+            tags: item.tags,
+            toolsUsed: item.toolsUsed,
+            team: item.team,
+            industries: item.industries,
+            blocks: item.blocks,
+            analytics: item.analytics,
+            featured: item.featured,
+            seoTitle: item.seoTitle,
+            seoDescription: item.seoDescription,
+            updatedAt: new Date(),
+          },
+        })
+      count++
+    }
+    revalidatePublicSite()
+    return { ok: true, count }
+  } catch (error) {
+    console.error("[cms] Could not seed demo projects", error)
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to seed demo projects" }
+  }
+}
+
