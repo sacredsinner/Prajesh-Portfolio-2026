@@ -614,13 +614,13 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
             {/* Nano Banana Image Generator Drawer */}
             {showImageGen && (
-              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2.5">
+              <div className="rounded-lg border border-border bg-secondary/30 p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                     <Sparkles className="size-3.5 text-amber-400" />
-                    <span>Nano Banana AI Image Generator</span>
-                    <span className="rounded bg-secondary px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground">
-                      Gemini
+                    <span>Nano Banana Visual Studio</span>
+                    <span className="rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-1.5 py-0.2 text-[10px] font-mono">
+                      Fast Mode (~2s)
                     </span>
                   </div>
                   <button
@@ -632,64 +632,100 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                   </button>
                 </div>
 
-                <form onSubmit={handleGenerateImage} className="space-y-2">
+                {/* 1-Click Instant Gallery */}
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    ⚡ Instant 1-Click Visuals (0s wait):
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { name: "Editorial Monolith", url: "/images/socials/preset-1.jpg", tag: "Identity" },
+                      { name: "Design System", url: "/images/socials/preset-2.jpg", tag: "Architecture" },
+                      { name: "Typography Art", url: "/images/socials/preset-3.jpg", tag: "Editorial" },
+                      { name: "Minimalist UI", url: "/images/socials/preset-4.jpg", tag: "Craft" },
+                    ].map((item) => (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => {
+                          setMediaUrl(item.url)
+                          setShowImageGen(false)
+                          toast.success(`Attached ${item.name}!`)
+                        }}
+                        className="group flex flex-col rounded-md border border-border bg-background p-1.5 text-left transition-all hover:border-foreground/30 hover:bg-secondary/40"
+                      >
+                        <div className="aspect-video w-full rounded overflow-hidden bg-secondary mb-1">
+                          <img src={item.url} alt={item.name} className="size-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                        </div>
+                        <span className="text-[11px] font-medium truncate leading-tight">{item.name}</span>
+                        <span className="text-[9px] text-muted-foreground font-mono">{item.tag}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom AI Prompt Generation (Ultra-Fast) */}
+                <form onSubmit={handleGenerateImage} className="space-y-2 pt-2 border-t border-border/40">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      Or Generate Custom AI Visual:
+                    </p>
+                    {postContent && (
+                      <button
+                        type="button"
+                        onClick={() => setImagePrompt(postContent)}
+                        className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                      >
+                        Auto-fill from post text
+                      </button>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={imagePrompt}
                       onChange={(e) => setImagePrompt(e.target.value)}
-                      placeholder="Describe the image you want Nano Banana to create..."
+                      placeholder="Prompt (e.g. Minimalist luxury poster, dark aesthetic)..."
                       className="flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
                     />
-                    {postContent && (
-                      <button
-                        type="button"
-                        onClick={() => setImagePrompt(postContent)}
-                        className="shrink-0 rounded-md border border-border bg-secondary/50 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
-                      >
-                        Use post text
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <span>Ratio:</span>
-                      <button
-                        type="button"
-                        onClick={() => setImageRatio("16:9")}
-                        className={`rounded px-2 py-0.5 border text-[10px] ${
-                          imageRatio === "16:9"
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border text-muted-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        16:9 (Landscape)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setImageRatio("1:1")}
-                        className={`rounded px-2 py-0.5 border text-[10px] ${
-                          imageRatio === "1:1"
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border text-muted-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        1:1 (FB / IG Square)
-                      </button>
-                    </div>
-
                     <button
                       type="submit"
                       disabled={isGeneratingImg || (!imagePrompt.trim() && !postContent.trim())}
-                      className="flex items-center gap-1 rounded-md bg-foreground px-3 py-1 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50 transition-colors shadow-sm"
+                      className="flex items-center gap-1 rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50 transition-colors shadow-sm"
                     >
                       {isGeneratingImg ? (
                         <RefreshCw className="size-3 animate-spin" />
                       ) : (
                         <Sparkles className="size-3" />
                       )}
-                      <span>{isGeneratingImg ? "Generating..." : "Generate & Attach"}</span>
+                      <span>{isGeneratingImg ? "Generating (~2s)..." : "Generate"}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
+                    <span>Ratio:</span>
+                    <button
+                      type="button"
+                      onClick={() => setImageRatio("16:9")}
+                      className={`rounded px-2 py-0.5 border ${
+                        imageRatio === "16:9"
+                          ? "bg-foreground text-background border-foreground font-medium"
+                          : "border-border text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      16:9 Landscape
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageRatio("1:1")}
+                      className={`rounded px-2 py-0.5 border ${
+                        imageRatio === "1:1"
+                          ? "bg-foreground text-background border-foreground font-medium"
+                          : "border-border text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      1:1 Square (FB / IG)
                     </button>
                   </div>
                 </form>

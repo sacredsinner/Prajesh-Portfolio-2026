@@ -7,7 +7,7 @@ const origRequire = Module.prototype.require
 // @ts-ignore
 Module.prototype.require = function (id: string, ...args: any[]) {
   if (id === "server-only") return {}
-  return origRequire.apply(this, [id, ...args])
+  return (origRequire as any).apply(this, [id, ...args])
 }
 
 import { config } from "dotenv"
