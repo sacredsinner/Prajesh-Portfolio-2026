@@ -1177,7 +1177,7 @@ function LeadsSync() {
     try {
       const res = await syncLeadsToResend()
       if (res.ok) {
-        toast.success(`Synced ${res.synced} leads to Resend audience`)
+        toast.success(`Synced leads (${res.added} added, ${res.existing} existing)`)
       } else {
         toast.error(res.error)
       }

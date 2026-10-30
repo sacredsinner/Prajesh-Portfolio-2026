@@ -12,6 +12,7 @@
   "dependencies": {
     "@gsap/react": "2.1.2",
     "@hookform/resolvers": "^3.9.1",
+    "@notionhq/client": "^5.28.0",
     "@pdf-lib/fontkit": "1.1.1",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -57,6 +58,7 @@
     "lucide-react": "^0.564.0",
     "next": "16.2.4",
     "next-themes": "^0.4.6",
+    "notion-to-md": "^3.1.9",
     "pdf-lib": "1.17.1",
     "pg": "^8.22.0",
     "react": "^19",

@@ -195,11 +195,14 @@ function ClientEditor({ client, onCancel, onSaved }: { client: Client; onCancel:
     setBusy(true)
     setError("")
     try {
-      const saved = await saveClient(client.id, {
+      const saved = await saveClient({
+        id: client.id,
         name: data.name.trim(),
         slug: makeSlug(data.slug),
-        websiteUrl: data.websiteUrl?.trim() || null,
-        description: data.description?.trim() || null,
+        logoUrl: client.logoUrl,
+        logoPathname: client.logoPathname,
+        websiteUrl: data.websiteUrl?.trim() || "",
+        description: data.description?.trim() || "",
         isPublished: data.isPublished,
         sortOrder: data.sortOrder,
       })

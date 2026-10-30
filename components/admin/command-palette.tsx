@@ -233,6 +233,13 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
             <ExternalLink className="size-4" />
             <span>View Client Portal</span>
           </CommandItem>
+          <CommandItem
+            onSelect={() => runCommand(() => window.open("/design-system", "_blank"))}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <ExternalLink className="size-4" />
+            <span>View Design System</span>
+          </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
