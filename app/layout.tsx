@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Instrument_Sans, Instrument_Serif } from "next/font/google"
 import Script from "next/script"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { MotionProvider } from "@/components/motion-provider"
 import { DEFAULT_SHARE_IMAGE, SITE_DESCRIPTION, SITE_URL } from "@/lib/site"
 import "./globals.css"
@@ -84,6 +85,7 @@ gtag('js', new Date());
 gtag('config', 'G-HCW8V0E4QD');`}
         </Script>
         {process.env.NODE_ENV === "production" && <Analytics />}
+        <SpeedInsights />
       </body>
     </html>
   )
