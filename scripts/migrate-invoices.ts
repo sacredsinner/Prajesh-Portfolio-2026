@@ -1,15 +1,3 @@
-import { createRequire } from "node:module"
-import Module from "node:module"
-
-// Mock 'server-only' for standalone Node/tsx CLI executions
-// @ts-ignore
-const origRequire = Module.prototype.require
-// @ts-ignore
-Module.prototype.require = function (id: string, ...args: any[]) {
-  if (id === "server-only") return {}
-  return (origRequire as any).apply(this, [id, ...args])
-}
-
 import { config } from "dotenv"
 import { resolve } from "node:path"
 import { existsSync, readFileSync } from "node:fs"
@@ -34,6 +22,7 @@ const newToken = () => randomBytes(18).toString("base64url")
 
 async function migrateInvoices() {
   console.log("🚀 Starting Invoice Migration from Invoice Generator CSV...")
+  console.log(`Connecting to database: ${process.env.DATABASE_URL ? "URL provided" : "Default fallback"}`)
 
   try {
     console.log("📦 Ensuring database schema...")
