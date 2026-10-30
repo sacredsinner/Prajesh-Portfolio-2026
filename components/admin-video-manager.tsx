@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { activateShowcaseVideo, deactivateShowcaseVideo, addShowcaseVideo, deleteShowcaseVideo } from "@/app/actions/showcase"
@@ -27,6 +27,16 @@ export function AdminVideoManager({
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState<number | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  useEffect(() => {
+    setVideos(initialVideos)
+  }, [initialVideos])
+
+  useEffect(() => {
+    if (initialFeatures) {
+      setFeatures(initialFeatures)
+    }
+  }, [initialFeatures])
 
   const activeVideo = videos.find((v) => v.isActive) || null
   const hasActiveVideo = activeVideo !== null

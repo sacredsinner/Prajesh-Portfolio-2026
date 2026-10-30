@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { ensureSchema } from "@/lib/db/migrate"
 import { showcaseVideos } from "@/lib/db/schema"
 import { getBlobDeleteOptions, isBlobUrl } from "@/lib/blob"
 
@@ -25,12 +26,14 @@ const uploadedVideoSchema = z.object({
 
 export async function listShowcaseVideos() {
   await requireAdmin()
+  await ensureSchema()
   return db.select().from(showcaseVideos).orderBy(desc(showcaseVideos.createdAt))
 }
 
 // Runs after the browser has uploaded the video to Blob, and makes it the active showcase.
 export async function addShowcaseVideo(input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireAdmin()
+  await ensureSchema()
   const parsed = uploadedVideoSchema.safeParse(input)
   if (!parsed.success) {
     const url = input && typeof input === "object" ? (input as { url?: unknown }).url : undefined
@@ -54,6 +57,7 @@ export async function addShowcaseVideo(input: unknown): Promise<{ ok: true } | {
 
 export async function activateShowcaseVideo(id: number) {
   await requireAdmin()
+  await ensureSchema()
   const saved = await db.transaction(async (tx) => {
     const target = await tx.select({ id: showcaseVideos.id }).from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1)
     if (!target[0]) throw new Error("Showcase video not found")
@@ -66,6 +70,7 @@ export async function activateShowcaseVideo(id: number) {
 
 export async function deactivateShowcaseVideo(id?: number) {
   await requireAdmin()
+  await ensureSchema()
   await db.transaction(async (tx) => {
     if (typeof id === "number") {
       await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.id, id))
@@ -87,6 +92,7 @@ export async function toggleShowcaseVideo(id: number, makeActive: boolean) {
 
 export async function deleteShowcaseVideo(id: number) {
   await requireAdmin()
+  await ensureSchema()
   const result = await db.transaction(async (tx) => {
     const row = (await tx.select().from(showcaseVideos).where(eq(showcaseVideos.id, id)).limit(1))[0]
     if (!row) return null

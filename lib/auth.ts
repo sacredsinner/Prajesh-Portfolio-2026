@@ -64,7 +64,7 @@ const canonicalProductionUrl = "https://shakyaprajesh.com.np"
 
 export const auth = betterAuth({
   database: authPool,
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: process.env.BETTER_AUTH_SECRET || "prajesh-portfolio-auth-secret-32-chars-long",
   baseURL: process.env.BETTER_AUTH_URL ?? (process.env.NODE_ENV === "production" ? canonicalProductionUrl : origins[0] ?? "http://localhost:3000"),
   trustedOrigins: origins.length > 0 ? origins : ["http://localhost:3000"],
   emailAndPassword: {

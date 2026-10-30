@@ -155,6 +155,30 @@ const STATEMENTS = [
   `CREATE INDEX IF NOT EXISTS idx_invoices_status_kind ON invoices (status, kind, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts (status, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_testimonials_published ON testimonials (published, featured DESC, sort_order ASC)`,
+  `CREATE TABLE IF NOT EXISTS showcase_videos (
+    id SERIAL PRIMARY KEY,
+    pathname text NOT NULL UNIQUE,
+    url text NOT NULL,
+    filename text NOT NULL,
+    content_type text NOT NULL,
+    size_bytes integer NOT NULL,
+    is_active boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE IF NOT EXISTS clients (
+    id SERIAL PRIMARY KEY,
+    name text NOT NULL,
+    slug text NOT NULL UNIQUE,
+    logo_url text NOT NULL,
+    logo_pathname text NOT NULL,
+    website_url text,
+    description text,
+    is_published boolean NOT NULL DEFAULT true,
+    sort_order integer NOT NULL DEFAULT 0,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_showcase_videos_active ON showcase_videos (is_active, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_clients_published ON clients (is_published, sort_order ASC, created_at DESC)`,
 ]
 
 let isSchemaEnsured = false

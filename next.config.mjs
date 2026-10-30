@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
   // Vercel's own deployment ID comes first: it is unique for every deployment, so a
   // plain "Redeploy" of the same commit works (a commit-SHA ID repeats, and Vercel
   // refuses a second deployment with the same ID). Vercel also caps IDs at 32 characters;
