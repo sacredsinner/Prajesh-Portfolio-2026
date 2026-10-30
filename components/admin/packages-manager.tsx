@@ -7,6 +7,8 @@ import { CURRENCIES, CURRENCY_LABELS, formatMoney, type Currency } from "@/lib/m
 import { newId } from "@/lib/moodboards"
 import { budgetChoices, type Package, type Pricing, type Rate } from "@/lib/packages"
 import { PackagesView } from "@/components/packages/packages-view"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
+import { toast } from "sonner"
 
 const inputClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
 const labelClass = "grid gap-1.5 text-sm"
@@ -53,15 +55,13 @@ function RateList({ title, note, list, onChange }: { title: string; note: string
   )
 }
 
-// Content studio → Packages: everything on /packages, the contact form's budget ranges and
-// the invoice rate card, edited in one place.
 export function PackagesManager({ initial }: { initial: Pricing }) {
   const router = useRouter()
   const [data, setData] = useState<Pricing>(initial)
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
   const [preview, setPreview] = useState(false)
+  const [removeTarget, setRemoveTarget] = useState<Package | null>(null)
+
   const set = <K extends keyof Pricing>(key: K, value: Pricing[K]) => setData((old) => ({ ...old, [key]: value }))
   const setPackage = (id: string, patch: Partial<Package>) => set("packages", data.packages.map((p) => (p.id === id ? { ...p, ...patch } : p)))
   const move = <T,>(list: T[], index: number, by: number) => {
@@ -75,18 +75,17 @@ export function PackagesManager({ initial }: { initial: Pricing }) {
 
   async function save() {
     setBusy(true)
-    setError("")
-    setMessage("")
+    const toastId = toast.loading("Saving package pricing…")
     try {
       const result = await updatePricing(data)
       if (!result.ok) {
-        setError(result.error)
+        toast.error(result.error, { id: toastId })
         return
       }
-      setMessage("Packages saved. The Packages page, the contact form and the invoice rate card are updated.")
+      toast.success("Packages saved. Frontend and rate cards updated.", { id: toastId })
       router.refresh()
     } catch {
-      setError("Couldn't save. Your session may have expired. Reload the page, sign in again and retry.")
+      toast.error("Couldn't save pricing. Check connection.", { id: toastId })
     } finally {
       setBusy(false)
     }
@@ -96,17 +95,18 @@ export function PackagesManager({ initial }: { initial: Pricing }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Content studio</p>
-          <h1 className="mt-2 font-serif text-4xl">Packages &amp; pricing</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">What visitors see on /packages. The same prices set the contact form&apos;s budget ranges and the one-click lines in quotes and invoices.</p>
+          <h2 className="font-serif text-3xl">Packages &amp; pricing</h2>
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">What visitors see on /packages. The same prices automatically set contact form budget ranges and invoice line rates.</p>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setPreview((p) => !p)} className="rounded-full border border-border px-4 py-2 text-sm">{preview ? "Back to editing" : "Preview"}</button>
-          <button type="button" onClick={save} disabled={busy} className="rounded-full bg-foreground px-4 py-2 text-sm text-background disabled:opacity-50">{busy ? "Saving…" : "Save"}</button>
+          <button type="button" onClick={() => setPreview((p) => !p)} className="rounded-full border border-border px-3.5 py-1.5 text-xs hover:bg-secondary transition-colors">
+            {preview ? "Back to editing" : "Preview frontend"}
+          </button>
+          <button type="button" onClick={save} disabled={busy} className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background disabled:opacity-50 hover:opacity-90 transition-opacity">
+            {busy ? "Saving…" : "Save changes"}
+          </button>
         </div>
       </div>
-      {message && <p role="status" className="rounded-lg border border-border p-3 text-sm">{message}</p>}
-      {error && <p role="alert" className="rounded-lg border border-destructive p-3 text-sm text-destructive">{error}</p>}
 
       {preview ? (
         <div className="rounded-xl border border-dashed border-border p-4 sm:p-8"><PackagesView pricing={data} /></div>
@@ -122,7 +122,7 @@ export function PackagesManager({ initial }: { initial: Pricing }) {
           </fieldset>
 
           {data.packages.map((item, index) => (
-            <fieldset key={item.id} className={`grid gap-4 rounded-xl border p-4 ${item.popular ? "border-foreground" : "border-border"} ${item.hidden ? "opacity-60" : ""}`}>
+            <fieldset key={item.id} className={`grid gap-4 rounded-xl border p-4 transition-colors ${item.popular ? "border-foreground" : "border-border"} ${item.hidden ? "opacity-60" : ""}`}>
               <legend className="px-1 text-xs uppercase tracking-widest text-muted-foreground">Package {index + 1}{item.hidden ? " · not published" : " · published"}</legend>
               <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
                 <label className={labelClass}>Name<input className={inputClass} value={item.name} onChange={(e) => setPackage(item.id, { name: e.target.value })} maxLength={60} required /></label>
@@ -135,34 +135,48 @@ export function PackagesManager({ initial }: { initial: Pricing }) {
               </div>
               <div><p className="mb-1.5 text-sm">From price</p><Money value={item.from} onChange={(from) => setPackage(item.id, { from })} /></div>
               <label className={labelClass}>What&apos;s included (one per line)<textarea className={inputClass} rows={Math.max(4, item.includes.length + 1)} value={item.includes.join("\n")} onChange={(e) => setPackage(item.id, { includes: e.target.value.split("\n") })} /></label>
-              <div className="flex flex-wrap items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
                 <label className="flex items-center gap-2"><input type="checkbox" checked={Boolean(item.popular)} onChange={(e) => set("packages", data.packages.map((p) => ({ ...p, popular: p.id === item.id ? e.target.checked : false })))} /> Most chosen (highlighted)</label>
                 <label className="flex items-center gap-2"><input type="checkbox" checked={!item.hidden} onChange={(e) => setPackage(item.id, { hidden: !e.target.checked })} /> Publish package on frontend</label>
                 <div className="ml-auto flex gap-1">
                   <button type="button" onClick={() => set("packages", move(data.packages, index, -1))} disabled={index === 0} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-30" aria-label="Move up">↑</button>
                   <button type="button" onClick={() => set("packages", move(data.packages, index, 1))} disabled={index === data.packages.length - 1} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-30" aria-label="Move down">↓</button>
-                  <button type="button" onClick={() => { if (data.packages.length > 1 && window.confirm(`Remove the ${item.name || "package"} package?`)) set("packages", data.packages.filter((p) => p.id !== item.id)) }} className="rounded border border-border px-2 py-1 text-xs" aria-label="Remove">×</button>
+                  <button type="button" onClick={() => setRemoveTarget(item)} disabled={data.packages.length <= 1} className="rounded border border-destructive/50 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30" aria-label="Remove">×</button>
                 </div>
               </div>
             </fieldset>
           ))}
-          <button type="button" onClick={() => set("packages", [...data.packages, { id: newId(), name: "", audience: "", timeline: "", concepts: 2, rounds: 2, from: money(), includes: [] }])} className="w-fit rounded-lg border border-border px-3 py-2 text-sm">Add a package</button>
+          <button type="button" onClick={() => set("packages", [...data.packages, { id: newId(), name: "", audience: "", timeline: "", concepts: 2, rounds: 2, from: money(), includes: [] }])} className="w-fit rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Add a package</button>
 
           <RateList title="Add-ons and single pieces" note="Listed under the packages, with “from” prices." list={data.addOns} onChange={(list) => set("addOns", list)} />
           <RateList title="Ongoing work" note="Retainer, hourly and day rates. The unit shows after the price (“a month”, “an hour”)." list={data.ongoing} onChange={(list) => set("ongoing", list)} />
 
           <fieldset className="grid gap-2 rounded-xl border border-border p-4">
             <legend className="px-1 text-xs uppercase tracking-widest text-muted-foreground">Contact form budget ranges (from the package prices)</legend>
-            {CURRENCIES.map((code) => <p key={code} className="text-sm"><span className="text-muted-foreground">{CURRENCY_LABELS[code]}:</span> {budgets[code].join(" · ")}</p>)}
-            <p className="text-xs text-muted-foreground">Lowest shown package: {CURRENCIES.map((code) => formatMoney(Math.min(...data.packages.filter((p) => !p.hidden).map((p) => p.from[code] || Infinity)), code)).join(" · ")}</p>
+            {CURRENCIES.map((code) => <p key={code} className="text-xs"><span className="text-muted-foreground">{CURRENCY_LABELS[code]}:</span> {budgets[code].join(" · ")}</p>)}
+            <p className="text-[11px] text-muted-foreground">Lowest shown package: {CURRENCIES.map((code) => formatMoney(Math.min(...data.packages.filter((p) => !p.hidden).map((p) => p.from[code] || Infinity)), code)).join(" · ")}</p>
           </fieldset>
 
           <div className="flex items-center gap-3">
-            <button disabled={busy} className="rounded-full bg-foreground px-5 py-3 text-sm text-background disabled:opacity-50">{busy ? "Saving…" : "Save"}</button>
+            <button disabled={busy} className="rounded-full bg-foreground px-5 py-2 text-xs font-medium text-background disabled:opacity-50 hover:opacity-90 transition-opacity">{busy ? "Saving…" : "Save changes"}</button>
             <p className="text-xs text-muted-foreground">Changes go live on /packages within a few seconds of saving.</p>
           </div>
         </form>
       )}
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+        title="Remove package"
+        description={`Are you sure you want to remove the "${removeTarget?.name || "package"}" package?`}
+        confirmLabel="Remove package"
+        onConfirm={() => {
+          if (!removeTarget) return
+          set("packages", data.packages.filter((p) => p.id !== removeTarget.id))
+          setRemoveTarget(null)
+          toast.success("Package removed from draft")
+        }}
+      />
     </div>
   )
 }

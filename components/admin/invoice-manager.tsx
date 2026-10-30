@@ -7,6 +7,9 @@ import { KIND_LABELS, STATUS_LABELS, addDays, displayStatus, documentTotals, for
 import { CURRENCIES, CURRENCY_LABELS, formatMoney, isCurrency, type Currency } from "@/lib/money"
 import { newId } from "@/lib/moodboards"
 import { rateCard as buildRateCard, type Pricing } from "@/lib/packages"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
+import { Search } from "lucide-react"
+import { toast } from "sonner"
 
 export type AdminDocument = {
   id: string
@@ -105,15 +108,25 @@ export function InvoiceManager({ documents, settings, leads, pricing }: { docume
   const [view, setView] = useState<"documents" | "settings">("documents")
   const [filter, setFilter] = useState<"all" | "quote" | "invoice" | "unpaid" | "paid">("all")
   const [editing, setEditing] = useState<Draft | null>(null)
-  const [message, setMessage] = useState("")
   const [busyId, setBusyId] = useState<string | null>(null)
   const [sending, setSending] = useState<AdminDocument | null>(null)
+  const [search, setSearch] = useState("")
+  const [confirmTarget, setConfirmTarget] = useState<{ id: string; number: string; action: "delete" | "void" } | null>(null)
 
   const now = today()
   const rows = documents.map((doc) => ({ doc, status: displayStatus(doc, now) }))
-  const shown = rows.filter(({ doc, status }) =>
-    filter === "all" ? true : filter === "quote" || filter === "invoice" ? doc.kind === filter : filter === "paid" ? status === "paid" : doc.kind === "invoice" && (status === "sent" || status === "overdue"),
-  )
+  const shown = rows.filter(({ doc, status }) => {
+    const matchesFilter = filter === "all" ? true : filter === "quote" || filter === "invoice" ? doc.kind === filter : filter === "paid" ? status === "paid" : doc.kind === "invoice" && (status === "sent" || status === "overdue")
+    if (!matchesFilter) return false
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return (
+      doc.number.toLowerCase().includes(q) ||
+      doc.clientName.toLowerCase().includes(q) ||
+      doc.clientCompany?.toLowerCase().includes(q) ||
+      doc.clientEmail?.toLowerCase().includes(q)
+    )
+  })
 
   const summary = useMemo(() => {
     const outstanding: Partial<Record<Currency, number>> = {}
@@ -133,17 +146,16 @@ export function InvoiceManager({ documents, settings, leads, pricing }: { docume
 
   async function run(id: string, action: () => Promise<{ ok: true } | { ok: false; error: string }>, success: string) {
     setBusyId(id)
-    setMessage("")
     try {
       const result = await action()
       if (!result.ok) {
-        setMessage(result.error)
+        toast.error(result.error)
         return
       }
-      setMessage(success)
+      toast.success(success)
       router.refresh()
     } catch {
-      setMessage("Something went wrong. Your session may have expired. Reload the page, sign in again and retry.")
+      toast.error("Something went wrong. Please check your connection and retry.")
     } finally {
       setBusyId(null)
     }
@@ -159,7 +171,7 @@ export function InvoiceManager({ documents, settings, leads, pricing }: { docume
         onCancel={() => setEditing(null)}
         onSaved={(note) => {
           setEditing(null)
-          setMessage(note)
+          toast.success(note)
           router.refresh()
         }}
       />
@@ -170,36 +182,47 @@ export function InvoiceManager({ documents, settings, leads, pricing }: { docume
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Content studio</p>
-          <h1 className="mt-2 font-serif text-4xl">Invoices &amp; quotes</h1>
+          <h2 className="font-serif text-3xl">Invoices &amp; quotes</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Manage client billing, quotes, currencies, taxes and track document view status.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setView("documents")} className={`rounded-full px-4 py-2 text-sm ${view === "documents" ? "bg-foreground text-background" : "border border-border"}`}>Documents</button>
-          <button onClick={() => setView("settings")} className={`rounded-full px-4 py-2 text-sm ${view === "settings" ? "bg-foreground text-background" : "border border-border"}`}>Settings</button>
+          <button onClick={() => setView("documents")} className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${view === "documents" ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}>Documents</button>
+          <button onClick={() => setView("settings")} className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${view === "settings" ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}>Settings</button>
         </div>
       </div>
 
-      {message && <p role="status" className="rounded-lg border border-border p-3 text-sm">{message}</p>}
-
       {view === "settings" ? (
-        <SettingsForm settings={settings} onSaved={() => { setMessage("Settings saved."); router.refresh() }} />
+        <SettingsForm settings={settings} onSaved={() => { toast.success("Settings saved."); router.refresh() }} />
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border p-4"><p className="text-xs uppercase tracking-widest text-muted-foreground">Outstanding</p><p className="mt-2 font-serif text-2xl">{summary.outstanding}</p></div>
-            <div className="rounded-xl border border-border p-4"><p className="text-xs uppercase tracking-widest text-muted-foreground">Overdue</p><p className="mt-2 font-serif text-2xl">{summary.overdue}</p></div>
-            <div className="rounded-xl border border-border p-4"><p className="text-xs uppercase tracking-widest text-muted-foreground">Paid this year</p><p className="mt-2 font-serif text-2xl">{summary.paid}</p></div>
+            <div className="rounded-xl border border-border p-4"><p className="text-xs uppercase tracking-widest text-muted-foreground">Outstanding</p><p className="mt-1 font-serif text-2xl">{summary.outstanding}</p></div>
+            <div className="rounded-xl border border-border p-4"><p className="text-xs uppercase tracking-widest text-muted-foreground">Overdue</p><p className="mt-1 font-serif text-2xl">{summary.overdue}</p></div>
+            <div className="rounded-xl border border-border p-4"><p className="text-xs uppercase tracking-widest text-muted-foreground">Paid this year</p><p className="mt-1 font-serif text-2xl">{summary.paid}</p></div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {(["all", "quote", "invoice", "unpaid", "paid"] as const).map((key) => (
-              <button key={key} onClick={() => setFilter(key)} className={`rounded-full px-3 py-1.5 text-xs ${filter === key ? "bg-foreground text-background" : "border border-border"}`}>
-                {{ all: "All", quote: "Quotes", invoice: "Invoices", unpaid: "Unpaid", paid: "Paid" }[key]}
-              </button>
-            ))}
-            <div className="ml-auto flex gap-2">
-              <button onClick={() => { setMessage(""); setEditing(emptyDraft("quote", settings)) }} className="rounded-full border border-foreground px-4 py-2 text-sm">New quote</button>
-              <button onClick={() => { setMessage(""); setEditing(emptyDraft("invoice", settings)) }} className="rounded-full bg-foreground px-4 py-2 text-sm text-background">New invoice</button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(["all", "quote", "invoice", "unpaid", "paid"] as const).map((key) => (
+                <button key={key} onClick={() => setFilter(key)} className={`rounded-full px-3 py-1 text-xs transition-colors ${filter === key ? "bg-foreground text-background font-medium" : "border border-border text-muted-foreground hover:bg-secondary"}`}>
+                  {{ all: "All", quote: "Quotes", invoice: "Invoices", unpaid: "Unpaid", paid: "Paid" }[key]}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search number, client…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-full border border-border bg-background pl-9 pr-3 py-1.5 text-xs outline-none focus:border-foreground"
+                />
+              </div>
+              <button onClick={() => setEditing(emptyDraft("quote", settings))} className="rounded-full border border-foreground px-3.5 py-1.5 text-xs hover:bg-secondary transition-colors">New quote</button>
+              <button onClick={() => setEditing(emptyDraft("invoice", settings))} className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity">New invoice</button>
             </div>
           </div>
 
@@ -220,14 +243,14 @@ export function InvoiceManager({ documents, settings, leads, pricing }: { docume
               const currency: Currency = isCurrency(doc.currency) ? doc.currency : "USD"
               const busy = busyId === doc.id
               return (
-                <article key={doc.id} className="rounded-xl border border-border p-4">
+                <article key={doc.id} className="rounded-xl border border-border p-4 transition-colors hover:border-foreground/30">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <p className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
                         {KIND_LABELS[doc.kind === "quote" ? "quote" : "invoice"]} · {doc.number} <span className={chip(status)}>{STATUS_LABELS[status]}</span>
                       </p>
-                      <h2 className="mt-2 font-serif text-2xl">{doc.clientName}{doc.clientCompany ? ` · ${doc.clientCompany}` : ""}</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h2 className="mt-1 font-serif text-2xl truncate">{doc.clientName}{doc.clientCompany ? ` · ${doc.clientCompany}` : ""}</h2>
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Issued {formatDate(doc.issueDate)}
                         {doc.dueDate ? ` · ${doc.kind === "quote" ? "valid until" : "due"} ${formatDate(doc.dueDate)}` : ""}
                         {doc.viewedAt ? " · viewed by client" : ""}
@@ -235,29 +258,46 @@ export function InvoiceManager({ documents, settings, leads, pricing }: { docume
                         {doc.reminderCount ? ` · ${doc.reminderCount} reminder${doc.reminderCount === 1 ? "" : "s"} sent` : ""}
                       </p>
                     </div>
-                    <p className="font-serif text-2xl sm:text-right">{formatMoney(Number(doc.total), currency, 2)}</p>
+                    <p className="font-serif text-2xl sm:text-right shrink-0">{formatMoney(Number(doc.total), currency, 2)}</p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button disabled={busy} onClick={() => { setMessage(""); setEditing(toDraft(doc)) }} className="rounded-lg border border-border px-3 py-1.5 text-sm">Edit</button>
-                    <button disabled={busy || !doc.clientEmail} title={doc.clientEmail ? undefined : "Add the client's email first"} onClick={() => setSending(doc)} className="rounded-lg bg-foreground px-3 py-1.5 text-sm text-background disabled:opacity-40">{doc.sentAt ? "Send again" : "Send"}</button>
-                    <a href={`/i/${doc.publicToken}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border px-3 py-1.5 text-sm">View</a>
-                    <a href={`/i/${doc.publicToken}/pdf`} className="rounded-lg border border-border px-3 py-1.5 text-sm">PDF</a>
-                    <button disabled={busy} onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/i/${doc.publicToken}`).then(() => setMessage(`Link to ${doc.number} copied.`))} className="rounded-lg border border-border px-3 py-1.5 text-sm">Copy link</button>
-                    {doc.kind === "invoice" && status !== "paid" && status !== "void" && <button disabled={busy} onClick={() => run(doc.id, () => setDocumentStatus(doc.id, "paid"), `${doc.number} marked as paid.`)} className="rounded-lg border border-border px-3 py-1.5 text-sm">Mark paid</button>}
-                    {doc.kind === "invoice" && status === "paid" && <button disabled={busy} onClick={() => run(doc.id, () => setDocumentStatus(doc.id, doc.sentAt ? "sent" : "draft"), `${doc.number} marked as unpaid.`)} className="rounded-lg border border-border px-3 py-1.5 text-sm">Mark unpaid</button>}
-                    {doc.kind === "quote" && (status === "sent" || status === "accepted" || status === "draft" || status === "expired") && <button disabled={busy} onClick={() => run(doc.id, () => convertQuoteToInvoice(doc.id), `${doc.number} turned into a draft invoice.`)} className="rounded-lg border border-border px-3 py-1.5 text-sm">Turn into invoice</button>}
-                    {doc.kind === "quote" && status === "sent" && <button disabled={busy} onClick={() => run(doc.id, () => setDocumentStatus(doc.id, "declined"), `${doc.number} marked as declined.`)} className="rounded-lg border border-border px-3 py-1.5 text-sm">Declined</button>}
-                    <button disabled={busy} onClick={() => run(doc.id, () => duplicateDocument(doc.id), `Copy of ${doc.number} created as a draft.`)} className="rounded-lg border border-border px-3 py-1.5 text-sm">Duplicate</button>
-                    {doc.kind === "invoice" && status !== "void" && status !== "paid" && <button disabled={busy} onClick={() => { if (window.confirm(`Void ${doc.number}? The client link will stop working.`)) void run(doc.id, () => setDocumentStatus(doc.id, "void"), `${doc.number} voided.`) }} className="rounded-lg border border-border px-3 py-1.5 text-sm">Void</button>}
-                    <button disabled={busy} onClick={() => { if (window.confirm(`Delete ${doc.number} permanently?`)) void run(doc.id, () => deleteDocument(doc.id), `${doc.number} deleted.`) }} className="rounded-lg border border-destructive px-3 py-1.5 text-sm text-destructive">Delete</button>
+                    <button disabled={busy} onClick={() => setEditing(toDraft(doc))} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Edit</button>
+                    <button disabled={busy || !doc.clientEmail} title={doc.clientEmail ? undefined : "Add the client's email first"} onClick={() => setSending(doc)} className="rounded-lg bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 disabled:opacity-40 transition-opacity">{doc.sentAt ? "Send again" : "Send"}</button>
+                    <a href={`/i/${doc.publicToken}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">View ↗</a>
+                    <a href={`/i/${doc.publicToken}/pdf`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">PDF</a>
+                    <button disabled={busy} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/i/${doc.publicToken}`); toast.success(`Link to ${doc.number} copied to clipboard`) }} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Copy link</button>
+                    {doc.kind === "invoice" && status !== "paid" && status !== "void" && <button disabled={busy} onClick={() => run(doc.id, () => setDocumentStatus(doc.id, "paid"), `${doc.number} marked as paid.`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Mark paid</button>}
+                    {doc.kind === "invoice" && status === "paid" && <button disabled={busy} onClick={() => run(doc.id, () => setDocumentStatus(doc.id, doc.sentAt ? "sent" : "draft"), `${doc.number} marked as unpaid.`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Mark unpaid</button>}
+                    {doc.kind === "quote" && (status === "sent" || status === "accepted" || status === "draft" || status === "expired") && <button disabled={busy} onClick={() => run(doc.id, () => convertQuoteToInvoice(doc.id), `${doc.number} turned into a draft invoice.`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Turn into invoice</button>}
+                    {doc.kind === "quote" && status === "sent" && <button disabled={busy} onClick={() => run(doc.id, () => setDocumentStatus(doc.id, "declined"), `${doc.number} marked as declined.`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Declined</button>}
+                    <button disabled={busy} onClick={() => run(doc.id, () => duplicateDocument(doc.id), `Copy of ${doc.number} created as a draft.`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Duplicate</button>
+                    {doc.kind === "invoice" && status !== "void" && status !== "paid" && <button disabled={busy} onClick={() => setConfirmTarget({ id: doc.id, number: doc.number, action: "void" })} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors">Void</button>}
+                    <button disabled={busy} onClick={() => setConfirmTarget({ id: doc.id, number: doc.number, action: "delete" })} className="rounded-lg border border-destructive px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors">Delete</button>
                   </div>
                 </article>
               )
             })}
-            {shown.length === 0 && <p className="text-muted-foreground">{documents.length ? "Nothing matches this filter." : "No quotes or invoices yet. Start with a quote, then turn it into an invoice once it's accepted."}</p>}
+            {shown.length === 0 && <p className="text-muted-foreground text-sm p-4 text-center border border-dashed border-border rounded-xl">{documents.length ? "Nothing matches this filter or search." : "No quotes or invoices yet. Start with a quote, then turn it into an invoice once it's accepted."}</p>}
           </section>
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        onOpenChange={(open) => !open && setConfirmTarget(null)}
+        title={confirmTarget?.action === "void" ? `Void ${confirmTarget?.number}` : `Delete ${confirmTarget?.number}`}
+        description={confirmTarget?.action === "void" ? "The public client link will immediately stop working." : "Permanently delete this record. This cannot be undone."}
+        confirmLabel={confirmTarget?.action === "void" ? "Void document" : "Delete permanently"}
+        onConfirm={async () => {
+          if (!confirmTarget) return
+          if (confirmTarget.action === "void") {
+            await run(confirmTarget.id, () => setDocumentStatus(confirmTarget.id, "void"), `${confirmTarget.number} voided.`)
+          } else {
+            await run(confirmTarget.id, () => deleteDocument(confirmTarget.id), `${confirmTarget.number} deleted permanently.`)
+          }
+          setConfirmTarget(null)
+        }}
+      />
     </div>
   )
 }

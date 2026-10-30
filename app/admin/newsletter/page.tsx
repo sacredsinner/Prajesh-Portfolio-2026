@@ -8,6 +8,7 @@ import { ensureSchema } from "@/lib/db/migrate"
 import { blogPosts } from "@/lib/db/schema"
 import { listIssues, listSubscribers, refreshIssueStatuses, sendReadiness, sentNoteIds } from "@/lib/newsletter-issues"
 import { NewsletterManager } from "@/components/admin/newsletter-manager"
+import { AdminHeader } from "@/components/admin/admin-header"
 
 export const metadata: Metadata = { title: "Newsletter · Content studio", robots: { index: false, follow: false } }
 
@@ -25,10 +26,12 @@ export default async function AdminNewsletterPage() {
     sentNoteIds(),
   ])
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-8">
+    <main className="min-h-screen bg-background px-4 py-6 sm:px-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <a href="/admin" className="text-xs uppercase tracking-widest hover:opacity-60">← Content studio</a>
-        <div className="mt-8"><NewsletterManager issues={issues} subscribers={subscribers} readiness={readiness} notes={notes} sentNoteIds={sent} /></div>
+        <AdminHeader active="newsletter" user={session.user} />
+        <div className="mt-6">
+          <NewsletterManager issues={issues} subscribers={subscribers} readiness={readiness} notes={notes} sentNoteIds={sent} />
+        </div>
       </div>
     </main>
   )

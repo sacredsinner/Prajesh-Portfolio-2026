@@ -5,6 +5,7 @@ import { desc } from "drizzle-orm"
 import { auth, isAdminUser } from "@/lib/auth"
 import { listDocuments, getInvoiceSettings } from "@/app/actions/invoices"
 import { InvoiceManager } from "@/components/admin/invoice-manager"
+import { AdminHeader } from "@/components/admin/admin-header"
 import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
 import { contacts } from "@/lib/db/schema"
@@ -33,10 +34,12 @@ export default async function AdminInvoicesPage() {
     return true
   })
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-8">
+    <main className="min-h-screen bg-background px-4 py-6 sm:px-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <a href="/admin" className="text-xs uppercase tracking-widest hover:opacity-60">← Content studio</a>
-        <div className="mt-8"><InvoiceManager documents={documents} settings={settings} leads={leads} pricing={pricing} /></div>
+        <AdminHeader active="invoices" user={session.user} />
+        <div className="mt-6">
+          <InvoiceManager documents={documents} settings={settings} leads={leads} pricing={pricing} />
+        </div>
       </div>
     </main>
   )
