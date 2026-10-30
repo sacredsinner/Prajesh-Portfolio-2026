@@ -1,19 +1,38 @@
 {
   "bufferEndpoint": "https://mcp.buffer.com/mcp",
   "hasToken": true,
-  "tokenMasked": "Buffer MCP Bridge (Connected)",
+  "tokenMasked": "Buffer API (prajeshbuffer)",
   "bufferConnected": true,
   "channels": [
+    {
+      "id": "chan-ig",
+      "platform": "instagram",
+      "name": "madebyprajesh",
+      "handle": "@madebyprajesh",
+      "avatarUrl": "/images/prajesh-avatar.jpg",
+      "connected": true,
+      "queueCount": 3,
+      "bufferProfileId": "6a97d475065799be4671b5c3"
+    },
     {
       "id": "chan-fb",
       "platform": "facebook",
       "name": "Prajesh Shakya",
-      "handle: ": "facebook.com/shakyaprajesh",
       "handle": "facebook.com/shakyaprajesh",
       "avatarUrl": "/images/prajesh-avatar.jpg",
       "connected": true,
       "queueCount": 1,
-      "bufferProfileId": "buf_profile_fb_prajesh"
+      "bufferProfileId": "6a98e114065799be467a4645"
+    },
+    {
+      "id": "chan-li",
+      "platform": "linkedin",
+      "name": "prajeshshakya",
+      "handle": "in/prajeshshakya",
+      "avatarUrl": "/images/prajesh-avatar.jpg",
+      "connected": true,
+      "queueCount": 1,
+      "bufferProfileId": "6a97d494065799be4671b603"
     },
     {
       "id": "chan-x",
@@ -21,29 +40,9 @@
       "name": "Prajesh Shakya",
       "handle": "@shakyaprajesh",
       "avatarUrl": "/images/prajesh-avatar.jpg",
-      "connected": true,
-      "queueCount": 2,
+      "connected": false,
+      "queueCount": 0,
       "bufferProfileId": "buf_profile_x_prajesh"
-    },
-    {
-      "id": "chan-li",
-      "platform": "linkedin",
-      "name": "Prajesh Shakya",
-      "handle": "in/shakyaprajesh",
-      "avatarUrl": "/images/prajesh-avatar.jpg",
-      "connected": true,
-      "queueCount": 1,
-      "bufferProfileId": "buf_profile_li_prajesh"
-    },
-    {
-      "id": "chan-ig",
-      "platform": "instagram",
-      "name": "Prajesh Shakya",
-      "handle": "@shakyaprajesh",
-      "avatarUrl": "/images/prajesh-avatar.jpg",
-      "connected": true,
-      "queueCount": 3,
-      "bufferProfileId": "buf_profile_ig_prajesh"
     }
   ],
   "posts": [

@@ -180,7 +180,7 @@ function writeLocalFallback(data: SocialsData & { token?: string }) {
 }
 
 export async function getRawBufferToken(): Promise<string> {
-  const envToken = process.env.BUFFER_ACCESS_TOKEN?.trim()
+  const envToken = process.env.BUFFER_API_KEY?.trim() || process.env.BUFFER_ACCESS_TOKEN?.trim()
   if (envToken) return envToken
 
   if (isDatabaseAvailable()) {
@@ -527,7 +527,7 @@ export async function pushToBufferApi(
             schedulingType,
             dueAt: options.scheduled_at,
             saveToDraft: Boolean(options.draft),
-            assets: publicMediaUrl ? [{ url: publicMediaUrl }] : undefined,
+            assets: publicMediaUrl ? [{ image: { url: publicMediaUrl } }] : undefined,
           },
         },
       }

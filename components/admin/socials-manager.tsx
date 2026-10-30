@@ -1987,7 +1987,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-secondary transition-colors"
                   >
                     <RefreshCw className={`size-3 ${isRefreshingChannels ? "animate-spin" : ""}`} />
-                    <span>{isRefreshingChannels ? "Testing..." : "Test Connection"}</span>
+                    <span>{isRefreshingChannels ? "Syncing..." : "Sync & Fetch Channels"}</span>
                   </button>
                 </div>
 
