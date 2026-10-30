@@ -1082,7 +1082,7 @@ function ContactReply({ contact, onClose }: { contact: Contact; onClose: () => v
     setBusy(true)
     setError("")
     try {
-      const result = await replyToContact({ contactId: contact.id, subject, body })
+      const result = await replyToContact({ contactId: contact.id, subject, text: body, body })
       if (!result.ok) {
         setError(result.error)
         setBusy(false)
@@ -1090,8 +1090,8 @@ function ContactReply({ contact, onClose }: { contact: Contact; onClose: () => v
       }
       toast.success("Reply sent successfully!")
       onClose()
-    } catch {
-      setError("Couldn't send the reply. Check your Resend API key and network connection.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't send the reply. Check your Resend API key and network connection.")
       setBusy(false)
     }
   }
@@ -1276,7 +1276,7 @@ function EmailComposer({ contacts, onMessage }: { contacts: Contact[]; onMessage
     if (!to || !subject || !body) return
     setBusy(true)
     try {
-      const res = await sendAdminEmail({ to, subject, html: `<p style="white-space: pre-wrap;">${body}</p>` })
+      const res = await sendAdminEmail({ to, subject, text: body, body })
       if (res.ok) {
         toast.success(`Email sent to ${to}`)
         setSubject("")
@@ -1285,8 +1285,8 @@ function EmailComposer({ contacts, onMessage }: { contacts: Contact[]; onMessage
       } else {
         toast.error(res.error)
       }
-    } catch {
-      toast.error("Failed to send email.")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send email.")
     } finally {
       setBusy(false)
     }

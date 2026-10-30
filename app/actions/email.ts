@@ -14,17 +14,29 @@ import { addLead } from "@/lib/resend-contacts"
 // A "use server" file may only export async functions. Exporting anything else
 // (it previously exported a plain array) makes every Server Action on /admin fail.
 
-const emailSchema = z.object({
-  to: z.string().email(),
-  subject: z.string().trim().min(1).max(200),
-  text: z.string().trim().min(1).max(10000),
-})
+const emailSchema = z
+  .object({
+    to: z.string().email("Enter a valid recipient email address."),
+    subject: z.string().trim().min(1, "Add a subject line.").max(200, "Subject line is too long."),
+    text: z.string().trim().min(1).max(10000).optional(),
+    body: z.string().trim().min(1).max(10000).optional(),
+    html: z.string().trim().min(1).max(20000).optional(),
+  })
+  .refine((data) => Boolean(data.text?.trim() || data.body?.trim() || data.html?.trim()), {
+    message: "Write a message.",
+  })
 
-const replySchema = z.object({
-  contactId: z.string().uuid(),
-  subject: z.string().trim().min(1, "Add a subject.").max(200),
-  text: z.string().trim().min(1, "Write a message.").max(10000),
-})
+const replySchema = z
+  .object({
+    contactId: z.string().uuid(),
+    subject: z.string().trim().min(1, "Add a subject.").max(200),
+    text: z.string().trim().min(1).max(10000).optional(),
+    body: z.string().trim().min(1).max(10000).optional(),
+    message: z.string().trim().min(1).max(10000).optional(),
+  })
+  .refine((data) => Boolean(data.text?.trim() || data.body?.trim() || data.message?.trim()), {
+    message: "Write a message.",
+  })
 
 export type AdminEmailInput = z.infer<typeof emailSchema>
 export type AdminEmailResult = { ok: true; id: string | null } | { ok: false; error: string }
@@ -39,8 +51,17 @@ async function requireAdmin() {
 export async function sendAdminEmail(input: unknown): Promise<AdminEmailResult> {
   await requireAdmin()
   const parsed = emailSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: "Check the recipient, subject and message." }
-  const result = await sendEmail({ to: parsed.data.to, replyTo: ADMIN_EMAIL, ...adminMessageEmail({ subject: parsed.data.subject, text: parsed.data.text }) })
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the recipient, subject and message." }
+  
+  const rawText = parsed.data.text || parsed.data.body || (parsed.data.html ? parsed.data.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : "")
+  const text = rawText.trim()
+  if (!text) return { ok: false, error: "Write a message." }
+
+  const result = await sendEmail({
+    to: parsed.data.to,
+    replyTo: ADMIN_EMAIL,
+    ...adminMessageEmail({ subject: parsed.data.subject, text }),
+  })
   if (!result.ok) return { ok: false, error: `The email wasn't sent: ${result.error}` }
   return { ok: true, id: result.id }
 }
@@ -50,7 +71,9 @@ export async function replyToContact(input: unknown): Promise<AdminEmailResult> 
   await requireAdmin()
   const parsed = replySchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the subject and message." }
-  const { contactId, subject, text } = parsed.data
+  const { contactId, subject } = parsed.data
+  const text = (parsed.data.text || parsed.data.body || parsed.data.message || "").trim()
+  if (!text) return { ok: false, error: "Write a message." }
 
   const [contact] = await db.select().from(contacts).where(eq(contacts.id, contactId)).limit(1)
   if (!contact) return { ok: false, error: "That enquiry no longer exists. Reload the page." }

@@ -41,21 +41,36 @@ export type SendEmailResult = { ok: true; id: string | null } | { ok: false; err
 
 export async function sendEmail(message: EmailMessage): Promise<SendEmailResult> {
   const resend = getResend()
-  if (!resend) return { ok: false, error: "RESEND_API_KEY is not set." }
+  if (!resend) {
+    console.warn(`[email] RESEND_API_KEY is not configured. Email to ${Array.isArray(message.to) ? message.to.join(", ") : message.to} was not sent: "${message.subject}"`)
+    return {
+      ok: false,
+      error: "RESEND_API_KEY is not configured. Please add RESEND_API_KEY to your environment (.env.local or Vercel).",
+    }
+  }
 
   // hello@shakyaprajesh.com.np only sends (the domain has no inbox), so replies go to Gmail
   // unless the email says otherwise.
   message = { ...message, replyTo: message.replyTo ?? CONTACT_EMAIL }
   let response = await withRateLimitRetry(() => resend.emails.send({ ...message, from: EMAIL_FROM }))
-  // If the domain isn't verified for this API key, fall back to the test sender so
-  // emails to the account owner (enquiry alerts, password resets) still arrive.
-  if (response.error && /verif/i.test(response.error.message ?? "")) {
-    console.error(`[email] Resend won't send from ${EMAIL_FROM}: ${response.error.message} Falling back to the test sender.`)
+
+  // If the domain isn't verified or registered in Resend for this API key, fall back to the test sender
+  // so emails to the account owner (enquiry alerts, password resets) still arrive.
+  const isDomainError = (msg?: string) =>
+    /verif|domain|not registered|not found|unregistered|sender|validation_error/i.test(msg ?? "")
+
+  if (response.error && isDomainError(response.error.message)) {
+    console.error(`[email] Resend won't send from ${EMAIL_FROM}: ${response.error.message}. Falling back to test sender ${TEST_SENDER}.`)
     response = await withRateLimitRetry(() => resend.emails.send({ ...message, from: TEST_SENDER }))
   }
+
   if (response.error) {
     console.error("[email] Resend rejected the email", response.error)
-    return { ok: false, error: response.error.message || "Resend rejected the email." }
+    let errorMsg = response.error.message || "Resend rejected the email."
+    if (/only send testing emails to your own email/i.test(errorMsg)) {
+      errorMsg = "Resend test mode limit: can only send to your registered Resend account email. Verify shakyaprajesh.com.np in Resend (resend.com/domains) to send to external clients."
+    }
+    return { ok: false, error: errorMsg }
   }
   return { ok: true, id: response.data?.id ?? null }
 }
