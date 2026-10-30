@@ -457,24 +457,36 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
             {/* Media Attachment (Optional) */}
             {showMediaInput && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="url"
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder="Paste image or preview URL..."
-                  className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-foreground"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMediaUrl("")
-                    setShowMediaInput(false)
-                  }}
-                  className="text-muted-foreground hover:text-foreground p-1"
-                >
-                  <X className="size-3.5" />
-                </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={mediaUrl}
+                    onChange={(e) => setMediaUrl(e.target.value)}
+                    placeholder="Paste image URL or /images/generated-social-visual.jpg..."
+                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-foreground"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMediaUrl("")
+                      setShowMediaInput(false)
+                    }}
+                    className="text-muted-foreground hover:text-foreground p-1"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>Quick attach:</span>
+                  <button
+                    type="button"
+                    onClick={() => setMediaUrl("/images/generated-social-visual.jpg")}
+                    className="rounded bg-secondary px-2 py-0.5 hover:text-foreground hover:underline transition-colors"
+                  >
+                    ✦ AI Brand Visual (Nano Banana)
+                  </button>
+                </div>
               </div>
             )}
 
