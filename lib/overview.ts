@@ -7,6 +7,7 @@ import { blogPosts, contacts, invoices, moodboardComments, moodboards, projects 
 import { displayStatus, today } from "@/lib/invoices"
 import { formatMoney, isCurrency, type Currency } from "@/lib/money"
 import { NEWSLETTER_SEGMENT, LEADS_SEGMENT, countSegment } from "@/lib/resend-contacts"
+import { FALLBACK_OVERVIEW } from "@/lib/overview-fallback"
 
 // Numbers and lists for the admin overview. Every query is cheap; the Resend counts
 // are fetched with a short timeout so a slow API never holds up the page.
@@ -251,5 +252,17 @@ export async function getOverview() {
       unpaidInvoices: unpaid.length,
       overdueInvoices: overdue.length,
     },
+  }
+}
+
+export async function getSafeOverview(options: { forceDemo?: boolean } = {}): Promise<Overview> {
+  if (options.forceDemo) {
+    return FALLBACK_OVERVIEW
+  }
+  try {
+    return await getOverview()
+  } catch (error) {
+    console.warn("[overview] Database overview load failed, using fallback:", error instanceof Error ? error.message : error)
+    return FALLBACK_OVERVIEW
   }
 }

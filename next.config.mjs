@@ -20,6 +20,44 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/mobile/overview",
+        destination: "/overview",
+      },
+      {
+        source: "/m/overview",
+        destination: "/overview",
+      },
+    ]
+  },
+  async headers() {
+    return [
+      {
+        source: "/overview",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self' *" },
+          { key: "X-Micro-Frontend-Name", value: "studio-overview-mobile" },
+          { key: "X-Micro-Frontend-Version", value: "2026.1.0" },
+        ],
+      },
+      {
+        source: "/mobile/overview",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self' *" },
+          { key: "X-Micro-Frontend-Name", value: "studio-overview-mobile" },
+          { key: "X-Micro-Frontend-Version", value: "2026.1.0" },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig
