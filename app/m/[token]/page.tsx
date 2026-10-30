@@ -10,6 +10,7 @@ import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
 import { moodboardComments, moodboards } from "@/lib/db/schema"
 import { DEMO_MOODBOARD, DEMO_CANVAS, DEMO_COMMENTS } from "@/lib/demo-board"
+import { APPLE_GUITAR_MOODBOARD, APPLE_GUITAR_CANVAS, APPLE_GUITAR_COMMENTS } from "@/lib/apple-guitars-board"
 
 // A client's moodboard: /m/<token>. Private (unguessable link, not indexed).
 export const dynamic = "force-dynamic"
@@ -19,6 +20,13 @@ async function load(token: string) {
     return {
       ...DEMO_MOODBOARD,
       canvas: DEMO_CANVAS,
+      sections: [],
+    }
+  }
+  if (token === "apple" || token === "apple-guitars") {
+    return {
+      ...APPLE_GUITAR_MOODBOARD,
+      canvas: APPLE_GUITAR_CANVAS,
       sections: [],
     }
   }
@@ -38,10 +46,13 @@ export default async function MoodboardPage({ params }: { params: Promise<{ toke
   const row = await load(token)
   if (!row) notFound()
   const isDemo = token === "demo"
+  const isApple = token === "apple" || token === "apple-guitars"
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null)
   const isAdmin = isAdminUser(session?.user)
-  if (!isAdmin && !isDemo) await db.update(moodboards).set({ lastViewedAt: new Date() }).where(eq(moodboards.id, row.id))
-  const comments = isDemo
+  if (!isAdmin && !isDemo && !isApple) await db.update(moodboards).set({ lastViewedAt: new Date() }).where(eq(moodboards.id, row.id))
+  const comments = isApple
+    ? APPLE_GUITAR_COMMENTS
+    : isDemo
     ? DEMO_COMMENTS
     : await db.select().from(moodboardComments).where(eq(moodboardComments.moodboardId, row.id)).orderBy(asc(moodboardComments.createdAt))
   const approved = row.status === "approved"

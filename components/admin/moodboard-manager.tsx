@@ -119,13 +119,22 @@ export function MoodboardManager({ boards }: { boards: AdminMoodboard[] }) {
             />
           </div>
           <a
+            href="/m/apple"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-border px-4 py-1.5 text-xs font-medium hover:bg-secondary transition-colors inline-flex items-center gap-1.5"
+            title="Launch Apple Guitars interactive showcase"
+          >
+            <span>Apple Guitars</span> ↗
+          </a>
+          <a
             href="/m/demo"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full border border-border px-4 py-1.5 text-xs font-medium hover:bg-secondary transition-colors inline-flex items-center gap-1.5"
             title="Launch interactive client presentation demo"
           >
-            <span>Demo Studio</span> ↗
+            <span>Komorebi Studio</span> ↗
           </a>
           <button
             onClick={() => setEditing({ title: "", clientName: "", clientEmail: "", intro: "" })}

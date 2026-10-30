@@ -174,7 +174,7 @@ export async function sendMoodboardFeedback(input: unknown): Promise<PlainResult
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check your message and try again." }
   const { token, name, body, kind, website, itemId } = parsed.data
   if (website) return { ok: true }
-  if (token === "demo") return { ok: true }
+  if (token === "demo" || token === "apple" || token === "apple-guitars") return { ok: true }
   if (kind === "comment" && !body) return { ok: false, error: "Write a comment first." }
   await ensureSchema()
   const [row] = await db.select().from(moodboards).where(and(eq(moodboards.shareToken, token), eq(moodboards.shared, true))).limit(1)
