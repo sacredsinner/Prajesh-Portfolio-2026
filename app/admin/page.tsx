@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { ADMIN_SIGNUP_OPEN, GOOGLE_SIGN_IN_ENABLED, auth, isAdminUser } from "@/lib/auth"
 import { listContacts, listPosts, listProjects, listTestimonials } from "@/app/actions/cms"
 import { listShowcaseVideos } from "@/app/actions/showcase"
+import { getFeatureFlags } from "@/lib/feature-flags"
 import { getOverview } from "@/lib/overview"
 import { AdminNoAccess, AdminSignIn } from "@/components/admin-sign-in"
 import { AdminDashboard } from "@/components/admin-dashboard"
@@ -38,13 +39,14 @@ export default async function AdminPage({
 
   const { tab } = await searchParams
   if (tab === "socials") redirect("/admin/socials")
-  const [projectRows, postRows, contactRows, testimonialRows, showcaseVideos, overview] = await Promise.all([
+  const [projectRows, postRows, contactRows, testimonialRows, showcaseVideos, overview, featureFlags] = await Promise.all([
     listProjects(),
     listPosts(),
     listContacts(),
     listTestimonials(),
     listShowcaseVideos(),
     getOverview(),
+    getFeatureFlags(),
   ])
 
   return (
@@ -56,6 +58,7 @@ export default async function AdminPage({
       contacts={contactRows}
       testimonials={testimonialRows}
       showcaseVideos={showcaseVideos}
+      featureFlags={featureFlags}
       overview={overview}
     />
   )

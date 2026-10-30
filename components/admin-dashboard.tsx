@@ -23,6 +23,7 @@ import { OverviewPanel } from "@/components/admin/overview-panel"
 import { AdminHeader, type AdminSection } from "@/components/admin/admin-header"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import type { Overview } from "@/lib/overview"
+import type { FeatureFlags } from "@/lib/feature-flags"
 import { replyToContact, sendAdminEmail, syncLeadsToResend } from "@/app/actions/email"
 import { RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
@@ -113,6 +114,7 @@ type Props = {
   contacts: Contact[]
   testimonials: Testimonial[]
   showcaseVideos: ShowcaseVideo[]
+  featureFlags?: FeatureFlags
   overview: Overview
 }
 
@@ -127,6 +129,7 @@ export function AdminDashboard({
   contacts,
   testimonials,
   showcaseVideos,
+  featureFlags,
   overview,
 }: Props) {
   const router = useRouter()
@@ -698,7 +701,7 @@ export function AdminDashboard({
           )}
 
           {/* SHOWCASE TAB */}
-          {tab === "showcase" && <AdminVideoManager videos={showcaseVideos} />}
+          {tab === "showcase" && <AdminVideoManager videos={showcaseVideos} initialFeatures={featureFlags} />}
 
           {/* TESTIMONIALS TAB */}
           {tab === "testimonials" && editingTestimonial && (
