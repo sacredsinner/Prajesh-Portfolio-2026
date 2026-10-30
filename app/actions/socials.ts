@@ -143,3 +143,62 @@ export async function saveSocialSettings(settings: {
   revalidatePath("/admin/socials")
   return { ok: true }
 }
+
+export async function generateAiHooks(
+  topic?: string,
+  angle?: "hot-take" | "case-study" | "tip" | "story" | "launch" | "all"
+): Promise<{ ok: boolean; hooks: string[]; error?: string }> {
+  await requireAdmin()
+
+  const subject = topic?.trim() || "brand identity design, modern typography, and design systems for ambitious founders"
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY
+
+  if (apiKey) {
+    try {
+      const { generateText } = await import("ai")
+      const { google } = await import("@ai-sdk/google")
+      const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
+
+      const prompt = `You are a senior social media strategist and brand copywriter for Prajesh Shakya (senior brand identity designer, design system architect, minimalist, calm, and authoritative).
+
+Generate 4 scroll-stopping, high-engagement opening hooks/post starters for Twitter/X and LinkedIn about:
+"${subject}"
+
+${angle && angle !== "all" ? `Style angle: ${angle}` : "Mix of angles: 1 contrarian hot take, 1 tactical micro-tip, 1 case study/story hook, and 1 insightful observation."}
+
+Rules:
+- Under 240 characters each.
+- No clichés, buzzwords, or cringe emojis (max 1 subtle emoji per hook).
+- Direct, crisp, and thought-provoking.
+- Output ONLY the 4 hooks, one per line. No extra commentary or numbers.`
+
+      const result = await generateText({
+        model: google(modelName),
+        prompt,
+      })
+
+      const rawText = result.text.trim()
+      const lines = rawText
+        .split("\n")
+        .map((l) => l.replace(/^[0-9]+[\.\)]\s*/, "").replace(/^[-•*]\s*/, "").trim())
+        .filter((l) => l.length > 15)
+
+      if (lines.length > 0) {
+        return { ok: true, hooks: lines.slice(0, 4) }
+      }
+    } catch (err) {
+      console.error("[socials] Gemini generateAiHooks error:", err)
+    }
+  }
+
+  // Curated high-performing fallback hooks
+  const fallbackHooks = [
+    `Most designers over-index on Figma files and under-index on design token documentation. Here's why that slows teams down:`,
+    `Case study: How we restructured a multi-brand design system to cut handoff churn by 40% with zero UI bloat. 🧵👇`,
+    `Quick design tip: If your secondary button looks identical to a disabled primary button, your visual hierarchy is failing your users.`,
+    `Great typography doesn't shout. It builds instant authority before a single word is consciously read.`,
+  ]
+
+  return { ok: true, hooks: fallbackHooks }
+}
+

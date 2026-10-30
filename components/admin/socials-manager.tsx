@@ -31,6 +31,7 @@ import {
   publishSocialPostNow,
   addSocialIdea,
   deleteSocialIdea,
+  generateAiHooks,
 } from "@/app/actions/socials"
 import type { SocialsData, SocialPlatform, SocialPost } from "@/lib/socials"
 
@@ -70,6 +71,17 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   const [newIdeaTitle, setNewIdeaTitle] = React.useState("")
   const [newIdeaNotes, setNewIdeaNotes] = React.useState("")
   const [addingIdea, setAddingIdea] = React.useState(false)
+
+  // AI Hooks Generator State
+  const [aiTopic, setAiTopic] = React.useState("")
+  const [aiAngle, setAiAngle] = React.useState<"all" | "hot-take" | "case-study" | "tip" | "launch">("all")
+  const [isGeneratingHooks, setIsGeneratingHooks] = React.useState(false)
+  const [hooksList, setHooksList] = React.useState<string[]>([
+    "Case Study breakdown: How we cut portfolio bounce rate by 40% with micro-interactions 🧵👇",
+    "Most designers over-index on Figma files and under-index on design token documentation. Here's why:",
+    "Quick design tip: If your secondary buttons look like disabled primary buttons, your visual hierarchy is lying.",
+    "New project shipped! 🚀 Built with Next.js 16 and typography-driven layout principles.",
+  ])
 
   const togglePlatform = (p: SocialPlatform) => {
     setSelectedPlatforms((prev) =>
@@ -162,6 +174,31 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   // Quick Hook Prompts
   const handleInsertHook = (hook: string) => {
     setPostContent((prev) => (prev ? `${prev}\n\n${hook}` : hook))
+    toast.success("Hook inserted into composer draft.")
+  }
+
+  const handleReplaceWithHook = (hook: string) => {
+    setPostContent(hook)
+    toast.success("Draft set to selected hook.")
+  }
+
+  const handleGenerateHooks = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setIsGeneratingHooks(true)
+    const toastId = toast.loading("Generating hooks with Gemini AI...")
+    try {
+      const res = await generateAiHooks(aiTopic, aiAngle)
+      if (res.ok && res.hooks && res.hooks.length > 0) {
+        setHooksList(res.hooks)
+        toast.success(`Generated ${res.hooks.length} AI hooks!`, { id: toastId })
+      } else {
+        toast.error(res.error || "Could not generate hooks.", { id: toastId })
+      }
+    } catch {
+      toast.error("Error generating hooks.", { id: toastId })
+    } finally {
+      setIsGeneratingHooks(false)
+    }
   }
 
   // Handle Add Idea
@@ -563,31 +600,102 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
             </div>
           </div>
 
-          {/* AI Hook Inspiration Sidebar */}
+          {/* AI Hook Inspiration & Generator Sidebar */}
           <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-                <Sparkles className="size-3.5 text-amber-400" />
-                <span>Social Hooks & Angle Starters</span>
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+                  <Sparkles className="size-3.5 text-amber-400" />
+                  <span>AI Hook Generator</span>
+                </div>
+                <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                  Gemini AI
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Click any angle to insert into your composer draft:
-              </p>
-              <div className="space-y-2">
-                {[
-                  "Case Study breakdown: How we cut portfolio bounce rate by 40% with micro-interactions 🧵👇",
-                  "Most designers over-index on Figma files and under-index on design token documentation. Here's why:",
-                  "Quick design tip: If your secondary buttons look like disabled primary buttons, your visual hierarchy is lying.",
-                  "New project shipped! 🚀 Built with Next.js 16 and typography-driven layout principles.",
-                ].map((hook, idx) => (
+
+              {/* Topic Input & Angle Controls */}
+              <form onSubmit={handleGenerateHooks} className="space-y-2">
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    placeholder="Topic (e.g. Design token ROI, micro-interactions)..."
+                    className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground transition-colors"
+                  />
                   <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleInsertHook(hook)}
-                    className="w-full text-left rounded-lg border border-border/60 bg-background/50 p-2.5 text-xs text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
+                    type="submit"
+                    disabled={isGeneratingHooks}
+                    className="flex items-center gap-1 shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50 transition-colors"
                   >
-                    &ldquo;{hook}&rdquo;
+                    {isGeneratingHooks ? (
+                      <RefreshCw className="size-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-3" />
+                    )}
+                    <span>{isGeneratingHooks ? "Thinking..." : "Generate"}</span>
                   </button>
+                </div>
+
+                {/* Angle Filter Pills */}
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {[
+                    { id: "all", label: "Mix" },
+                    { id: "hot-take", label: "Hot Take" },
+                    { id: "case-study", label: "Case Study" },
+                    { id: "tip", label: "Design Tip" },
+                    { id: "launch", label: "Launch" },
+                  ].map((ang) => (
+                    <button
+                      key={ang.id}
+                      type="button"
+                      onClick={() => setAiAngle(ang.id as any)}
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors border ${
+                        aiAngle === ang.id
+                          ? "bg-foreground text-background border-foreground"
+                          : "border-border text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      {ang.label}
+                    </button>
+                  ))}
+                </div>
+              </form>
+
+              {/* Hooks Feed */}
+              <div className="space-y-2 pt-1 border-t border-border/40">
+                <p className="text-[11px] text-muted-foreground">
+                  Click a hook to insert into your composer:
+                </p>
+                {hooksList.map((hook, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative rounded-lg border border-border/60 bg-background/50 p-2.5 transition-all hover:border-foreground/30 hover:bg-background"
+                  >
+                    <p className="text-xs leading-relaxed text-foreground select-text">
+                      &ldquo;{hook}&rdquo;
+                    </p>
+                    <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-1.5 text-[10px] text-muted-foreground">
+                      <span className="font-mono">{hook.length} chars</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleReplaceWithHook(hook)}
+                          className="hover:text-foreground hover:underline"
+                        >
+                          Use as draft
+                        </button>
+                        <span className="text-border">|</span>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertHook(hook)}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          + Append
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

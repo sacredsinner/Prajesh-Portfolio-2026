@@ -3,6 +3,9 @@ import { and, desc, eq, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { blogPosts, clients, projects, showcaseVideos, testimonials } from "@/lib/db/schema"
 import { projects as fallbackProjects } from "@/lib/projects"
+import { DEMO_NOTES } from "@/lib/demo-notes"
+
+export type BlogPost = typeof blogPosts.$inferSelect
 
 // The public portfolio should still render when the CMS database is
 // unavailable, so these return empty results instead of throwing. Errors are
@@ -115,23 +118,24 @@ export const getPublishedProject = cache(async (slug: string) => {
   return (fallbackProjects.find((p) => p.slug === slug) as any) ?? undefined
 })
 
-export const getPublishedPosts = cache(async () => {
+export const getPublishedPosts = cache(async (): Promise<BlogPost[]> => {
   try {
-    return await db.select().from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.featured), desc(blogPosts.publishedAt))
+    const rows = await db.select().from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.featured), desc(blogPosts.publishedAt))
+    if (rows && rows.length > 0) return rows
   } catch (error) {
     logUnavailable("notes", error)
-    return []
   }
+  return DEMO_NOTES as unknown as BlogPost[]
 })
 
-export const getPublishedPost = cache(async (slug: string) => {
+export const getPublishedPost = cache(async (slug: string): Promise<BlogPost | undefined> => {
   try {
     const rows = await db.select().from(blogPosts).where(and(eq(blogPosts.slug, slug), eq(blogPosts.published, true))).limit(1)
-    return rows[0]
+    if (rows[0]) return rows[0]
   } catch (error) {
     logUnavailable(`note "${slug}"`, error)
-    return undefined
   }
+  return (DEMO_NOTES.find((n) => n.slug === slug) as unknown as BlogPost) ?? undefined
 })
 
 export type PublicProject = any
