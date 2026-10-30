@@ -97,9 +97,10 @@ export async function saveTestimonial(input: TestimonialInput & { id?: string })
 }
 export async function deleteTestimonial(id: string) { await requireAdmin(); await db.delete(testimonials).where(eq(testimonials.id, id)); revalidatePublicSite() }
 
-export async function listProjects() { await requireAdmin(); return db.select().from(projects).orderBy(desc(projects.createdAt)) }
+export async function listProjects() { await requireAdmin(); await ensureSchema(); return db.select().from(projects).orderBy(desc(projects.createdAt)) }
 export async function saveProject(input: ProjectInput & { id?: string }): Promise<SaveResult> {
   await requireAdmin()
+  await ensureSchema()
   const parsed = projectSchema.safeParse({
     ...input,
     thumbnail: toImageUrl(input.thumbnail),
@@ -123,7 +124,7 @@ export async function saveProject(input: ProjectInput & { id?: string }): Promis
     return { ok: false, error: "Could not save the project. Please try again." }
   }
 }
-export async function deleteProject(id: string) { await requireAdmin(); const [removed] = await db.delete(projects).where(eq(projects.id, id)).returning(); revalidatePublicSite(); if (removed) await deleteBlobs([removed.thumbnail, ...(removed.images ?? [])]) }
+export async function deleteProject(id: string) { await requireAdmin(); await ensureSchema(); const [removed] = await db.delete(projects).where(eq(projects.id, id)).returning(); revalidatePublicSite(); if (removed) await deleteBlobs([removed.thumbnail, ...(removed.images ?? [])]) }
 
 export async function listPosts() { await requireAdmin(); return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)) }
 export async function savePost(input: PostInput & { id?: string }): Promise<SaveResult> {
