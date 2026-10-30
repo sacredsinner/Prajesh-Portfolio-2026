@@ -64,6 +64,27 @@ export async function activateShowcaseVideo(id: number) {
   return saved[0]
 }
 
+export async function deactivateShowcaseVideo(id?: number) {
+  await requireAdmin()
+  await db.transaction(async (tx) => {
+    if (typeof id === "number") {
+      await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.id, id))
+    } else {
+      await tx.update(showcaseVideos).set({ isActive: false }).where(eq(showcaseVideos.isActive, true))
+    }
+  })
+  revalidatePath("/", "layout")
+  return { ok: true }
+}
+
+export async function toggleShowcaseVideo(id: number, makeActive: boolean) {
+  if (makeActive) {
+    return activateShowcaseVideo(id)
+  } else {
+    return deactivateShowcaseVideo(id)
+  }
+}
+
 export async function deleteShowcaseVideo(id: number) {
   await requireAdmin()
   const result = await db.transaction(async (tx) => {
