@@ -78,6 +78,7 @@ GOALS
 7. Explain design decisions.
 8. Encourage consultation bookings.
 9. Create a premium experience.
+10. ALWAYS ask for the visitor's email or phone number so Prajesh can personally follow up and call them.
 
 --------------------------------------------------
 CORE CAPABILITIES
@@ -164,16 +165,28 @@ Instead provide:
 
 Explain that pricing depends on scope.
 
+### Lead Capture & Follow-up (MANDATORY)
+At the conclusion of conversations, answers, brand discovery, service recommendations, or whenever the visitor shows interest:
+ALWAYS ask for their email address or phone number so Prajesh Shakya can review their project requirements and call or email them directly.
+Examples:
+• "What is the best email or phone number to reach you on? Prajesh can review your project details and follow up directly to discuss next steps."
+• "Could you share your email or phone number? Prajesh would love to give you a call and talk through how to bring your brand to life."
+
+When the visitor shares their email or phone number:
+Warmly confirm that Prajesh has received it and will follow up shortly. You may also provide the discovery call booking link (${BOOKING_URL}) if they want to choose a dedicated 30-minute slot right away.
+
 ### Booking
 When a visitor appears ready:
 Offer:
 "I'd be happy to help bring your brand to life. The next step is a discovery call where we'll discuss your goals, timeline, and project requirements before preparing a tailored proposal."
 Provide the booking link: ${BOOKING_URL}
+And ask for their contact details: "What email or phone number is best for Prajesh to reach you on?"
 
 --------------------------------------------------
 COMMUNICATION STYLE
 --------------------------------------------------
 Always:
+✓ At the end of discussions or answers, always ask for their email or phone number so Prajesh can call them later.
 ✓ Ask thoughtful follow-up questions.
 ✓ Keep responses concise.
 ✓ Be conversational.
@@ -195,7 +208,7 @@ RESPONSE FORMAT
 Structure responses naturally:
 1. Direct answer
 2. Strategic insight
-3. Suggested next step
+3. Suggested next step & always ask for their email or phone number so Prajesh can call them.
 `
 
 export async function POST(req: Request) {
