@@ -1,15 +1,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { HeroMotion } from "@/components/home/hero-motion"
-
-const TITLE_WORDS = [
-  "Crafting",
-  "Authentic",
-  "Brand",
-  "Identities",
-  "That",
-  "Resonate",
-]
+import { InteractiveHeroTitle } from "@/components/home/interactive-hero-title"
 
 // Entrance animations are GPU-accelerated CSS for instant LCP and 0ms TBT.
 export function HeroSection() {
@@ -20,17 +12,7 @@ export function HeroSection() {
           <span className="hero-animate-kicker hero-interactive-kicker block text-xs uppercase tracking-widest text-muted-foreground mb-6 cursor-default">
             Brand Identity Designer | Creative Strategist
           </span>
-          <h1
-            className="hero-animate-title hero-interactive-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none"
-            aria-label="Crafting Authentic Brand Identities That Resonate"
-          >
-            {TITLE_WORDS.map((word, idx) => (
-              <span key={word}>
-                <span className="hero-title-word">{word}</span>
-                {idx < TITLE_WORDS.length - 1 ? " " : ""}
-              </span>
-            ))}
-          </h1>
+          <InteractiveHeroTitle />
           <p
             className="hero-animate-fade mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl transition-colors duration-300 hover:text-foreground/90 cursor-default"
           >

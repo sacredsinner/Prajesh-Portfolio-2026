@@ -177,6 +177,40 @@
   animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both;
 }
 
+@keyframes hero-morph {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-hero-morph {
+  animation: hero-morph 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes hero-morph-return {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translate3d(0, -6px, 0);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-hero-return {
+  animation: hero-morph-return 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Hero Text Interactive Hover Effects */
 @media (hover: hover) and (pointer: fine) {
   .hero-interactive-title {
