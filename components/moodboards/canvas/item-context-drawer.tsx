@@ -117,8 +117,11 @@ export function ItemContextDrawer({
 
   return (
     <div
+      data-control="true"
       className="absolute bottom-4 right-4 top-4 z-[1050] flex w-80 max-w-[calc(100vw-32px)] flex-col rounded-2xl border border-border bg-background/95 p-5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-right-4 sm:w-96"
       onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border pb-3">
@@ -132,8 +135,11 @@ export function ItemContextDrawer({
         </div>
         <button
           type="button"
-          onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          onClick={(e) => {
+            e.stopPropagation()
+            onClose()
+          }}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:scale-95"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -157,9 +163,12 @@ export function ItemContextDrawer({
                 key={emoji}
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => handleReaction(emoji, meaning)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleReaction(emoji, meaning)
+                }}
                 title={`${label} (${meaning})`}
-                className={`flex flex-col items-center justify-center rounded-xl border p-2 text-center transition ${
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border p-2 text-center transition active:scale-95 ${
                   isSelected
                     ? "scale-105 border-foreground bg-secondary font-semibold"
                     : "border-border hover:border-foreground/60 hover:bg-secondary/40"
@@ -237,7 +246,7 @@ export function ItemContextDrawer({
           <button
             type="submit"
             disabled={!body.trim() || isSubmitting}
-            className="absolute bottom-2.5 right-2 flex h-6 w-6 items-center justify-center rounded-lg bg-foreground text-background transition disabled:opacity-30 hover:opacity-90"
+            className="absolute bottom-2.5 right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg bg-foreground text-background transition disabled:opacity-30 hover:opacity-90 active:scale-95"
             aria-label="Send"
           >
             <Send className="h-3 w-3" />
