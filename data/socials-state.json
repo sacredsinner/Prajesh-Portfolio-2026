@@ -42,11 +42,23 @@
       "handle": "@shakyaprajesh",
       "avatarUrl": "/images/prajesh-avatar.jpg",
       "connected": true,
-      "queueCount": 2,
+      "queueCount": 3,
       "bufferProfileId": "buf_profile_ig_prajesh"
     }
   ],
   "posts": [
+    {
+      "id": "post-ig-demo-1793390255723",
+      "content": "Design systems are living systems. When teams treat them as static Figma UI kits, they begin to atrophy within quarters.\n\nThe key is token architecture:\n• Semantic aliases over raw hex primitives\n• Documented intent before component variants\n• Zero-friction handoff between design and production\n\nFull case study breakdown live on shakyaprajesh.com.np (link in bio).\n\n#brandidentity #designsystems #typography #minimalism #visualidentity #uicraft #designtokens",
+      "platforms": [
+        "instagram"
+      ],
+      "status": "published",
+      "publishedAt": "2026-10-30T19:57:35.723Z",
+      "mediaUrl": "/images/socials/preset-4.jpg",
+      "bufferUpdateId": "buf_ig_demo_1793390255723",
+      "createdAt": "2026-10-30T19:57:35.723Z"
+    },
     {
       "id": "post-1",
       "content": "Design systems are living systems. If you treat them as static UI kits, they atrophy within quarters. Build for team velocity and documentation-first alignment.",

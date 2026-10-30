@@ -218,7 +218,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
   // Improvement 1: Live Platform Mockup Preview
   const [composerView, setComposerView] = React.useState<"write" | "preview">("write")
-  const [previewPlatform, setPreviewPlatform] = React.useState<"facebook" | "linkedin" | "twitter">("facebook")
+  const [previewPlatform, setPreviewPlatform] = React.useState<"facebook" | "instagram" | "linkedin" | "twitter">("instagram")
 
   // Improvement 3: Weekly Calendar View
   const [queueView, setQueueView] = React.useState<"timeline" | "calendar">("timeline")
@@ -859,8 +859,8 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                   <span className="text-xs font-medium text-muted-foreground">
                     Realistic Feed Preview:
                   </span>
-                  <div className="flex items-center gap-1">
-                    {(["facebook", "linkedin", "twitter"] as const).map((plat) => (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {(["instagram", "facebook", "linkedin", "twitter"] as const).map((plat) => (
                       <button
                         key={plat}
                         type="button"
@@ -871,7 +871,13 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                             : "border-border text-muted-foreground hover:bg-secondary"
                         }`}
                       >
-                        {plat === "facebook" ? "Facebook" : plat === "linkedin" ? "LinkedIn" : "X / Twitter"}
+                        {plat === "instagram"
+                          ? "Instagram"
+                          : plat === "facebook"
+                          ? "Facebook"
+                          : plat === "linkedin"
+                          ? "LinkedIn"
+                          : "X / Twitter"}
                       </button>
                     ))}
                   </div>
@@ -1011,6 +1017,78 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                       <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
                         <Bookmark className="size-3.5" />
                       </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Instagram Feed Mockup */}
+                {previewPlatform === "instagram" && (
+                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card overflow-hidden shadow-sm font-sans text-xs">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-3 border-b border-border/40">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-[2px] rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600">
+                          <div className="size-8 rounded-full overflow-hidden bg-background p-[1.5px]">
+                            <img src="/images/prajesh-avatar.jpg" alt="Prajesh" className="size-full rounded-full object-cover" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1 font-semibold leading-tight">
+                            <span>shakyaprajesh</span>
+                            <span className="size-1 rounded-full bg-muted-foreground/60" />
+                            <span className="text-[11px] text-primary font-medium">Follow</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground leading-tight">Kathmandu, Nepal</p>
+                        </div>
+                      </div>
+                      <span className="text-muted-foreground font-bold tracking-widest text-xs cursor-pointer">•••</span>
+                    </div>
+
+                    {/* Image / Media Container (Square 1:1) */}
+                    <div className="aspect-square bg-black/90 relative overflow-hidden flex items-center justify-center border-b border-border/40">
+                      {mediaUrl ? (
+                        <img src={mediaUrl} alt="Instagram Media" className="size-full object-cover" />
+                      ) : (
+                        <div className="p-8 text-center space-y-2">
+                          <div className="size-12 rounded-full bg-secondary/80 border border-border mx-auto flex items-center justify-center text-muted-foreground">
+                            <ImageIcon className="size-6" />
+                          </div>
+                          <p className="text-xs font-medium text-foreground">Visual Asset Needed</p>
+                          <p className="text-[11px] text-muted-foreground max-w-xs">
+                            Instagram posts require a 1:1 or 4:5 visual. Attach a generated image or choose a preset above.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3.5">
+                          <Heart className="size-4 hover:text-rose-500 cursor-pointer transition-colors" />
+                          <MessageSquare className="size-4 hover:text-foreground cursor-pointer transition-colors" />
+                          <Send className="size-4 hover:text-foreground cursor-pointer transition-colors" />
+                        </div>
+                        <Bookmark className="size-4 hover:text-foreground cursor-pointer transition-colors" />
+                      </div>
+
+                      <div className="font-semibold text-[11px]">
+                        384 likes
+                      </div>
+
+                      <div className="space-y-1 text-xs leading-relaxed">
+                        <span className="font-semibold mr-1.5">shakyaprajesh</span>
+                        <span className="whitespace-pre-wrap">
+                          {postContent || "Documenting design systems, luxury minimalist typography, and tokens for high-velocity software teams."}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground cursor-pointer pt-0.5">
+                        View all 24 comments
+                      </p>
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground/80">
+                        Just now
+                      </p>
                     </div>
                   </div>
                 )}
