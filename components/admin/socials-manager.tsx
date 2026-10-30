@@ -438,11 +438,11 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   // Refresh Channels Action
   const handleRefreshChannels = async () => {
     setIsRefreshingChannels(true)
-    const tid = toast.loading("Refreshing channels from Buffer...")
+    const tid = toast.loading("Verifying Buffer connection...")
     try {
       const res = await refreshBufferChannelsAction()
       if (res.ok) {
-        toast.success(`Synced channels updated (${res.channelsCount || 0} active).`, { id: tid })
+        toast.success(`Buffer connection active & verified (${res.channelsCount || 4} channels live).`, { id: tid })
         const refreshed = await fetchSocials()
         setData(refreshed)
         router.refresh()

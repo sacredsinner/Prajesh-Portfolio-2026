@@ -1,8 +1,7 @@
 {
   "bufferEndpoint": "https://mcp.buffer.com/mcp",
   "hasToken": true,
-  "token": "buf_mcp_live_bridge",
-  "tokenMasked": "buf_••••••••bridge",
+  "tokenMasked": "Buffer MCP Bridge (Connected)",
   "bufferConnected": true,
   "channels": [
     {
@@ -51,7 +50,10 @@
     {
       "id": "post-1",
       "content": "Design systems are living systems. If you treat them as static UI kits, they atrophy within quarters. Build for team velocity and documentation-first alignment.",
-      "platforms": ["facebook", "linkedin"],
+      "platforms": [
+        "facebook",
+        "linkedin"
+      ],
       "status": "scheduled",
       "scheduledFor": "2026-11-01T17:00:00.000Z",
       "bufferUpdateId": "buf_upd_10928374",
@@ -60,7 +62,11 @@
     {
       "id": "post-2",
       "content": "Case study live: How we reimagined the student onboarding portal with zero-friction micro-interactions. Full breakdown on shakyaprajesh.com.np/projects",
-      "platforms": ["facebook", "twitter", "instagram"],
+      "platforms": [
+        "facebook",
+        "twitter",
+        "instagram"
+      ],
       "status": "queued",
       "scheduledFor": "2026-11-02T17:00:00.000Z",
       "mediaUrl": "/images/socials/default-brand-cover.jpg",
@@ -70,7 +76,10 @@
     {
       "id": "post-3",
       "content": "Shipped the brand new 2026 portfolio refresh! Built with Next.js 16, Better Auth, and Drizzle. Fast, minimal, and typography-obsessed.",
-      "platforms": ["facebook", "twitter"],
+      "platforms": [
+        "facebook",
+        "twitter"
+      ],
       "status": "published",
       "publishedAt": "2026-10-29T10:00:00.000Z",
       "bufferUpdateId": "buf_upd_10928376",
@@ -82,18 +91,25 @@
       "id": "idea-1",
       "title": "Why design tokens save engineering cycles during rebrands",
       "notes": "Walk through token aliases vs global primitives with code snippets.",
-      "tags": ["Design System", "Engineering"],
+      "tags": [
+        "Design System",
+        "Engineering"
+      ],
       "createdAt": "2026-10-30T12:00:00.000Z"
     },
     {
       "id": "idea-2",
       "title": "5 Micro-interactions that make client portals feel premium",
       "notes": "Focus on optimistic updates, command palette hints, and calm notifications.",
-      "tags": ["UX", "Product"],
+      "tags": [
+        "UX",
+        "Product"
+      ],
       "createdAt": "2026-10-30T13:00:00.000Z"
     }
   ],
   "autoShortenLinks": true,
   "defaultScheduleTime": "17:00",
-  "timezone": "Asia/Kathmandu"
+  "timezone": "Asia/Kathmandu",
+  "token": "buf_mcp_live_bridge"
 }

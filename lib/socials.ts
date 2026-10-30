@@ -148,6 +148,15 @@ const DEFAULT_IDEAS: SocialIdea[] = [
 export const BUFFER_MCP_URL = "https://mcp.buffer.com/mcp"
 const STATE_FILE = path.join(process.cwd(), "data", "socials-state.json")
 
+function isDatabaseAvailable(): boolean {
+  return Boolean(
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING
+  )
+}
+
 function readLocalFallback(): (Partial<SocialsData> & { token?: string }) | null {
   try {
     if (fs.existsSync(STATE_FILE)) {
@@ -174,20 +183,22 @@ export async function getRawBufferToken(): Promise<string> {
   const envToken = process.env.BUFFER_ACCESS_TOKEN?.trim()
   if (envToken) return envToken
 
-  try {
-    await ensureSchema()
-    const [row] = await db
-      .select()
-      .from(siteSettings)
-      .where(eq(siteSettings.key, "socials"))
-      .limit(1)
+  if (isDatabaseAvailable()) {
+    try {
+      await ensureSchema()
+      const [row] = await db
+        .select()
+        .from(siteSettings)
+        .where(eq(siteSettings.key, "socials"))
+        .limit(1)
 
-    const saved = (row?.value && typeof row.value === "object" ? row.value : {}) as Record<string, any>
-    if (saved.token && typeof saved.token === "string" && saved.token.trim()) {
-      return saved.token.trim()
+      const saved = (row?.value && typeof row.value === "object" ? row.value : {}) as Record<string, any>
+      if (saved.token && typeof saved.token === "string" && saved.token.trim()) {
+        return saved.token.trim()
+      }
+    } catch {
+      // If DB is offline, read from local fallback file
     }
-  } catch {
-    // If DB is offline, read from local fallback file
   }
 
   const fallback = readLocalFallback()
@@ -204,19 +215,21 @@ export async function getSocials(): Promise<SocialsData> {
 
   let savedData: (Partial<SocialsData> & { token?: string }) | null = null
 
-  try {
-    await ensureSchema()
-    const [row] = await db
-      .select()
-      .from(siteSettings)
-      .where(eq(siteSettings.key, "socials"))
-      .limit(1)
+  if (isDatabaseAvailable()) {
+    try {
+      await ensureSchema()
+      const [row] = await db
+        .select()
+        .from(siteSettings)
+        .where(eq(siteSettings.key, "socials"))
+        .limit(1)
 
-    if (row?.value && typeof row.value === "object") {
-      savedData = row.value as Partial<SocialsData> & { token?: string }
+      if (row?.value && typeof row.value === "object") {
+        savedData = row.value as Partial<SocialsData> & { token?: string }
+      }
+    } catch {
+      // DB offline, fall through to local fallback
     }
-  } catch {
-    // DB offline, fall through to local fallback
   }
 
   if (!savedData) {
@@ -260,24 +273,26 @@ export async function saveSocials(data: Partial<SocialsData & { token?: string }
   writeLocalFallback(updated)
 
   // Also persist to DB if configured
-  try {
-    await ensureSchema()
-    await db
-      .insert(siteSettings)
-      .values({
-        key: "socials",
-        value: updated,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: siteSettings.key,
-        set: {
+  if (isDatabaseAvailable()) {
+    try {
+      await ensureSchema()
+      await db
+        .insert(siteSettings)
+        .values({
+          key: "socials",
           value: updated,
           updatedAt: new Date(),
-        },
-      })
-  } catch (err) {
-    console.warn("[socials] Saved to local fallback (DB unavailable):", err)
+        })
+        .onConflictDoUpdate({
+          target: siteSettings.key,
+          set: {
+            value: updated,
+            updatedAt: new Date(),
+          },
+        })
+    } catch (err) {
+      console.warn("[socials] Saved to local fallback (DB unavailable):", err)
+    }
   }
 }
 
