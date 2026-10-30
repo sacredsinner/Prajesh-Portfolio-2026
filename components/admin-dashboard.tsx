@@ -257,13 +257,14 @@ export function AdminDashboard({
     try {
       const res = await syncNotionNotesAction()
       if (res.ok) {
+        const titleStr = res.databaseTitle ? ` from "${res.databaseTitle}"` : ""
         toast.success(
-          `Notion sync complete: ${res.added} added, ${res.updated} updated (${res.total} total)`,
+          `Notion sync complete: ${res.added} added, ${res.updated} updated${titleStr} (${res.total} total)`,
           { id: toastId }
         )
         router.refresh()
       } else {
-        toast.error(res.errors?.[0] || "Failed to sync notes from Notion", { id: toastId })
+        toast.error(res.errors?.[0] || "Failed to sync notes from Notion", { id: toastId, duration: 8000 })
       }
     } catch (err: any) {
       toast.error(err?.message || "Could not sync from Notion. Check your API credentials.", { id: toastId })
