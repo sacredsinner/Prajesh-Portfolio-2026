@@ -21,9 +21,17 @@ async function requireAdmin() {
   return session.user
 }
 
-// Public pages are cached, so every content change refreshes the whole site.
-function revalidatePublicSite() {
-  revalidatePath("/", "layout")
+// Targeted revalidation refreshes the affected public routes without
+// indiscriminately purging unrelated static cache segments.
+function revalidatePublicSite(slug?: string) {
+  revalidatePath("/")
+  revalidatePath("/projects")
+  revalidatePath("/blog")
+  revalidatePath("/sitemap.xml")
+  if (slug) {
+    revalidatePath(`/projects/${slug}`)
+    revalidatePath(`/blog/${slug}`)
+  }
 }
 
 // Saves return { ok, error } instead of throwing: in production React replaces any
@@ -129,7 +137,36 @@ export async function saveTestimonial(input: TestimonialInput & { id?: string })
 }
 export async function deleteTestimonial(id: string) { await requireAdmin(); await db.delete(testimonials).where(eq(testimonials.id, id)); revalidatePublicSite() }
 
-export async function listProjects() { await requireAdmin(); await ensureSchema(); return db.select().from(projects).orderBy(desc(projects.createdAt)) }
+export async function listProjects() {
+  await requireAdmin()
+  await ensureSchema()
+  return db
+    .select({
+      id: projects.id,
+      slug: projects.slug,
+      title: projects.title,
+      subtitle: projects.subtitle,
+      status: projects.status,
+      category: projects.category,
+      year: projects.year,
+      thumbnail: projects.thumbnail,
+      client: projects.client,
+      overview: projects.overview,
+      problem: projects.problem,
+      approach: projects.approach,
+      solution: projects.solution,
+      outcome: projects.outcome,
+      images: projects.images,
+      featured: projects.featured,
+      seoTitle: projects.seoTitle,
+      seoDescription: projects.seoDescription,
+      blocksCount: sql<number>`case when jsonb_typeof(${projects.blocks}) = 'array' then jsonb_array_length(${projects.blocks}) else 0 end`.as("blocks_count"),
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+    })
+    .from(projects)
+    .orderBy(desc(projects.createdAt))
+}
 
 export async function getProject(id: string) {
   await requireAdmin()

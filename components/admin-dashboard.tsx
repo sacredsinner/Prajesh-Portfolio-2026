@@ -39,6 +39,7 @@ type Project = {
   outcome: string | null
   images: string[]
   blocks?: any[]
+  blocksCount?: number
   featured: boolean
   seoTitle: string | null
   seoDescription: string | null
@@ -314,9 +315,9 @@ export function AdminDashboard({
                       >
                         {row.status || "published"}
                       </span>
-                      {row.blocks && row.blocks.length > 0 && (
+                      {((row.blocksCount !== undefined && row.blocksCount > 0) || (row.blocks && row.blocks.length > 0)) && (
                         <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                          {row.blocks.length} blocks
+                          {row.blocksCount ?? row.blocks?.length} blocks
                         </span>
                       )}
                     </div>

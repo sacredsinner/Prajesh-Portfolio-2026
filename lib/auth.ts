@@ -4,19 +4,33 @@ import { pgConnection } from "@/lib/db"
 import { sendEmail } from "@/lib/email"
 import { passwordResetEmail } from "@/lib/email-templates"
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __authPgPool: Pool | undefined
+}
+
 // Neon Auth stores Better Auth tables in the neon_auth schema. Keep a
 // dedicated pool for auth so the app's Drizzle pool can continue using public.
-const authPool = new Pool({
-  // Use the unpooled connection for Better Auth's schema selection.
-  ...pgConnection(process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL),
-  options: "-c search_path=neon_auth,public",
-})
+const authPool =
+  globalThis.__authPgPool ??
+  new Pool({
+    // Use the unpooled connection for Better Auth's schema selection.
+    ...pgConnection(process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL),
+    options: "-c search_path=neon_auth,public",
+    max: 3,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 8_000,
+    allowExitOnIdle: true,
+  })
 
-// Ensure every newly opened connection uses Neon Auth's schema. Some Neon
-// connection strings ignore startup options, so apply it after connection too.
-authPool.on("connect", (client) => {
-  void client.query("SET search_path TO neon_auth, public")
-})
+if (!globalThis.__authPgPool) {
+  globalThis.__authPgPool = authPool
+  // Ensure every newly opened connection uses Neon Auth's schema. Some Neon
+  // connection strings ignore startup options, so apply it after connection too.
+  authPool.on("connect", (client) => {
+    void client.query("SET search_path TO neon_auth, public")
+  })
+}
 
 export const ADMIN_EMAIL = "prajeshshakya@gmail.com"
 

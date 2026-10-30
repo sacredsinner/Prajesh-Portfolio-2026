@@ -2,10 +2,9 @@ import "server-only"
 
 import { pool } from "@/lib/db"
 
-// Creates the tables and columns added after launch, the first time they're needed.
-// Every statement is idempotent (IF NOT EXISTS), runs in one transaction, and is
-// serialised with an advisory lock, so concurrent cold starts can't trip over each
-// other. The same SQL is listed in DEPLOYMENT.md.
+// Creates the tables, columns, and indexes added after launch, the first time they're needed.
+// Every statement is idempotent (IF NOT EXISTS), runs in a single batched transaction, and is
+// serialised with an advisory lock, so concurrent cold starts cannot trip over each other.
 const STATEMENTS = [
   `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS package_interest text`,
   `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS budget text`,
@@ -129,17 +128,26 @@ const STATEMENTS = [
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS analytics jsonb NOT NULL DEFAULT '{"views":0,"appreciations":0,"saves":0,"comments":0}'::jsonb`,
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS og_image text`,
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS cover_crop jsonb`,
+  // High-performance composite indexes for instant lookups
+  `CREATE INDEX IF NOT EXISTS idx_projects_status_featured ON projects (status, featured DESC, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_blog_posts_published ON blog_posts (published, featured DESC, published_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_invoices_status_kind ON invoices (status, kind, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts (status, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_testimonials_published ON testimonials (published, featured DESC, sort_order ASC)`,
 ]
 
-let ready: Promise<void> | null = null
+let isSchemaEnsured = false
+let migrationPromise: Promise<void> | null = null
 
 async function migrate() {
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
     await client.query("SELECT pg_advisory_xact_lock(472910385)")
-    for (const statement of STATEMENTS) await client.query(statement)
+    // Execute all statements in a single multi-statement batch to eliminate network round-trip overhead
+    await client.query(STATEMENTS.join(";\n"))
     await client.query("COMMIT")
+    isSchemaEnsured = true
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined)
     throw error
@@ -149,10 +157,11 @@ async function migrate() {
 }
 
 export function ensureSchema() {
-  ready ??= migrate().catch((error) => {
-    ready = null // try again on the next request
-    console.error("[db] Could not create the new tables", error)
+  if (isSchemaEnsured) return Promise.resolve()
+  migrationPromise ??= migrate().catch((error) => {
+    migrationPromise = null // retry on next attempt if failed
+    console.error("[db] Could not initialize database schema", error)
     throw error
   })
-  return ready
+  return migrationPromise
 }

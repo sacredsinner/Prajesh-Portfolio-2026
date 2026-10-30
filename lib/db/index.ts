@@ -12,12 +12,7 @@ const connectionString =
   process.env.POSTGRES_URL_NON_POOLING
 
 // Keep module evaluation build-safe. Vercel can evaluate route modules during
-// static collection before runtime environment variables are injected. The
-// placeholder never connects successfully; production requests use the real
-// integration-provided connection string above.
-// Neon's connection strings carry sslmode=require. pg already treats that as full
-// certificate checking, but logs a deprecation warning (as an error) on every cold
-// start. Drop it from the URL and ask for the same encrypted, verified connection directly.
+// static collection before runtime environment variables are injected.
 export function pgConnection(url: string | undefined) {
   if (!url) return { connectionString: url, ssl: true as const }
   try {
@@ -29,11 +24,33 @@ export function pgConnection(url: string | undefined) {
   }
 }
 
-export const pool = new Pool({
-  ...pgConnection(connectionString ?? "postgresql://missing-database-config:5432/portfolio"),
-  max: 5,
-  idleTimeoutMillis: 20_000,
-  connectionTimeoutMillis: 10_000,
-})
+// Global singleton pattern to prevent connection pool leaks across serverless
+// warm invocations and Next.js hot module reloading (HMR) in development.
+declare global {
+  // eslint-disable-next-line no-var
+  var __pgPool: Pool | undefined
+  // eslint-disable-next-line no-var
+  var __drizzleDb: ReturnType<typeof drizzle> | undefined
+}
 
-export const db = drizzle(pool, { schema })
+export const pool =
+  globalThis.__pgPool ??
+  new Pool({
+    ...pgConnection(connectionString ?? "postgresql://missing-database-config:5432/portfolio"),
+    max: process.env.NODE_ENV === "production" ? 10 : 4,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 8_000,
+    allowExitOnIdle: true,
+  })
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.__pgPool = pool
+}
+
+export const db =
+  globalThis.__drizzleDb ??
+  drizzle(pool, { schema })
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.__drizzleDb = db
+}

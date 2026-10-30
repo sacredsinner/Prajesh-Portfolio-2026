@@ -43,6 +43,15 @@ type Fonts = { sans: PDFFont; sansBold: PDFFont; serif: PDFFont; serifItalic: PD
 
 const fromBase64 = (value: string) => Uint8Array.from(Buffer.from(value, "base64"))
 
+// Pre-buffer font bytes in memory once per process lifecycle to avoid
+// redundant Base64 deserialization overhead on repeated PDF generations.
+const FONT_BUFFERS = {
+  sans: fromBase64(SANS_REGULAR),
+  sansBold: fromBase64(SANS_SEMIBOLD),
+  serif: fromBase64(SERIF_REGULAR),
+  serifItalic: fromBase64(SERIF_ITALIC),
+}
+
 // Splits text into lines that fit the width (keeps the author's line breaks).
 function wrap(text: string, font: PDFFont, size: number, width: number) {
   const lines: string[] = []
@@ -90,10 +99,10 @@ export async function buildDocumentPdf(data: PdfDocumentData, business: Business
   const pdf = await PDFDocument.create()
   pdf.registerFontkit(fontkit)
   const fonts: Fonts = {
-    sans: await pdf.embedFont(fromBase64(SANS_REGULAR), { subset: true }),
-    sansBold: await pdf.embedFont(fromBase64(SANS_SEMIBOLD), { subset: true }),
-    serif: await pdf.embedFont(fromBase64(SERIF_REGULAR), { subset: true }),
-    serifItalic: await pdf.embedFont(fromBase64(SERIF_ITALIC), { subset: true }),
+    sans: await pdf.embedFont(FONT_BUFFERS.sans, { subset: true }),
+    sansBold: await pdf.embedFont(FONT_BUFFERS.sansBold, { subset: true }),
+    serif: await pdf.embedFont(FONT_BUFFERS.serif, { subset: true }),
+    serifItalic: await pdf.embedFont(FONT_BUFFERS.serifItalic, { subset: true }),
   }
   const label = data.kind === "quote" ? "Quote" : "Invoice"
   pdf.setTitle(`${label} ${data.number} — ${business.businessName}`)
