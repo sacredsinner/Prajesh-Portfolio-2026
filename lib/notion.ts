@@ -64,20 +64,41 @@ export function getNotionClient(): Client | null {
  */
 export async function findAccessibleDatabases(notion: Client): Promise<{ id: string; title: string; url?: string }[]> {
   try {
-    const res = (await notion.search({
+    const res = (await (notion as any).search({
       filter: { value: "database", property: "object" },
     })) as { results: any[] }
 
-    return (res.results || []).map((db: any) => {
-      const title = Array.isArray(db.title)
-        ? db.title.map((t: any) => t.plain_text || "").join("").trim()
-        : ""
-      return {
-        id: db.id,
-        title: title || "Untitled Database",
-        url: db.url,
-      }
-    })
+    const databases = (res.results || []).filter(
+      (item: any) => item.object === "database" || item.object === "data_source"
+    )
+
+    if (databases.length > 0) {
+      return databases.map((db: any) => {
+        const title = Array.isArray(db.title)
+          ? db.title.map((t: any) => t.plain_text || "").join("").trim()
+          : ""
+        return {
+          id: db.id,
+          title: title || "Untitled Database",
+          url: db.url,
+        }
+      })
+    }
+
+    // Fallback: search without filter and pick databases
+    const allRes = (await (notion as any).search({})) as { results: any[] }
+    return (allRes.results || [])
+      .filter((item: any) => item.object === "database" || item.object === "data_source")
+      .map((db: any) => {
+        const title = Array.isArray(db.title)
+          ? db.title.map((t: any) => t.plain_text || "").join("").trim()
+          : ""
+        return {
+          id: db.id,
+          title: title || "Untitled Database",
+          url: db.url,
+        }
+      })
   } catch (error) {
     console.error("[notion] Error searching for shared databases:", error)
     return []
@@ -325,7 +346,7 @@ export async function getNotionPageMarkdown(pageId: string, client?: Client): Pr
   }
 }
 
-export async function fetchNotionNotes(): Promise<ParsedNotionNote[]> {
+export async function fetchNotionNotes(): Promise<{ notes: ParsedNotionNote[]; databaseTitle: string }> {
   const { databaseId, apiKey } = getNotionConfig()
   const notion = getNotionClient()
 
@@ -359,7 +380,7 @@ export async function fetchNotionNotes(): Promise<ParsedNotionNote[]> {
       })
     }
 
-    return notes
+    return { notes, databaseTitle: targetDb.title }
   } catch (error) {
     console.error(`[notion] Error querying database ${targetDb.id}:`, error)
     throw error
@@ -400,8 +421,9 @@ export async function syncNotionNotesToDatabase(): Promise<SyncResult> {
   }
 
   try {
-    const notes = await fetchNotionNotes()
+    const { notes, databaseTitle } = await fetchNotionNotes()
     result.total = notes.length
+    result.databaseTitle = databaseTitle
 
     for (const note of notes) {
       try {
