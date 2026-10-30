@@ -20,6 +20,7 @@ export type AdminSection =
   | "moodboards"
   | "packages"
   | "newsletter"
+  | "socials"
 
 interface AdminHeaderProps {
   active: AdminSection
@@ -55,6 +56,7 @@ export function AdminHeader({
     { id: "invoices", label: "Invoices", href: "/admin/invoices" },
     { id: "packages", label: "Packages", href: "/admin/packages" },
     { id: "newsletter", label: "Newsletter", href: "/admin/newsletter" },
+    { id: "socials", label: "Socials", href: "/admin/socials" },
     { id: "testimonials", label: "Testimonials", href: "/admin?tab=testimonials", count: counts?.testimonials },
     { id: "showcase", label: "Showcase", href: "/admin?tab=showcase", count: counts?.showcase },
     { id: "email", label: "Email", href: "/admin?tab=email" },

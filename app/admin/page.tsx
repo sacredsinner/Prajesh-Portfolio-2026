@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 import { ADMIN_SIGNUP_OPEN, GOOGLE_SIGN_IN_ENABLED, auth, isAdminUser } from "@/lib/auth"
 import { listContacts, listPosts, listProjects, listTestimonials } from "@/app/actions/cms"
 import { listShowcaseVideos } from "@/app/actions/showcase"
@@ -36,6 +37,7 @@ export default async function AdminPage({
   }
 
   const { tab } = await searchParams
+  if (tab === "socials") redirect("/admin/socials")
   const [projectRows, postRows, contactRows, testimonialRows, showcaseVideos, overview] = await Promise.all([
     listProjects(),
     listPosts(),

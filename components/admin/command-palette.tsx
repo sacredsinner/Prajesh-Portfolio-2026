@@ -24,6 +24,7 @@ import {
   Palette,
   Package,
   Send,
+  Share2,
   PlusCircle,
   Sparkles,
   ExternalLink,
@@ -143,6 +144,13 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
           >
             <Send className="size-4" />
             <span>Newsletter & Issues</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runCommand(() => router.push("/admin/socials"))}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Share2 className="size-4" />
+            <span>Socials & Buffer Hub</span>
           </CommandItem>
           <CommandItem
             onSelect={() => runCommand(() => router.push("/admin?tab=testimonials"))}
