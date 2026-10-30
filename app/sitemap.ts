@@ -22,11 +22,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...pages,
-    ...projects.map((project) => ({ url: `${SITE_URL}/projects/${project.slug}`, lastModified: project.updatedAt, changeFrequency: "yearly" as const, priority: 0.8 })),
-    ...posts.map((post) => ({ url: `${SITE_URL}/blog/${post.slug}`, lastModified: post.updatedAt, changeFrequency: "yearly" as const, priority: 0.6 })),
+    ...projects.map((project: any) => ({
+      url: `${SITE_URL}/projects/${project.slug}`,
+      lastModified: project.updatedAt ? new Date(project.updatedAt) : new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.8,
+    })),
+    ...posts.map((post) => ({
+      url: `${SITE_URL}/blog/${post.slug}`,
+      lastModified: post.updatedAt,
+      changeFrequency: "yearly" as const,
+      priority: 0.6,
+    })),
     // Only client pages with a real name and a description are worth indexing.
     ...clients
       .filter((client) => client.description && !needsClientName(client.name))
-      .map((client) => ({ url: `${SITE_URL}/clients/${client.slug}`, lastModified: client.createdAt, changeFrequency: "yearly" as const, priority: 0.4 })),
+      .map((client) => ({
+        url: `${SITE_URL}/clients/${client.slug}`,
+        lastModified: client.createdAt,
+        changeFrequency: "yearly" as const,
+        priority: 0.4,
+      })),
   ]
 }

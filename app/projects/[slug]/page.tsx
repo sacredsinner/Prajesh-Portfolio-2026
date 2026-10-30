@@ -58,7 +58,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const projectRows = await getPublishedProjects()
   const publicProjects = projectRows.map(toProjectCard)
-  const currentIndex = publicProjects.findIndex((p) => p.slug === slug)
+  const currentIndex = publicProjects.findIndex((p: any) => p.slug === slug)
   const nextProject = publicProjects[(currentIndex + 1) % publicProjects.length] ?? publicProjects[0]
 
   const projectSchema = {

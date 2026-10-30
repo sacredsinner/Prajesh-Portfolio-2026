@@ -1,6 +1,7 @@
 import { and, desc, eq, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { blogPosts, clients, projects, showcaseVideos, testimonials } from "@/lib/db/schema"
+import { projects as fallbackProjects } from "@/lib/projects"
 
 // The public portfolio should still render when the CMS database is
 // unavailable, so these return empty results instead of throwing. Errors are
@@ -11,7 +12,11 @@ function logUnavailable(what: string, error: unknown) {
 
 export async function getActiveShowcaseVideo() {
   try {
-    const rows = await db.select({ url: showcaseVideos.url, filename: showcaseVideos.filename }).from(showcaseVideos).where(eq(showcaseVideos.isActive, true)).limit(1)
+    const rows = await db
+      .select({ url: showcaseVideos.url, filename: showcaseVideos.filename })
+      .from(showcaseVideos)
+      .where(eq(showcaseVideos.isActive, true))
+      .limit(1)
     return rows[0] ?? null
   } catch (error) {
     logUnavailable("showcase video", error)
@@ -40,7 +45,11 @@ export async function getPublishedClient(slug: string) {
 
 export async function getPublishedTestimonials() {
   try {
-    return await db.select().from(testimonials).where(eq(testimonials.published, true)).orderBy(desc(testimonials.featured), testimonials.sortOrder, desc(testimonials.createdAt))
+    return await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.published, true))
+      .orderBy(desc(testimonials.featured), testimonials.sortOrder, desc(testimonials.createdAt))
   } catch (error) {
     logUnavailable("testimonials", error)
     return []
@@ -49,25 +58,26 @@ export async function getPublishedTestimonials() {
 
 export async function getPublishedProjects() {
   try {
-    return await db
+    const rows = await db
       .select()
       .from(projects)
       .where(or(eq(projects.status, "published"), sql`${projects.status} IS NULL`))
       .orderBy(desc(projects.featured), desc(projects.updatedAt), desc(projects.createdAt))
+    if (rows && rows.length > 0) return rows
   } catch (error) {
     logUnavailable("projects", error)
-    return []
   }
+  return fallbackProjects as any
 }
 
 export async function getPublishedProject(slug: string) {
   try {
     const rows = await db.select().from(projects).where(eq(projects.slug, slug)).limit(1)
-    return rows[0]
+    if (rows[0]) return rows[0]
   } catch (error) {
     logUnavailable(`project "${slug}"`, error)
-    return undefined
   }
+  return (fallbackProjects.find((p) => p.slug === slug) as any) ?? undefined
 }
 
 export async function getPublishedPosts() {
@@ -89,9 +99,9 @@ export async function getPublishedPost(slug: string) {
   }
 }
 
-export type PublicProject = Awaited<ReturnType<typeof getPublishedProjects>>[number]
+export type PublicProject = any
 
-export function toProjectCard(project: PublicProject) {
+export function toProjectCard(project: any) {
   return {
     id: project.id,
     slug: project.slug,
@@ -109,7 +119,7 @@ export function toProjectCard(project: PublicProject) {
     approach: project.approach ?? "",
     solution: project.solution ?? "",
     outcome: project.outcome ?? "",
-    images: Array.isArray(project.images) ? project.images.filter((image): image is string => typeof image === "string") : [],
+    images: Array.isArray(project.images) ? project.images.filter((image: unknown): image is string => typeof image === "string") : [],
     creativeFields: Array.isArray(project.creativeFields) ? project.creativeFields : [],
     tags: Array.isArray(project.tags) ? project.tags : [],
     toolsUsed: Array.isArray(project.toolsUsed) ? project.toolsUsed : [],
