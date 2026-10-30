@@ -48,7 +48,7 @@ export default async function MoodboardPage({ params }: { params: Promise<{ toke
         <h1 className="mt-4 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight md:text-6xl">{row.title}</h1>
         {row.intro && <p className="mt-6 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-muted-foreground">{row.intro}</p>}
         {approved && <p className="mt-4 text-sm">Approved by <strong>{row.approvedBy}</strong>{row.approvedAt ? ` on ${when(row.approvedAt)}` : ""}.</p>}
-        <div className="mt-12"><ClientBoard canvas={row.canvas ?? sectionsToCanvas(row.sections)} comments={comments} token={row.shareToken} approved={approved} clientName={row.clientName} /></div>
+        <div className="mt-12"><ClientBoard canvas={row.canvas ?? sectionsToCanvas(row.sections)} comments={comments} token={row.shareToken} approved={approved} clientName={row.clientName} title={row.title} intro={row.intro} /></div>
       </div>
       <footer className="page-container border-t border-border py-8 text-xs text-muted-foreground"><p className="font-serif text-base italic text-foreground">Designed with intention.</p><p className="mt-2">This page is private to you. Please don&apos;t share the link.</p></footer>
     </main>

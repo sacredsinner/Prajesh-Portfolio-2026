@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { boundsOf, type Canvas, type CanvasItem } from "@/lib/canvas"
+import { boundsOf, type Canvas, type CanvasItem, type Rect } from "@/lib/canvas"
 import { ItemView } from "@/components/moodboards/canvas/item-view"
 import { useViewport, type View } from "@/components/moodboards/canvas/use-viewport"
 
@@ -10,8 +10,33 @@ import { useViewport, type View } from "@/components/moodboards/canvas/use-viewp
 
 export type Pin = { itemId: string; count: number }
 
-export function CanvasStage({ canvas, pins = [], onPickItem, selectedItem, children }: { canvas: Canvas; pins?: Pin[]; onPickItem?: (item: CanvasItem | null) => void; selectedItem?: string | null; children?: ReactNode }) {
-  const { view, setView, ref, zoomAt, fitItems } = useViewport()
+export type CanvasStageControls = {
+  fitTo: (rect: Rect, padding?: number, smooth?: boolean) => void
+  fitItems: (items: Rect[], smooth?: boolean) => void
+  zoomAt: (factor: number) => void
+  resetView: () => void
+}
+
+export function CanvasStage({
+  canvas,
+  pins = [],
+  onPickItem,
+  selectedItem,
+  onInitControls,
+  presentationActive = false,
+  activeSlideItemIds = null,
+  children,
+}: {
+  canvas: Canvas
+  pins?: Pin[]
+  onPickItem?: (item: CanvasItem | null) => void
+  selectedItem?: string | null
+  onInitControls?: (controls: CanvasStageControls) => void
+  presentationActive?: boolean
+  activeSlideItemIds?: string[] | null
+  children?: ReactNode
+}) {
+  const { view, setView, ref, zoomAt, fitItems, fitTo, isAnimating, stopAnimation } = useViewport()
   const [dragging, setDragging] = useState(false)
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null)
   const items = [...canvas.items].sort((a, b) => a.z - b.z)
@@ -22,8 +47,20 @@ export function CanvasStage({ canvas, pins = [], onPickItem, selectedItem, child
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (onInitControls) {
+      onInitControls({
+        fitTo,
+        fitItems,
+        zoomAt,
+        resetView: () => fitItems(canvas.items, true),
+      })
+    }
+  }, [onInitControls, fitTo, fitItems, zoomAt, canvas.items])
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+    stopAnimation()
     drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false }
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
@@ -47,20 +84,61 @@ export function CanvasStage({ canvas, pins = [], onPickItem, selectedItem, child
   }
 
   return (
-    <div ref={ref} className={`relative h-full w-full touch-none overflow-hidden bg-background ${dragging ? "cursor-grabbing" : "cursor-grab"}`} style={backgroundStyle(canvas.background, view)} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-      <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
+    <div
+      ref={ref}
+      className={`relative h-full w-full touch-none overflow-hidden bg-background ${
+        dragging ? "cursor-grabbing" : "cursor-grab"
+      }`}
+      style={backgroundStyle(canvas.background, view)}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <div
+        className="absolute left-0 top-0 origin-top-left"
+        style={{
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+          transition: isAnimating ? "transform 550ms cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+        }}
+      >
         <ConnectorLayer canvas={canvas} />
         {items.map((item) => {
           const pin = pins.find((p) => p.itemId === item.id)
+          const isFocused =
+            !presentationActive ||
+            !activeSlideItemIds ||
+            activeSlideItemIds.length === 0 ||
+            activeSlideItemIds.includes(item.id)
+
           return (
-            <div key={item.id} data-item={item.id} className={`absolute ${onPickItem ? "cursor-pointer" : ""} ${selectedItem === item.id ? "ring-2 ring-foreground ring-offset-2" : ""}`} style={{ left: item.x, top: item.y, width: item.w, height: item.h, zIndex: item.z + 1000, transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined }}>
+            <div
+              key={item.id}
+              data-item={item.id}
+              className={`absolute transition-opacity duration-300 ${
+                onPickItem ? "cursor-pointer" : ""
+              } ${selectedItem === item.id ? "ring-2 ring-foreground ring-offset-2" : ""}`}
+              style={{
+                left: item.x,
+                top: item.y,
+                width: item.w,
+                height: item.h,
+                zIndex: item.z + 1000,
+                transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined,
+                opacity: isFocused ? 1 : 0.22,
+              }}
+            >
               <ItemView item={item} interactive={!dragging} embedLive={selectedItem === item.id} />
-              {pin && <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-foreground px-1.5 text-[11px] font-semibold text-background shadow">{pin.count}</span>}
+              {pin && (
+                <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-foreground px-1.5 text-[11px] font-semibold text-background shadow">
+                  {pin.count}
+                </span>
+              )}
             </div>
           )
         })}
       </div>
-      <ZoomControls scale={view.scale} onZoom={(f) => zoomAt(f)} onFit={() => fitItems(canvas.items)} />
+      <ZoomControls scale={view.scale} onZoom={(f) => zoomAt(f)} onFit={() => fitItems(canvas.items, true)} />
       <MiniMap canvas={canvas} view={view} viewport={ref.current} bounds={bounds} onJump={(x, y) => setView({ ...view, x, y })} />
       {children}
     </div>
@@ -116,7 +194,7 @@ function edgePoints(a: CanvasItem, b: CanvasItem) {
 
 export function ZoomControls({ scale, onZoom, onFit }: { scale: number; onZoom: (factor: number) => void; onFit: () => void }) {
   return (
-    <div className="absolute bottom-4 left-4 flex items-center gap-1 rounded-full border border-border bg-background/90 p-1 text-sm shadow-sm backdrop-blur">
+    <div className="absolute bottom-4 left-4 z-[1020] flex items-center gap-1 rounded-full border border-border bg-background/90 p-1 text-sm shadow-sm backdrop-blur">
       <button type="button" onClick={() => onZoom(1 / 1.25)} className="h-8 w-8 rounded-full hover:bg-secondary" aria-label="Zoom out">−</button>
       <button type="button" onClick={onFit} className="min-w-14 rounded-full px-2 text-xs tabular-nums hover:bg-secondary" title="Fit to content">{Math.round(scale * 100)}%</button>
       <button type="button" onClick={() => onZoom(1.25)} className="h-8 w-8 rounded-full hover:bg-secondary" aria-label="Zoom in">+</button>
@@ -139,7 +217,7 @@ export function MiniMap({ canvas, view, viewport, bounds, onJump }: { canvas: Ca
     onJump(-(cx - vw / 2) * view.scale, -(cy - vh / 2) * view.scale)
   }
   return (
-    <svg width={W} height={H} onPointerDown={(e) => e.stopPropagation()} onClick={jump} className="absolute bottom-4 right-4 cursor-crosshair rounded-lg border border-border bg-background/90 shadow-sm backdrop-blur">
+    <svg width={W} height={H} onPointerDown={(e) => e.stopPropagation()} onClick={jump} className="absolute bottom-4 right-4 z-[1020] cursor-crosshair rounded-lg border border-border bg-background/90 shadow-sm backdrop-blur">
       {canvas.items.map((i) => <rect key={i.id} x={ox + (i.x - world.x) * k} y={oy + (i.y - world.y) * k} width={Math.max(1, i.w * k)} height={Math.max(1, i.h * k)} fill={i.type === "frame" ? "rgba(27,26,22,0.08)" : "rgba(27,26,22,0.45)"} />)}
       <rect x={ox + (vx - world.x) * k} y={oy + (vy - world.y) * k} width={vw * k} height={vh * k} fill="none" stroke="#1B1A16" strokeWidth={1} />
     </svg>

@@ -12,7 +12,17 @@ export const MAX_SCALE = 4
 
 export function useViewport(initial?: View) {
   const [view, setView] = useState<View>(initial ?? { x: 80, y: 80, scale: 1 })
+  const [isAnimating, setIsAnimating] = useState(false)
+  const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+
+  const stopAnimation = useCallback(() => {
+    if (animTimer.current) {
+      clearTimeout(animTimer.current)
+      animTimer.current = null
+    }
+    setIsAnimating(false)
+  }, [])
 
   const toCanvas = useCallback((clientX: number, clientY: number) => {
     const rect = ref.current?.getBoundingClientRect()
@@ -21,6 +31,7 @@ export function useViewport(initial?: View) {
   }, [view])
 
   const zoomAt = useCallback((factor: number, clientX?: number, clientY?: number) => {
+    stopAnimation()
     setView((v) => {
       const rect = ref.current?.getBoundingClientRect()
       const cx = clientX !== undefined && rect ? clientX - rect.left : (rect?.width ?? 0) / 2
@@ -29,17 +40,30 @@ export function useViewport(initial?: View) {
       const k = scale / v.scale
       return { scale, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k }
     })
-  }, [])
+  }, [stopAnimation])
 
-  const fitTo = useCallback((rect: Rect, padding = 64) => {
+  const fitTo = useCallback((rect: Rect, padding = 64, smooth = false) => {
     const el = ref.current
     if (!el || rect.w <= 0 || rect.h <= 0) return
     const pad = Math.min(padding, el.clientWidth / 8, el.clientHeight / 8) // keep some canvas on narrow screens
     const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min((el.clientWidth - pad * 2) / rect.w, (el.clientHeight - pad * 2) / rect.h, 1.5)))
-    setView({ scale, x: (el.clientWidth - rect.w * scale) / 2 - rect.x * scale, y: (el.clientHeight - rect.h * scale) / 2 - rect.y * scale })
-  }, [])
+    const target = { scale, x: (el.clientWidth - rect.w * scale) / 2 - rect.x * scale, y: (el.clientHeight - rect.h * scale) / 2 - rect.y * scale }
 
-  const fitItems = useCallback((items: Rect[]) => (items.length ? fitTo(boundsOf(items)) : setView({ x: 80, y: 80, scale: 1 })), [fitTo])
+    if (smooth) {
+      if (animTimer.current) clearTimeout(animTimer.current)
+      setIsAnimating(true)
+      setView(target)
+      animTimer.current = setTimeout(() => {
+        setIsAnimating(false)
+        animTimer.current = null
+      }, 550)
+    } else {
+      stopAnimation()
+      setView(target)
+    }
+  }, [stopAnimation])
+
+  const fitItems = useCallback((items: Rect[], smooth = false) => (items.length ? fitTo(boundsOf(items), 64, smooth) : setView({ x: 80, y: 80, scale: 1 })), [fitTo])
 
   // Wheel: pinch/ctrl = zoom, otherwise pan. Attached natively so preventDefault works.
   useEffect(() => {
@@ -47,12 +71,19 @@ export function useViewport(initial?: View) {
     if (!el) return
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
+      stopAnimation()
       if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY)
       else setView((v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }))
     }
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)
-  }, [zoomAt])
+  }, [zoomAt, stopAnimation])
 
-  return { view, setView, ref, toCanvas, zoomAt, fitTo, fitItems }
+  useEffect(() => {
+    return () => {
+      if (animTimer.current) clearTimeout(animTimer.current)
+    }
+  }, [])
+
+  return { view, setView, ref, toCanvas, zoomAt, fitTo, fitItems, isAnimating, stopAnimation }
 }
