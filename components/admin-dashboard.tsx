@@ -25,7 +25,8 @@ import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import type { Overview } from "@/lib/overview"
 import type { FeatureFlags } from "@/lib/feature-flags"
 import { replyToContact, sendAdminEmail, syncLeadsToResend } from "@/app/actions/email"
-import { Check, Copy, Download, RefreshCw, Search } from "lucide-react"
+import { createPostFromProjectAction } from "@/app/actions/socials"
+import { Check, Copy, Download, RefreshCw, Search, Share2 } from "lucide-react"
 import { toast } from "sonner"
 
 type Project = {
@@ -254,6 +255,27 @@ export function AdminDashboard({
       toast.error("Could not seed projects. Check database connection.", { id: toastId })
     } finally {
       setSeeding(false)
+    }
+  }
+
+  async function handleShareProjectToSocials(proj: Project) {
+    const toastId = toast.loading(`Drafting social post for ${proj.title || "project"}…`)
+    try {
+      const res = await createPostFromProjectAction({
+        title: proj.title,
+        category: proj.category,
+        slug: proj.slug,
+        overview: proj.overview || proj.subtitle || undefined,
+        thumbnail: proj.thumbnail || undefined,
+      })
+      if (res.ok) {
+        toast.success(`Social draft created for ${proj.title}! Opening studio…`, { id: toastId })
+        router.push("/admin/socials")
+      } else {
+        toast.error("Could not create social draft.", { id: toastId })
+      }
+    } catch {
+      toast.error("Error drafting post.", { id: toastId })
     }
   }
 
@@ -585,6 +607,15 @@ export function AdminDashboard({
                       >
                         Edit in Builder
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleShareProjectToSocials(row)}
+                        className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors"
+                        title="Draft social post for Facebook, LinkedIn & X"
+                      >
+                        <Share2 className="size-3" />
+                        <span>Post</span>
+                      </button>
                       <button
                         onClick={() => handleDuplicateProject(row.id)}
                         className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary transition-colors"

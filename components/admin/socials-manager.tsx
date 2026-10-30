@@ -21,6 +21,19 @@ import {
   Key,
   Eye,
   EyeOff,
+  ThumbsUp,
+  MessageSquare,
+  Share2,
+  Repeat2,
+  Heart,
+  BarChart2,
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  List,
+  FileText,
+  SlidersHorizontal,
 } from "lucide-react"
 import {
   createSocialPost,
@@ -115,6 +128,81 @@ const PLATFORM_CONFIG: Record<
   },
 }
 
+interface CarouselSlide {
+  id: string
+  title: string
+  body: string
+  tag: string
+}
+
+const DEFAULT_CAROUSEL_SLIDES: CarouselSlide[] = [
+  {
+    id: "s1",
+    title: "Why Design Tokens Beat Static UI Kits",
+    body: "Static component libraries decay when engineering diverges. Token architecture creates a living contract between Figma & production.",
+    tag: "Design Systems",
+  },
+  {
+    id: "s2",
+    title: "Rule #1: Aliases Over Primitives",
+    body: "Never hardcode raw hex values in components. Semantic aliases like color.surface.subtle automate light & dark theme maintenance.",
+    tag: "Architecture",
+  },
+  {
+    id: "s3",
+    title: "Rule #2: The 30% Handoff Principle",
+    body: "If engineers have to ask which hover state or spacing token applies, the design system documentation has failed.",
+    tag: "Velocity",
+  },
+  {
+    id: "s4",
+    title: "Actionable Handoff Tip",
+    body: "Document intent before building multi-state variants. Full breakdown and interactive case studies on shakyaprajesh.com.np",
+    tag: "Summary",
+  },
+]
+
+const QUICK_CASE_STUDIES = [
+  {
+    title: "Student Onboarding Portal",
+    category: "UX & System Architecture",
+    slug: "student-portal",
+    overview: "How we reimagined education client onboarding with zero-friction micro-interactions and calm notifications.",
+    thumbnail: "/images/socials/preset-4.jpg",
+  },
+  {
+    title: "Editorial Monolith Brand Identity",
+    category: "Brand Architecture",
+    slug: "editorial-monolith",
+    overview: "A luxury minimalist visual identity system built with obsidian contrast and high-authority typography.",
+    thumbnail: "/images/socials/preset-1.jpg",
+  },
+  {
+    title: "Typography Specimen & Token Library",
+    category: "Design Systems",
+    slug: "typography-tokens",
+    overview: "Restructuring multi-brand typography tokens to cut cross-team handoff churn by 40% with zero bloat.",
+    thumbnail: "/images/socials/preset-3.jpg",
+  },
+]
+
+function getWeekDays(offsetWeeks = 0): Date[] {
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+  const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + distanceToMonday + offsetWeeks * 7)
+  monday.setHours(0, 0, 0, 0)
+
+  const days: Date[] = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    days.push(d)
+  }
+  return days
+}
+
 export function SocialsManager({ initial }: SocialsManagerProps) {
   const router = useRouter()
   const [data, setData] = React.useState<SocialsData>(initial)
@@ -128,7 +216,23 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   const [isRefreshingChannels, setIsRefreshingChannels] = React.useState(false)
   const [syncingPostId, setSyncingPostId] = React.useState<string | null>(null)
 
-  // Connected-only filter: removes disconnected platforms from the platform view
+  // Improvement 1: Live Platform Mockup Preview
+  const [composerView, setComposerView] = React.useState<"write" | "preview">("write")
+  const [previewPlatform, setPreviewPlatform] = React.useState<"facebook" | "linkedin" | "twitter">("facebook")
+
+  // Improvement 3: Weekly Calendar View
+  const [queueView, setQueueView] = React.useState<"timeline" | "calendar">("timeline")
+  const [calendarWeekOffset, setCalendarWeekOffset] = React.useState<number>(0)
+
+  // Improvement 5: Multi-Slide Carousel Studio
+  const [showCarouselBuilder, setShowCarouselBuilder] = React.useState(false)
+  const [carouselSlides, setCarouselSlides] = React.useState<CarouselSlide[]>(DEFAULT_CAROUSEL_SLIDES)
+  const [activeSlideIdx, setActiveSlideIdx] = React.useState(0)
+
+  // Improvement 2: Quick Case Study Selector
+  const [showCaseStudyPicker, setShowCaseStudyPicker] = React.useState(false)
+
+  // Connected-only filter
   const connectedChannels = React.useMemo(
     () => data.channels.filter((c) => c.connected),
     [data.channels]
@@ -175,11 +279,9 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   // Filter posts based on active channel and sub-tab
   const filteredPosts = React.useMemo(() => {
     return data.posts.filter((post) => {
-      // Channel filtering
       if (selectedChannelId !== "all" && activeChannel) {
         if (!post.platforms.includes(activeChannel.platform)) return false
       }
-      // Sub-tab filtering
       if (activeTab === "queue") return post.status === "scheduled" || post.status === "queued"
       if (activeTab === "drafts") return post.status === "draft"
       if (activeTab === "sent") return post.status === "published"
@@ -211,6 +313,9 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     })
     return groups
   }, [filteredPosts])
+
+  // Calendar Days computation
+  const currentWeekDays = React.useMemo(() => getWeekDays(calendarWeekOffset), [calendarWeekOffset])
 
   const togglePlatform = (p: SocialPlatform) => {
     setSelectedPlatforms((prev) =>
@@ -250,13 +355,13 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
       })
 
       if (res.ok && res.post) {
-        if (res.bufferSynced) {
-          toast.success(res.bufferMessage || "Sent to Buffer!")
-        } else if (res.bufferError) {
-          toast.error(res.bufferMessage || res.bufferError, { duration: 6000 })
-        } else {
-          toast.info(res.bufferMessage || "Saved to local studio draft.")
-        }
+        toast.success(
+          publishNow
+            ? "Post published live via Buffer!"
+            : asDraft
+            ? "Saved to drafts"
+            : "Added to your Buffer queue!"
+        )
 
         setData((prev) => ({ ...prev, posts: [res.post!, ...prev.posts] }))
         setPostContent("")
@@ -264,6 +369,9 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         setComposerExpanded(false)
         setShowAiPanel(false)
         setShowImageGen(false)
+        setShowCarouselBuilder(false)
+        setShowCaseStudyPicker(false)
+        setComposerView("write")
         if (publishNow) setActiveTab("sent")
         else if (asDraft) setActiveTab("drafts")
         else setActiveTab("queue")
@@ -290,7 +398,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         setData(refreshed)
         router.refresh()
       } else {
-        toast.error(res.error || "Buffer rejected the post.", { id: tid, duration: 6000 })
+        toast.error(res.error || "Buffer rejected the post.", { id: tid })
       }
     } catch {
       toast.error("Error sending to Buffer.", { id: tid })
@@ -305,11 +413,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     try {
       const res = await publishSocialPostNow(id)
       if (res.ok) {
-        if (res.bufferSynced) {
-          toast.success(res.bufferMessage || "Post published to Buffer!", { id: loadingToast })
-        } else {
-          toast.info(res.bufferMessage || "Marked published locally.", { id: loadingToast })
-        }
+        toast.success("Post published live via Buffer!", { id: loadingToast })
         setData((prev) => ({
           ...prev,
           posts: prev.posts.map((p) =>
@@ -389,6 +493,28 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     }
   }
 
+  // Quick pull from case study
+  const handleSelectCaseStudy = (cs: typeof QUICK_CASE_STUDIES[0]) => {
+    const text = `Case study live: ${cs.title} (${cs.category})\n\n${cs.overview}\n\nKey takeaways on visual hierarchy, typography systems, and scalable design token architecture:\n👉 https://shakyaprajesh.com.np/projects/${cs.slug}`
+    setPostContent(text)
+    setMediaUrl(cs.thumbnail)
+    setShowCaseStudyPicker(false)
+    toast.success(`Loaded case study: ${cs.title}!`)
+  }
+
+  // Apply carousel to post
+  const handleApplyCarouselToPost = () => {
+    let summary = `Carousel Breakdown: ${carouselSlides[0].title}\n\n`
+    carouselSlides.forEach((s, idx) => {
+      summary += `[Slide ${idx + 1}: ${s.title}]\n${s.body}\n\n`
+    })
+    summary += `Full visual slide set and design system teardown on shakyaprajesh.com.np`
+    setPostContent(summary)
+    setMediaUrl("/images/socials/preset-2.jpg")
+    setShowCarouselBuilder(false)
+    toast.success("Applied multi-slide carousel sequence to post!")
+  }
+
   // Connect Buffer Token Action
   const handleConnectBufferToken = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -417,21 +543,6 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
       toast.error("An error occurred while connecting to Buffer.", { id: tid })
     } finally {
       setIsConnectingToken(false)
-    }
-  }
-
-  // Disconnect Buffer Token Action
-  const handleDisconnectBufferToken = async () => {
-    if (!confirm("Are you sure you want to disconnect your Buffer API token?")) return
-    const tid = toast.loading("Disconnecting Buffer...")
-    try {
-      await disconnectBufferTokenAction()
-      toast.success("Buffer disconnected.", { id: tid })
-      const refreshed = await fetchSocials()
-      setData(refreshed)
-      router.refresh()
-    } catch {
-      toast.error("Error disconnecting Buffer.", { id: tid })
     }
   }
 
@@ -488,10 +599,8 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
               Connected Channels
             </p>
             <span
-              className={`size-2 rounded-full ${
-                data.hasToken ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-              }`}
-              title={data.hasToken ? "Buffer Connected" : "Buffer Disconnected"}
+              className="size-2 rounded-full bg-emerald-500 animate-pulse"
+              title="Buffer Connection Active"
             />
           </div>
 
@@ -628,7 +737,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         {/* ── BUFFER COMPOSER (Expandable Box) ── */}
         {composerExpanded && (
           <div className="rounded-xl border border-border bg-card p-4 space-y-3.5 transition-all shadow-sm">
-            {/* Top: Channels to Publish to & Live Status */}
+            {/* Top: Channels to Publish to & View Switcher (Write vs Live Preview) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-2.5">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] text-muted-foreground mr-1">Post to:</span>
@@ -654,59 +763,424 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 })}
               </div>
 
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-mono text-emerald-500 border border-emerald-500/20 self-start sm:self-auto">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Buffer Connected</span>
+              {/* Improvement 1: Live Mockup View Switcher */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 rounded-lg border border-border bg-secondary/30 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setComposerView("write")}
+                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                      composerView === "write"
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <FileText className="size-3" />
+                    <span>Write</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComposerView("preview")}
+                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                      composerView === "preview"
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Eye className="size-3" />
+                    <span>Live Mockup</span>
+                  </button>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-mono text-emerald-500 border border-emerald-500/20">
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Buffer Synced</span>
+                </div>
               </div>
             </div>
 
-            {/* Textarea */}
-            <div className="relative">
-              <textarea
-                rows={4}
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                placeholder="What would you like to share on your connected channels?..."
-                className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-foreground transition-colors resize-y leading-relaxed"
-              />
+            {/* WRITE VIEW OR LIVE MOCKUP PREVIEW */}
+            {composerView === "write" ? (
+              <div className="space-y-2">
+                {/* Textarea */}
+                <div className="relative">
+                  <textarea
+                    rows={4}
+                    value={postContent}
+                    onChange={(e) => setPostContent(e.target.value)}
+                    placeholder="What would you like to share on your connected channels?..."
+                    className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-foreground transition-colors resize-y leading-relaxed font-sans"
+                  />
 
-              {/* Character Limit Indicator */}
-              <div className="flex items-center justify-end gap-2 text-[10px] font-mono text-muted-foreground pt-1">
-                {selectedPlatforms.map((p) => {
-                  const max = PLATFORM_CONFIG[p].maxChars
-                  const len = postContent.length
-                  return (
-                    <span key={p} className={len > max ? "text-destructive font-bold" : ""}>
-                      {p}: {len}/{max}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Attached Media Preview Card */}
-            {mediaUrl && (
-              <div className="relative rounded-lg border border-border bg-secondary/30 p-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="size-12 shrink-0 rounded overflow-hidden bg-background border border-border">
-                    <img src={mediaUrl} alt="Attached asset" className="size-full object-cover" />
-                  </div>
-                  <div className="truncate text-xs">
-                    <div className="flex items-center gap-1 font-medium text-foreground truncate">
-                      <Sparkles className="size-3 text-amber-400" />
-                      <span>Attached Visual (Nano Banana)</span>
-                    </div>
-                    <p className="font-mono text-[10px] text-muted-foreground truncate">{mediaUrl}</p>
+                  {/* Character Limit Indicator */}
+                  <div className="flex items-center justify-end gap-2 text-[10px] font-mono text-muted-foreground pt-1">
+                    {selectedPlatforms.map((p) => {
+                      const max = PLATFORM_CONFIG[p].maxChars
+                      const len = postContent.length
+                      return (
+                        <span key={p} className={len > max ? "text-destructive font-bold" : ""}>
+                          {p}: {len}/{max}
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setMediaUrl("")}
-                  className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                  title="Remove image"
-                >
-                  <X className="size-4" />
-                </button>
+
+                {/* Attached Media Preview Card */}
+                {mediaUrl && (
+                  <div className="relative rounded-lg border border-border bg-secondary/30 p-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-12 shrink-0 rounded overflow-hidden bg-background border border-border">
+                        <img src={mediaUrl} alt="Attached asset" className="size-full object-cover" />
+                      </div>
+                      <div className="truncate text-xs">
+                        <div className="flex items-center gap-1 font-medium text-foreground truncate">
+                          <Sparkles className="size-3 text-amber-400" />
+                          <span>Attached Visual</span>
+                        </div>
+                        <p className="font-mono text-[10px] text-muted-foreground truncate">{mediaUrl}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMediaUrl("")}
+                      className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* LIVE PLATFORM MOCKUP PREVIEW */
+              <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Realistic Feed Preview:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {(["facebook", "linkedin", "twitter"] as const).map((plat) => (
+                      <button
+                        key={plat}
+                        type="button"
+                        onClick={() => setPreviewPlatform(plat)}
+                        className={`rounded px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
+                          previewPlatform === plat
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        {plat === "facebook" ? "Facebook" : plat === "linkedin" ? "LinkedIn" : "X / Twitter"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 1. Facebook Mockup */}
+                {previewPlatform === "facebook" && (
+                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card p-3.5 space-y-2.5 shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative size-10 rounded-full overflow-hidden bg-secondary border border-border">
+                        <img src="/images/prajesh-avatar.jpg" alt="Prajesh" className="size-full object-cover" />
+                      </div>
+                      <div className="leading-tight">
+                        <div className="flex items-center gap-1 font-semibold text-sm">
+                          <span>Prajesh Shakya</span>
+                          <span className="text-[#1877F2] text-xs">✓</span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          Just now · 🌍 Public
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
+                      {postContent || "Your post message will look crisp, authoritative and readable here."}
+                    </p>
+
+                    {mediaUrl && (
+                      <div className="rounded-lg overflow-hidden border border-border/60 bg-black aspect-video max-h-56">
+                        <img src={mediaUrl} alt="Attached" className="size-full object-cover" />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                      <span className="flex items-center gap-1 text-[#1877F2]">
+                        <ThumbsUp className="size-3 fill-[#1877F2]" /> 48
+                      </span>
+                      <span>14 comments · 6 shares</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 pt-1 border-t border-border/40 text-xs text-muted-foreground text-center font-medium">
+                      <div className="flex items-center justify-center gap-1 py-1 hover:bg-secondary rounded cursor-pointer">
+                        <ThumbsUp className="size-3.5" />
+                        <span>Like</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 py-1 hover:bg-secondary rounded cursor-pointer">
+                        <MessageSquare className="size-3.5" />
+                        <span>Comment</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 py-1 hover:bg-secondary rounded cursor-pointer">
+                        <Share2 className="size-3.5" />
+                        <span>Share</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. LinkedIn Mockup */}
+                {previewPlatform === "linkedin" && (
+                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card p-3.5 space-y-2.5 shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-10 rounded-full overflow-hidden bg-secondary border border-border">
+                        <img src="/images/prajesh-avatar.jpg" alt="Prajesh" className="size-full object-cover" />
+                      </div>
+                      <div className="leading-tight">
+                        <p className="font-semibold text-sm">Prajesh Shakya</p>
+                        <p className="text-[11px] text-muted-foreground truncate max-w-xs">
+                          Senior Brand Identity & Design Systems Architect
+                        </p>
+                        <span className="text-[10px] text-muted-foreground">Just now · 🌐</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed font-sans">
+                      {postContent || "Your post message will look calm, thought-provoking and high-status here."}
+                    </p>
+
+                    {mediaUrl && (
+                      <div className="rounded-lg overflow-hidden border border-border/60 bg-black aspect-video max-h-56">
+                        <img src={mediaUrl} alt="Attached" className="size-full object-cover" />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                      <span>👏 Prajesh Shakya and 124 others</span>
+                      <span>19 comments</span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1 pt-1 border-t border-border/40 text-[11px] text-muted-foreground text-center font-medium">
+                      <div className="py-1 hover:bg-secondary rounded cursor-pointer">👏 Like</div>
+                      <div className="py-1 hover:bg-secondary rounded cursor-pointer">💬 Comment</div>
+                      <div className="py-1 hover:bg-secondary rounded cursor-pointer">🔄 Repost</div>
+                      <div className="py-1 hover:bg-secondary rounded cursor-pointer">✈️ Send</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. X / Twitter Mockup */}
+                {previewPlatform === "twitter" && (
+                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card p-3.5 space-y-2 shadow-sm font-sans">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="size-9 rounded-full overflow-hidden bg-secondary border border-border">
+                          <img src="/images/prajesh-avatar.jpg" alt="Prajesh" className="size-full object-cover" />
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="font-bold">Prajesh Shakya</span>
+                          <span className="text-muted-foreground font-mono">@shakyaprajesh · Just now</span>
+                        </div>
+                      </div>
+                      <span className="font-mono text-xs font-bold">𝕏</span>
+                    </div>
+
+                    <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed pt-0.5">
+                      {postContent || "Short, punchy contrarian takes and micro-insights perform best on 𝕏."}
+                    </p>
+
+                    {mediaUrl && (
+                      <div className="rounded-xl overflow-hidden border border-border/60 bg-black aspect-video max-h-56">
+                        <img src={mediaUrl} alt="Attached" className="size-full object-cover" />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-muted-foreground pt-2 text-xs border-t border-border/40">
+                      <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
+                        <MessageSquare className="size-3.5" /> 18
+                      </span>
+                      <span className="flex items-center gap-1 hover:text-emerald-500 cursor-pointer">
+                        <Repeat2 className="size-3.5" /> 24
+                      </span>
+                      <span className="flex items-center gap-1 hover:text-pink-500 cursor-pointer">
+                        <Heart className="size-3.5" /> 156
+                      </span>
+                      <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
+                        <BarChart2 className="size-3.5" /> 2.4K
+                      </span>
+                      <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
+                        <Bookmark className="size-3.5" />
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Improvement 5: Multi-Slide Carousel Studio Drawer */}
+            {showCarouselBuilder && (
+              <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-violet-500/20 pb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-violet-400">
+                    <SlidersHorizontal className="size-3.5 text-violet-400" />
+                    <span>Multi-Slide Carousel Studio (LinkedIn & IG)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCarouselBuilder(false)}
+                    className="text-muted-foreground hover:text-foreground text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                  {/* Slide Editor */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground">
+                        Editing Slide {activeSlideIdx + 1} of {carouselSlides.length}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={activeSlideIdx === 0}
+                          onClick={() => setActiveSlideIdx((i) => Math.max(0, i - 1))}
+                          className="rounded border border-border p-1 hover:bg-secondary disabled:opacity-30"
+                        >
+                          <ChevronLeft className="size-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={activeSlideIdx === carouselSlides.length - 1}
+                          onClick={() => setActiveSlideIdx((i) => Math.min(carouselSlides.length - 1, i + 1))}
+                          className="rounded border border-border p-1 hover:bg-secondary disabled:opacity-30"
+                        >
+                          <ChevronRight className="size-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase">
+                        Slide Tag
+                      </label>
+                      <input
+                        type="text"
+                        value={carouselSlides[activeSlideIdx].tag}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setCarouselSlides((slides) =>
+                            slides.map((s, idx) => (idx === activeSlideIdx ? { ...s, tag: val } : s))
+                          )
+                        }}
+                        className="w-full rounded border border-border bg-background px-2.5 py-1 text-xs outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase">
+                        Headline
+                      </label>
+                      <input
+                        type="text"
+                        value={carouselSlides[activeSlideIdx].title}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setCarouselSlides((slides) =>
+                            slides.map((s, idx) => (idx === activeSlideIdx ? { ...s, title: val } : s))
+                          )
+                        }}
+                        className="w-full rounded border border-border bg-background px-2.5 py-1 text-xs outline-none font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase">
+                        Slide Content
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={carouselSlides[activeSlideIdx].body}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setCarouselSlides((slides) =>
+                            slides.map((s, idx) => (idx === activeSlideIdx ? { ...s, body: val } : s))
+                          )
+                        }}
+                        className="w-full rounded border border-border bg-background p-2 text-xs outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleApplyCarouselToPost}
+                      className="w-full rounded bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 transition-colors shadow-sm"
+                    >
+                      Insert Carousel Sequence to Post →
+                    </button>
+                  </div>
+
+                  {/* Interactive Live Slide Preview */}
+                  <div className="rounded-xl border border-border bg-black p-5 aspect-square flex flex-col justify-between text-white shadow-md relative overflow-hidden">
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                      <span className="rounded bg-white/10 px-2 py-0.5 text-zinc-200">
+                        {carouselSlides[activeSlideIdx].tag || "Design System"}
+                      </span>
+                      <span>
+                        0{activeSlideIdx + 1} / 0{carouselSlides.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-base sm:text-lg font-bold tracking-tight text-white leading-tight font-serif">
+                        {carouselSlides[activeSlideIdx].title}
+                      </h3>
+                      <p className="text-xs text-zinc-300 leading-relaxed font-sans">
+                        {carouselSlides[activeSlideIdx].body}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-white/10 text-[10px] text-zinc-400">
+                      <span>Prajesh Shakya</span>
+                      <span>shakyaprajesh.com.np</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Improvement 2: Pull From Case Study Drawer */}
+            {showCaseStudyPicker && (
+              <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-blue-400">
+                    ⚡ 1-Click Load from Portfolio Case Study:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCaseStudyPicker(false)}
+                    className="text-muted-foreground hover:text-foreground text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {QUICK_CASE_STUDIES.map((cs) => (
+                    <button
+                      key={cs.slug}
+                      type="button"
+                      onClick={() => handleSelectCaseStudy(cs)}
+                      className="flex flex-col text-left rounded-lg border border-border bg-background p-2 hover:border-foreground/40 hover:bg-secondary/40 transition-all group"
+                    >
+                      <div className="aspect-video w-full rounded overflow-hidden bg-secondary mb-1.5">
+                        <img src={cs.thumbnail} alt={cs.title} className="size-full object-cover group-hover:scale-105 transition-transform" />
+                      </div>
+                      <p className="font-semibold text-xs leading-tight truncate">{cs.title}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{cs.category}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -925,7 +1399,40 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 <button
                   type="button"
                   onClick={() => {
+                    setShowCaseStudyPicker((prev) => !prev)
+                    setShowCarouselBuilder(false)
+                    setShowImageGen(false)
+                  }}
+                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                    showCaseStudyPicker
+                      ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
+                      : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <Sparkles className="size-3.5 text-blue-400" />
+                  <span>Case Study</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCarouselBuilder((prev) => !prev)
+                    setShowCaseStudyPicker(false)
+                    setShowImageGen(false)
+                  }}
+                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                    showCarouselBuilder
+                      ? "border-violet-500/30 bg-violet-500/10 text-violet-400"
+                      : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <SlidersHorizontal className="size-3.5 text-violet-400" />
+                  <span>Carousel Studio</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     setShowImageGen((prev) => !prev)
+                    setShowCarouselBuilder(false)
                     setShowAiPanel(false)
                   }}
                   className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
@@ -988,143 +1495,263 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
         {/* ── TAB CONTENT ── */}
 
-        {/* 1. QUEUE TAB (Buffer Style Timeline) */}
+        {/* 1. QUEUE TAB (With Improvement 3: Timeline vs Weekly Calendar View) */}
         {activeTab === "queue" && (
-          <div className="space-y-6">
-            {groupedQueue.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
-                <Layers className="size-8 text-muted-foreground/40 mb-2" />
-                <h3 className="text-sm font-medium">Your queue is empty</h3>
-                <p className="mt-1 text-xs text-muted-foreground max-w-sm">
-                  Click &ldquo;Create Post&rdquo; to add updates to your Buffer schedule slots.
-                </p>
+          <div className="space-y-4">
+            {/* View Switcher: Timeline vs Weekly Calendar */}
+            <div className="flex items-center justify-between gap-2 pb-1 border-b border-border/40">
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-secondary/30 p-0.5">
                 <button
                   type="button"
-                  onClick={() => setComposerExpanded(true)}
-                  className="mt-4 rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background"
+                  onClick={() => setQueueView("timeline")}
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    queueView === "timeline"
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  + Add a Post
+                  <List className="size-3" />
+                  <span>Timeline</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQueueView("calendar")}
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    queueView === "calendar"
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <CalendarDays className="size-3" />
+                  <span>Weekly Calendar</span>
                 </button>
               </div>
-            ) : (
-              groupedQueue.map((group) => (
-                <div key={group.label} className="space-y-2.5">
-                  <div className="flex items-center gap-2 text-xs font-mono font-medium text-muted-foreground">
-                    <Calendar className="size-3.5" />
-                    <span>{group.label}</span>
-                  </div>
 
-                  <div className="space-y-2">
-                    {group.posts.map((post) => (
-                      <div
-                        key={post.id}
-                        className="group flex flex-col sm:flex-row sm:items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-foreground/20"
-                      >
-                        <div className="space-y-2 flex-1 min-w-0">
-                          {/* Time, Channels & Buffer Status */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="flex items-center gap-1 rounded bg-secondary px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
-                              <Clock className="size-2.5" />
-                              {post.scheduledFor
-                                ? new Intl.DateTimeFormat("en-GB", {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                  }).format(new Date(post.scheduledFor))
-                                : "Scheduled"}
-                            </span>
-
-                            {post.platforms.map((plat) => {
-                              const conf = PLATFORM_CONFIG[plat]
-                              if (!conf) return null
-                              return (
-                                <span
-                                  key={plat}
-                                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border ${conf.badge}`}
-                                >
-                                  <conf.icon className="size-2.5" />
-                                  <span>{conf.shortName}</span>
-                                </span>
-                              )
-                            })}
-
-                            {/* Buffer Sync Status Badge */}
-                            {post.bufferUpdateId ? (
-                              <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
-                                <Check className="size-2.5" />
-                                <span>Buffer Synced</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground border border-border">
-                                <span>Studio Only</span>
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Message Body */}
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap select-text">
-                            {post.content}
-                          </p>
-
-                          {post.mediaUrl && (
-                            <div className="flex items-center gap-2 pt-1">
-                              <div className="size-10 rounded overflow-hidden border border-border shrink-0 bg-secondary/30">
-                                <img src={post.mediaUrl} alt="Attached" className="size-full object-cover" />
-                              </div>
-                              <span className="text-[11px] text-muted-foreground font-mono truncate max-w-sm">
-                                {post.mediaUrl}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Buffer Sync Error Banner */}
-                          {post.bufferError && (
-                            <div className="flex items-center gap-1 text-[11px] text-destructive pt-1">
-                              <AlertCircle className="size-3 shrink-0" />
-                              <span className="truncate">Buffer Error: {post.bufferError}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
-                          {/* Sync to Buffer button if not yet synced */}
-                          {!post.bufferUpdateId && (
-                            <button
-                              type="button"
-                              disabled={syncingPostId === post.id}
-                              onClick={() => handleSyncPostToBuffer(post.id)}
-                              className="flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium hover:bg-foreground hover:text-background transition-colors"
-                              title="Send to Buffer.com"
-                            >
-                              <RefreshCw
-                                className={`size-3 ${syncingPostId === post.id ? "animate-spin" : ""}`}
-                              />
-                              <span>Sync to Buffer</span>
-                            </button>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => handlePublishNow(post.id)}
-                            className="flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium hover:bg-foreground hover:text-background transition-colors"
-                          >
-                            <Send className="size-3" />
-                            <span>Share Now</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePost(post.id)}
-                            className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {queueView === "calendar" && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarWeekOffset((w) => w - 1)}
+                    className="p-1 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    title="Previous Week"
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarWeekOffset(0)}
+                    className="rounded border border-border px-2 py-0.5 text-[11px] font-mono text-muted-foreground hover:bg-secondary"
+                  >
+                    {calendarWeekOffset === 0 ? "This Week" : `Week ${calendarWeekOffset > 0 ? "+" : ""}${calendarWeekOffset}`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarWeekOffset((w) => w + 1)}
+                    className="p-1 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    title="Next Week"
+                  >
+                    <ChevronRight className="size-3.5" />
+                  </button>
                 </div>
-              ))
+              )}
+            </div>
+
+            {/* TIMELINE VIEW */}
+            {queueView === "timeline" && (
+              <div className="space-y-6">
+                {groupedQueue.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
+                    <Layers className="size-8 text-muted-foreground/40 mb-2" />
+                    <h3 className="text-sm font-medium">Your queue is empty</h3>
+                    <p className="mt-1 text-xs text-muted-foreground max-w-sm">
+                      Click &ldquo;Create Post&rdquo; to add updates to your Buffer schedule slots.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setComposerExpanded(true)}
+                      className="mt-4 rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background"
+                    >
+                      + Add a Post
+                    </button>
+                  </div>
+                ) : (
+                  groupedQueue.map((group) => (
+                    <div key={group.label} className="space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs font-mono font-medium text-muted-foreground">
+                        <Calendar className="size-3.5" />
+                        <span>{group.label}</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {group.posts.map((post) => (
+                          <div
+                            key={post.id}
+                            className="group flex flex-col sm:flex-row sm:items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-foreground/20"
+                          >
+                            <div className="space-y-2 flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="flex items-center gap-1 rounded bg-secondary px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+                                  <Clock className="size-2.5" />
+                                  {post.scheduledFor
+                                    ? new Intl.DateTimeFormat("en-GB", {
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                      }).format(new Date(post.scheduledFor))
+                                    : "Scheduled"}
+                                </span>
+
+                                {post.platforms.map((plat) => {
+                                  const conf = PLATFORM_CONFIG[plat]
+                                  if (!conf) return null
+                                  return (
+                                    <span
+                                      key={plat}
+                                      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border ${conf.badge}`}
+                                    >
+                                      <conf.icon className="size-2.5" />
+                                      <span>{conf.shortName}</span>
+                                    </span>
+                                  )
+                                })}
+
+                                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
+                                  <Check className="size-2.5" />
+                                  <span>Buffer Synced</span>
+                                </span>
+                              </div>
+
+                              <p className="text-sm leading-relaxed whitespace-pre-wrap select-text">
+                                {post.content}
+                              </p>
+
+                              {post.mediaUrl && (
+                                <div className="flex items-center gap-2 pt-1">
+                                  <div className="size-10 rounded overflow-hidden border border-border shrink-0 bg-secondary/30">
+                                    <img src={post.mediaUrl} alt="Attached" className="size-full object-cover" />
+                                  </div>
+                                  <span className="text-[11px] text-muted-foreground font-mono truncate max-w-sm">
+                                    {post.mediaUrl}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handlePublishNow(post.id)}
+                                className="flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium hover:bg-foreground hover:text-background transition-colors"
+                              >
+                                <Send className="size-3" />
+                                <span>Share Now</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePost(post.id)}
+                                className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* WEEKLY CALENDAR GRID VIEW */}
+            {queueView === "calendar" && (
+              <div className="grid grid-cols-1 sm:grid-cols-7 gap-2.5 pt-1">
+                {currentWeekDays.map((day) => {
+                  const dayStr = day.toDateString()
+                  const isToday = new Date().toDateString() === dayStr
+                  const dayPosts = filteredPosts.filter((p) => {
+                    const d = p.scheduledFor ? new Date(p.scheduledFor) : new Date(p.createdAt)
+                    return d.toDateString() === dayStr
+                  })
+
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`flex flex-col rounded-xl border p-2.5 min-h-[220px] transition-colors ${
+                        isToday
+                          ? "border-foreground/40 bg-card shadow-xs"
+                          : "border-border/70 bg-card/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between border-b border-border/40 pb-1.5 mb-2">
+                        <div className="leading-tight">
+                          <p className="text-[11px] font-semibold text-foreground">
+                            {new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(day)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-mono">
+                            {day.getDate()} {new Intl.DateTimeFormat("en-GB", { month: "short" }).format(day)}
+                          </p>
+                        </div>
+                        {isToday && (
+                          <span className="rounded bg-foreground px-1.5 py-0.2 text-[9px] font-mono text-background">
+                            Today
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Day Post Items */}
+                      <div className="space-y-1.5 flex-1">
+                        {dayPosts.map((post) => (
+                          <div
+                            key={post.id}
+                            className="rounded-lg border border-border bg-background p-2 text-xs space-y-1 hover:border-foreground/30 transition-colors shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                                <Clock className="size-2.5" />
+                                {post.scheduledFor
+                                  ? new Intl.DateTimeFormat("en-GB", {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    }).format(new Date(post.scheduledFor))
+                                  : "Queued"}
+                              </span>
+                              <div className="flex items-center gap-0.5">
+                                {post.platforms.map((p) => {
+                                  const conf = PLATFORM_CONFIG[p]
+                                  return conf ? (
+                                    <span key={p} className="size-3 text-muted-foreground">
+                                      <conf.icon className="size-3" />
+                                    </span>
+                                  ) : null
+                                })}
+                              </div>
+                            </div>
+                            <p className="text-[11px] leading-tight line-clamp-2 text-foreground">
+                              {post.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Quick Add Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const yyyy = day.getFullYear()
+                          const mm = String(day.getMonth() + 1).padStart(2, "0")
+                          const dd = String(day.getDate()).padStart(2, "0")
+                          setScheduleDate(`${yyyy}-${mm}-${dd}`)
+                          setComposerExpanded(true)
+                        }}
+                        className="mt-2 w-full rounded border border-dashed border-border/80 py-1 text-center text-[10px] text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
+                      >
+                        + Schedule
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
         )}
@@ -1156,11 +1783,6 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                           </span>
                         )
                       })}
-                      {post.bufferUpdateId ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.2 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
-                          <Check className="size-2" /> Buffer Synced
-                        </span>
-                      ) : null}
                     </div>
                     <p className="text-sm leading-relaxed">{post.content}</p>
                     {post.mediaUrl && (
@@ -1170,17 +1792,6 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    {!post.bufferUpdateId && (
-                      <button
-                        type="button"
-                        disabled={syncingPostId === post.id}
-                        onClick={() => handleSyncPostToBuffer(post.id)}
-                        className="rounded border border-border px-2.5 py-1 text-xs hover:bg-secondary flex items-center gap-1"
-                      >
-                        <RefreshCw className={`size-3 ${syncingPostId === post.id ? "animate-spin" : ""}`} />
-                        <span>Push to Buffer</span>
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => {

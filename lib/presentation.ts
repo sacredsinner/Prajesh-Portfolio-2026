@@ -38,20 +38,7 @@ export function buildSlides(canvas: Canvas, boardTitle?: string, intro?: string 
       return a.x - b.x
     })
 
-    // Add an initial Overview slide if there are multiple frames
-    if (sorted.length > 1 && allBounds.w > 0) {
-      slides.push({
-        id: "slide-overview",
-        title: boardTitle ? `${boardTitle} · Overview` : "Full Direction Overview",
-        subtitle: intro ? intro.slice(0, 140) + (intro.length > 140 ? "…" : "") : "Explore the big picture before diving in.",
-        bounds: allBounds,
-        itemIds: canvas.items.map((i) => i.id),
-        isOverview: true,
-        notes: intro ?? undefined,
-      })
-    }
-
-    // Add each frame as a slide
+    // Add each frame as a slide, starting with Frame 1 so clicking "Start Tour" zooms into the first concept immediately
     for (const frame of sorted) {
       const children = canvas.items.filter((i) => i.id !== frame.id && i.type !== "frame" && contains(frame, i))
       const notes = children
@@ -66,6 +53,19 @@ export function buildSlides(canvas: Canvas, boardTitle?: string, intro?: string 
         bounds: { x: frame.x, y: frame.y, w: frame.w, h: frame.h },
         itemIds: [frame.id, ...children.map((c) => c.id)],
         notes: notes || undefined,
+      })
+    }
+
+    // Add a closing Full Direction Overview slide
+    if (sorted.length > 1 && allBounds.w > 0) {
+      slides.push({
+        id: "slide-overview",
+        title: boardTitle ? `${boardTitle} · Full Overview` : "Full Direction Overview",
+        subtitle: intro ? intro.slice(0, 140) + (intro.length > 140 ? "…" : "") : "Explore the big picture before decision.",
+        bounds: allBounds,
+        itemIds: canvas.items.map((i) => i.id),
+        isOverview: true,
+        notes: intro ?? undefined,
       })
     }
   } else if (canvas.items.length > 0) {

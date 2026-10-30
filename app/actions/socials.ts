@@ -29,6 +29,37 @@ export async function fetchSocials(): Promise<SocialsData> {
   return getSocials()
 }
 
+export async function createPostFromProjectAction(project: {
+  title: string
+  category?: string
+  slug?: string
+  overview?: string
+  thumbnail?: string
+}): Promise<{ ok: boolean; post?: SocialPost; error?: string }> {
+  await requireAdmin()
+  const data = await getSocials()
+
+  const projectUrl = `https://shakyaprajesh.com.np/projects/${project.slug || ""}`
+  const content = `Case study breakdown: ${project.title} (${project.category || "Design & Architecture"})\n\n${
+    project.overview || "Deep dive into visual identity architecture, luxury typography, and scalable design system foundations."
+  }\n\nFull case study and interactive walkthrough:\n👉 ${projectUrl}`
+
+  const newPost: SocialPost = {
+    id: `post-${Date.now()}`,
+    content,
+    platforms: ["facebook", "linkedin", "twitter"],
+    status: "draft",
+    mediaUrl: project.thumbnail?.trim() || undefined,
+    createdAt: new Date().toISOString(),
+  }
+
+  const updatedPosts = [newPost, ...data.posts]
+  await saveSocials({ posts: updatedPosts })
+
+  revalidatePath("/admin/socials")
+  return { ok: true, post: newPost }
+}
+
 export async function createSocialPost(input: {
   content: string
   platforms: SocialPlatform[]

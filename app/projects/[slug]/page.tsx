@@ -34,7 +34,10 @@ export async function generateMetadata({
   const description = row?.seoDescription?.trim() || `${project.title}: ${project.overview}`
   const canonical = canonicalUrl(`/projects/${project.slug}`)
   // A page's openGraph replaces the layout's whole, so the site name is set again here.
-  const image = hasImage(project.thumbnail) ? { url: project.thumbnail, alt: project.title } : DEFAULT_SHARE_IMAGE
+  const dynamicOgUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(project.title)}&category=${encodeURIComponent(project.category || "Case Study")}&subtitle=${encodeURIComponent(project.overview || "")}`
+  const image = hasImage(project.thumbnail)
+    ? { url: project.thumbnail, alt: project.title }
+    : { url: dynamicOgUrl, alt: project.title }
   return {
     title,
     description,
