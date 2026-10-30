@@ -20,16 +20,34 @@ export function getNotionConfig(): NotionConfig {
   return {
     apiKey,
     databaseId,
-    isConfigured: Boolean(apiKey && databaseId),
+    isConfigured: Boolean(apiKey),
   }
 }
 
-export function normalizeNotionId(id: string): string {
-  const clean = id.replace(/[^a-zA-Z0-9]/g, "")
-  if (clean.length === 32) {
+/**
+ * Normalizes any Notion database ID or URL into a standard hyphenated UUID.
+ * Handles:
+ * - Full URLs: https://www.notion.so/myworkspace/a8aec43384f447ed84390e8e42c2e089?v=...
+ * - Title URLs: https://www.notion.so/Notes-a8aec43384f447ed84390e8e42c2e089
+ * - Raw 32-character hex strings: a8aec43384f447ed84390e8e42c2e089
+ * - Standard UUIDs: a8aec433-84f4-47ed-8439-0e8e42c2e089
+ */
+export function normalizeNotionId(raw: string): string | undefined {
+  if (!raw) return undefined
+  const trimmed = raw.trim()
+
+  // Match 36-char hyphenated UUID (8-4-4-4-12)
+  const uuidMatch = trimmed.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i)
+  if (uuidMatch) return uuidMatch[0]
+
+  // Match 32 continuous hex characters
+  const hexMatch = trimmed.match(/[a-f0-9]{32}/i)
+  if (hexMatch) {
+    const clean = hexMatch[0]
     return `${clean.slice(0, 8)}-${clean.slice(8, 12)}-${clean.slice(12, 16)}-${clean.slice(16, 20)}-${clean.slice(20)}`
   }
-  return id
+
+  return undefined
 }
 
 export function getNotionClient(): Client | null {
@@ -39,6 +57,86 @@ export function getNotionClient(): Client | null {
     auth: apiKey,
     notionVersion: "2022-06-28",
   })
+}
+
+/**
+ * Queries Notion's Search API to find any databases shared with the integration token.
+ */
+export async function findAccessibleDatabases(notion: Client): Promise<{ id: string; title: string; url?: string }[]> {
+  try {
+    const res = (await notion.search({
+      filter: { value: "database", property: "object" },
+    })) as { results: any[] }
+
+    return (res.results || []).map((db: any) => {
+      const title = Array.isArray(db.title)
+        ? db.title.map((t: any) => t.plain_text || "").join("").trim()
+        : ""
+      return {
+        id: db.id,
+        title: title || "Untitled Database",
+        url: db.url,
+      }
+    })
+  } catch (error) {
+    console.error("[notion] Error searching for shared databases:", error)
+    return []
+  }
+}
+
+/**
+ * Resolves the database ID to query:
+ * 1. Tests the configured ID if provided.
+ * 2. If invalid or not found, automatically discovers databases shared with the integration.
+ */
+export async function resolveDatabaseId(
+  notion: Client,
+  configuredId?: string
+): Promise<{ id: string; title: string }> {
+  // If configured ID is provided and formatted, test if reachable
+  if (configuredId) {
+    try {
+      const db = (await notion.request({
+        path: `databases/${configuredId}`,
+        method: "get",
+      })) as any
+
+      const title = Array.isArray(db.title)
+        ? db.title.map((t: any) => t.plain_text || "").join("").trim()
+        : ""
+      return { id: configuredId, title: title || "Notes Database" }
+    } catch {
+      console.warn(`[notion] Configured database ID (${configuredId}) was not found. Attempting auto-discovery...`)
+    }
+  }
+
+  // Auto-discovery via Notion Search API
+  const accessible = await findAccessibleDatabases(notion)
+
+  if (accessible.length === 1) {
+    console.log(`[notion] Auto-selected the single shared database: "${accessible[0].title}" (${accessible[0].id})`)
+    return accessible[0]
+  }
+
+  if (accessible.length > 1) {
+    // Look for a database with title matching notes/blog/articles
+    const match = accessible.find((d) => /note|blog|article|post|writing/i.test(d.title))
+    if (match) {
+      console.log(`[notion] Auto-selected matching database: "${match.title}" (${match.id})`)
+      return match
+    }
+
+    const list = accessible
+      .map((d) => `"${d.title}" (ID: ${d.id.replace(/-/g, "")})`)
+      .join(", ")
+    throw new Error(
+      `Multiple databases are shared with your Notion integration: ${list}. Please set NOTION_DATABASE_ID in .env.local to one of these IDs.`
+    )
+  }
+
+  throw new Error(
+    `No databases found connected to your Notion integration. In Notion, open your Notes database, click the ••• menu in the top-right corner -> Connections (or Connect to) -> select "Portfolio Notes" and confirm.`
+  )
 }
 
 function getPlainText(richTextList: any[]): string {
@@ -88,7 +186,7 @@ export function parseNotionProperties(page: any): Omit<ParsedNotionNote, "conten
 
   // Find Slug
   let slug = ""
-  const slugProp = props.Slug || props.slug || props.Address || props.address
+  const slugProp = props.Slug || props.slug || props.Address || props.address || props.URL || props.url
   if (slugProp) {
     if (slugProp.type === "rich_text") slug = getPlainText(slugProp.rich_text)
     else if (slugProp.type === "url") slug = slugProp.url || ""
@@ -102,7 +200,7 @@ export function parseNotionProperties(page: any): Omit<ParsedNotionNote, "conten
 
   // Find Category
   let category = "Brand Strategy"
-  const catProp = props.Category || props.category || props.Section || props.section
+  const catProp = props.Category || props.category || props.Section || props.section || props.Topic || props.topic
   if (catProp) {
     if (catProp.type === "select" && catProp.select?.name) category = catProp.select.name
     else if (catProp.type === "multi_select" && catProp.multi_select?.[0]?.name) category = catProp.multi_select[0].name
@@ -111,23 +209,24 @@ export function parseNotionProperties(page: any): Omit<ParsedNotionNote, "conten
 
   // Find Excerpt
   let excerpt = ""
-  const excProp = props.Excerpt || props.excerpt || props.Summary || props.summary || props.Description || props.description
+  const excProp =
+    props.Excerpt || props.excerpt || props.Summary || props.summary || props.Description || props.description
   if (excProp) {
     if (excProp.type === "rich_text") excerpt = getPlainText(excProp.rich_text)
   }
 
   // Find Published status
-  let published = false
-  const pubProp = props.Published || props.published || props.Status || props.status
+  let published = true // Default to true if user doesn't have a specific status column
+  const pubProp = props.Published || props.published || props.Status || props.status || props.State || props.state
   if (pubProp) {
     if (pubProp.type === "checkbox") {
       published = Boolean(pubProp.checkbox)
     } else if (pubProp.type === "status") {
       const name = pubProp.status?.name?.toLowerCase()
-      published = name === "published" || name === "done" || name === "live"
+      published = name === "published" || name === "done" || name === "live" || name === "ready"
     } else if (pubProp.type === "select") {
       const name = pubProp.select?.name?.toLowerCase()
-      published = name === "published" || name === "done" || name === "live"
+      published = name === "published" || name === "done" || name === "live" || name === "ready"
     }
   }
 
@@ -227,16 +326,19 @@ export async function getNotionPageMarkdown(pageId: string, client?: Client): Pr
 }
 
 export async function fetchNotionNotes(): Promise<ParsedNotionNote[]> {
-  const { databaseId, isConfigured } = getNotionConfig()
+  const { databaseId, apiKey } = getNotionConfig()
   const notion = getNotionClient()
 
-  if (!isConfigured || !notion || !databaseId) {
-    return []
+  if (!apiKey || !notion) {
+    throw new Error("NOTION_API_KEY is not set in environment variables.")
   }
+
+  // Resilient resolution: uses databaseId or auto-discovers from shared databases
+  const targetDb = await resolveDatabaseId(notion, databaseId)
 
   try {
     const response = (await notion.request({
-      path: `databases/${databaseId}/query`,
+      path: `databases/${targetDb.id}/query`,
       method: "post",
       body: {},
     })) as { results: any[] }
@@ -259,7 +361,7 @@ export async function fetchNotionNotes(): Promise<ParsedNotionNote[]> {
 
     return notes
   } catch (error) {
-    console.error("[notion] Error fetching notes from database:", error)
+    console.error(`[notion] Error querying database ${targetDb.id}:`, error)
     throw error
   }
 }
@@ -269,19 +371,20 @@ export type SyncResult = {
   total: number
   added: number
   updated: number
+  databaseTitle?: string
   errors: string[]
 }
 
 export async function syncNotionNotesToDatabase(): Promise<SyncResult> {
-  const { isConfigured, apiKey, databaseId } = getNotionConfig()
-  if (!isConfigured) {
+  const { apiKey } = getNotionConfig()
+  if (!apiKey) {
     return {
       ok: false,
       total: 0,
       added: 0,
       updated: 0,
       errors: [
-        `Notion credentials missing. Please set NOTION_API_KEY and NOTION_DATABASE_ID in .env.local or environment settings.`,
+        `NOTION_API_KEY is missing. Please add NOTION_API_KEY=secret_... to your .env.local file.`,
       ],
     }
   }
@@ -302,7 +405,7 @@ export async function syncNotionNotesToDatabase(): Promise<SyncResult> {
 
     for (const note of notes) {
       try {
-        // Check if exists by notionPageId or slug
+        // Check if note exists by notionPageId or slug
         const existing = await db
           .select({ id: blogPosts.id, notionPageId: blogPosts.notionPageId })
           .from(blogPosts)
@@ -352,7 +455,7 @@ export async function syncNotionNotesToDatabase(): Promise<SyncResult> {
       }
     }
 
-    // Revalidate paths
+    // Revalidate public routes
     revalidatePath("/blog")
     revalidatePath("/blog/rss.xml")
     revalidatePath("/admin")
