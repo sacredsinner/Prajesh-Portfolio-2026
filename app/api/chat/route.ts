@@ -2,7 +2,7 @@ import { google } from "@ai-sdk/google"
 import { streamText, convertToModelMessages } from "ai"
 import { BOOKING_URL, CONTACT_EMAIL, SITE_URL } from "@/lib/site"
 
-export const maxDuration = 30
+export const maxDuration = 60
 
 const SYSTEM_PROMPT = `
 # ROLE
@@ -236,7 +236,7 @@ export async function POST(req: Request) {
       })
     }
 
-    const modelName = process.env.GEMINI_MODEL || "gemini-3.8-flash"
+    const modelName = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"
 
     const result = streamText({
       model: google(modelName),

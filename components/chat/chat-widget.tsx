@@ -382,15 +382,25 @@ export function ChatWidget() {
 
               {/* Error banner */}
               {error && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="font-medium">Service configuration notice</p>
-                    <p className="text-[11px] opacity-90">
-                      {error.message ||
-                        "Please configure GOOGLE_GENERATIVE_AI_API_KEY in your .env.local file to enable Praj."}
-                    </p>
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-medium">Connection Notice</p>
+                      <p className="text-[11px] opacity-90">
+                        {error.message && error.message !== "An error occurred."
+                          ? error.message
+                          : "Connection interrupted. If you just added the API key, please restart your dev server (Ctrl+C then pnpm dev) and refresh."}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="shrink-0 rounded-md border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20 transition-colors"
+                  >
+                    Reset
+                  </button>
                 </div>
               )}
 
