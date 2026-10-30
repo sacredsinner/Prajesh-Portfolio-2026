@@ -1,0 +1,417 @@
+[
+  {
+    "number": "INV-15",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Manav Bista",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "NPR",
+    "issueDate": "2026-08-12",
+    "dueDate": "2026-08-12",
+    "total": "5000.00",
+    "taxRate": "0",
+    "notes": null,
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Agro logo",
+        "quantity": 1,
+        "unitPrice": 5000
+      }
+    ]
+  },
+  {
+    "number": "Q-13",
+    "kind": "quote",
+    "status": "draft",
+    "clientName": "Manav Bista",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "NPR",
+    "issueDate": "2026-07-20",
+    "dueDate": "2026-08-19",
+    "total": "4000.00",
+    "taxRate": "0",
+    "notes": null,
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Aafno Shop logo + socials",
+        "quantity": 1,
+        "unitPrice": 1714.29
+      },
+      {
+        "id": "item-2",
+        "description": "Photo Revamp",
+        "quantity": 1,
+        "unitPrice": 857.14
+      },
+      {
+        "id": "item-3",
+        "description": "Presentation",
+        "quantity": 1,
+        "unitPrice": 0
+      },
+      {
+        "id": "item-4",
+        "description": "National Innovation Challenge Nepal Proposal",
+        "quantity": 1,
+        "unitPrice": 1428.57
+      }
+    ]
+  },
+  {
+    "number": "INV-12",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Iod Parc",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "NPR",
+    "issueDate": "2026-06-12",
+    "dueDate": "2026-06-26",
+    "total": "3000.00",
+    "taxRate": "0",
+    "notes": null,
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Business Card Design and Print",
+        "quantity": 1,
+        "unitPrice": 3000
+      }
+    ]
+  },
+  {
+    "number": "INV-11",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Amazing Parents",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2026-06-01",
+    "dueDate": "2026-06-01",
+    "total": "50.00",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "A/C Holder Name: PRAJESH SHAKYA\nAccount Number: 03407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Design Certificate",
+        "quantity": 1,
+        "unitPrice": 50
+      }
+    ]
+  },
+  {
+    "number": "INV-10",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Grad Skill",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2026-04-03",
+    "dueDate": "2026-04-10",
+    "total": "210.00",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "Payment terms: Post work\n\nA/C Holder Name: PRAJESH SHAKYA\nAccount Number: 03407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Branding Setup",
+        "quantity": 1,
+        "unitPrice": 0
+      },
+      {
+        "id": "item-2",
+        "description": "Flyer Standard",
+        "quantity": 9,
+        "unitPrice": 10
+      },
+      {
+        "id": "item-3",
+        "description": "Prospectus A4",
+        "quantity": 1,
+        "unitPrice": 120
+      }
+    ]
+  },
+  {
+    "number": "Q-09",
+    "kind": "quote",
+    "status": "draft",
+    "clientName": "Grad Skill",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2026-04-03",
+    "dueDate": "2026-05-03",
+    "total": "210.00",
+    "taxRate": "0",
+    "notes": "Portfolio:\nhttps://drive.google.com/drive/folders/17BNIilQ8Z-BZ5H_g-dUnIUNFXwS-1_8r?usp=drive_link",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "VET course Flyer",
+        "quantity": 9,
+        "unitPrice": 10
+      },
+      {
+        "id": "item-2",
+        "description": "VET prospectus Standard",
+        "quantity": 1,
+        "unitPrice": 120
+      }
+    ]
+  },
+  {
+    "number": "INV-16",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Australia College of Pioneers",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2025-11-28",
+    "dueDate": "2025-12-06",
+    "total": "55.00",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "For March 2024\n\nA/C Holder Name: PRAJESH SHAKYA\nAccount Number: 03407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "ACP presentation folder",
+        "quantity": 1,
+        "unitPrice": 10
+      },
+      {
+        "id": "item-2",
+        "description": "Document Formatting and Editing (1. ACP Agent Agreement, 2. Direct Debit)",
+        "quantity": 1,
+        "unitPrice": 5
+      },
+      {
+        "id": "item-3",
+        "description": "ACP presentation",
+        "quantity": 1,
+        "unitPrice": 10
+      },
+      {
+        "id": "item-4",
+        "description": "Flyer (Pricelist 2026, Calendar 2026)",
+        "quantity": 3,
+        "unitPrice": 10
+      }
+    ]
+  },
+  {
+    "number": "INV-35",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "ACP Australia",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2025-02-11",
+    "dueDate": "2025-02-17",
+    "total": "472.00",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "Invoice Oct 2024 - Jan 2025\n\nA/C Holder Name: PRAJESH SHAKYA\nAccount Number: 3407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA\nWise : https://wise.com/pay/me/prajeshs8",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "ACP Handbook Formatting (Revamp, Content update)",
+        "quantity": 1,
+        "unitPrice": 10
+      },
+      {
+        "id": "item-2",
+        "description": "Brand Identity Design",
+        "quantity": 1,
+        "unitPrice": 50
+      },
+      {
+        "id": "item-3",
+        "description": "Revamp Certificate",
+        "quantity": 4,
+        "unitPrice": 3
+      },
+      {
+        "id": "item-4",
+        "description": "Elicos Final Audit (9 pages)",
+        "quantity": 1,
+        "unitPrice": 15
+      },
+      {
+        "id": "item-5",
+        "description": "Enrolment Form Formatting (Document Formatting)",
+        "quantity": 1,
+        "unitPrice": 5
+      },
+      {
+        "id": "item-6",
+        "description": "Pricelist ACP",
+        "quantity": 3,
+        "unitPrice": 10
+      },
+      {
+        "id": "item-7",
+        "description": "ACP logo update with Tagline",
+        "quantity": 1,
+        "unitPrice": 5
+      },
+      {
+        "id": "item-8",
+        "description": "Course Flyer (SIT40521 Kitchen Mgmt, SIT50422 Hospitality, MEM40222 Boating, RII60520 Civil Constr, General English)",
+        "quantity": 5,
+        "unitPrice": 25
+      },
+      {
+        "id": "item-9",
+        "description": "Business Card",
+        "quantity": 2,
+        "unitPrice": 5
+      },
+      {
+        "id": "item-10",
+        "description": "Sale Kit",
+        "quantity": 1,
+        "unitPrice": 15
+      },
+      {
+        "id": "item-11",
+        "description": "Audit Submission 8 Page Flyers",
+        "quantity": 5,
+        "unitPrice": 15
+      },
+      {
+        "id": "item-12",
+        "description": "ACP Prospectus 2025 (24 pages)",
+        "quantity": 1,
+        "unitPrice": 120
+      }
+    ]
+  },
+  {
+    "number": "Q-05",
+    "kind": "quote",
+    "status": "draft",
+    "clientName": "Anil Shrestha (Opal college)",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2024-11-20",
+    "dueDate": "2024-12-20",
+    "total": "280.00",
+    "taxRate": "0",
+    "notes": "Payment Information\n\nA/C Holder Name: PRAJESH SHAKYA\nAccount Number: 3407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA\n\nWise Australia:\nName: Prajesh Shakya\nAccount number: 223374191\nBSB code: 774001\nSwift/BIC: TRWIAUS1XXX",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Resource Branding Work (BSBSUS211, SITXFSA005, SITXFSA006, SITXHRM007, BSBCRT611, BSBTEC601, BSBCMM511, BSBLDR811, BSBLDR812, BSBSTR801, BSBPUB504, HLTWHS004, SITXWHS005, TAELED803)",
+        "quantity": 14,
+        "unitPrice": 20
+      }
+    ]
+  },
+  {
+    "number": "INV-45",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Serenity Connect.au",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2024-08-28",
+    "dueDate": "2024-09-11",
+    "total": "30.00",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "A/C Holder Name: PRAJESH SHAKYA\nAccount Number: 3407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "Flyer",
+        "quantity": 1,
+        "unitPrice": 20
+      },
+      {
+        "id": "item-2",
+        "description": "Document Formatting (1-5 pages)",
+        "quantity": 2,
+        "unitPrice": 5
+      }
+    ]
+  },
+  {
+    "number": "INV-30",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Style Matrix",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2024-08-25",
+    "dueDate": "2024-09-08",
+    "total": "55.00",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "A/C Holder Name: PRAJESH SHAKYA\nAccount Number: 3407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "SoleMatrix Content formatting",
+        "quantity": 1,
+        "unitPrice": 0
+      },
+      {
+        "id": "item-2",
+        "description": "StyleMatrix PPT Branding template + Content Template",
+        "quantity": 1,
+        "unitPrice": 50
+      },
+      {
+        "id": "item-3",
+        "description": "StyleMatrix Word Branding template",
+        "quantity": 1,
+        "unitPrice": 5
+      }
+    ]
+  },
+  {
+    "number": "INV-29",
+    "kind": "invoice",
+    "status": "draft",
+    "clientName": "Australia College of Pioneers",
+    "clientCompany": null,
+    "clientEmail": null,
+    "currency": "AUD",
+    "issueDate": "2024-08-25",
+    "dueDate": "2024-08-25",
+    "total": "73.50",
+    "taxRate": "0",
+    "paymentLink": "https://wise.com/pay/me/prajeshs8",
+    "notes": "A/C Holder Name: PRAJESH SHAKYA\nAccount Number: 3407010002740\nBank Name: GLOBAL IME BANK\nBranch: Tripureshwor\nSwift code: GLBBNPKA",
+    "items": [
+      {
+        "id": "item-1",
+        "description": "General English Flyers + (Stock photo)",
+        "quantity": 4,
+        "unitPrice": 17.5
+      },
+      {
+        "id": "item-2",
+        "description": "Organisational Chart",
+        "quantity": 1,
+        "unitPrice": 3.5
+      }
+    ]
+  }
+]
