@@ -73,7 +73,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${instrumentSans.variable} ${instrumentSerif.variable} bg-background`}>
+    <html lang="en" suppressHydrationWarning className={`${instrumentSans.variable} ${instrumentSerif.variable} bg-background`}>
       <body className="font-sans antialiased">
         <MotionProvider>{children}</MotionProvider>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-HCW8V0E4QD" strategy="afterInteractive" />
