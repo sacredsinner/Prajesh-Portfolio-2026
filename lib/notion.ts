@@ -192,6 +192,37 @@ export type ParsedNotionNote = {
   featured: boolean
 }
 
+function isLikelyImageUrl(url: string): boolean {
+  if (!url) return false
+  return (
+    /\.(png|jpe?g|webp|gif|svg|avif)(\?.*)?$/i.test(url) ||
+    /images\.unsplash\.com|cloudinary\.com|imgur\.com|vercel-storage\.com|blob\.vercel-storage\.com|amazonaws\.com/i.test(
+      url
+    )
+  )
+}
+
+function extractImageUrlFromProp(prop: any): string | null {
+  if (!prop) return null
+  if (prop.type === "url" && prop.url) {
+    const u = prop.url.trim()
+    if (/^https?:\/\//i.test(u)) return u
+  }
+  if (prop.type === "rich_text") {
+    const text = getPlainText(prop.rich_text)
+    if (/^https?:\/\//i.test(text)) return text.trim()
+    const mdImg = text.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/i)
+    if (mdImg) return mdImg[1]
+    const mdLink = text.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/i)
+    if (mdLink && isLikelyImageUrl(mdLink[1])) return mdLink[1]
+  }
+  if (prop.type === "files" && Array.isArray(prop.files) && prop.files.length > 0) {
+    const file = prop.files[0]
+    return file.external?.url || file.file?.url || null
+  }
+  return null
+}
+
 export function parseNotionProperties(page: any): Omit<ParsedNotionNote, "content"> {
   const props = page.properties || {}
 
@@ -260,7 +291,7 @@ export function parseNotionProperties(page: any): Omit<ParsedNotionNote, "conten
     publishedAt = new Date(page.created_time || Date.now())
   }
 
-  // Find Featured Image / Cover
+  // Find Featured Image / Cover (supports Page Cover, File uploads, and Image URLs/links)
   let featuredImage = "/placeholder.jpg"
   if (page.cover) {
     if (page.cover.type === "external" && page.cover.external?.url) {
@@ -269,11 +300,61 @@ export function parseNotionProperties(page: any): Omit<ParsedNotionNote, "conten
       featuredImage = page.cover.file.url
     }
   }
-  const coverProp = props.Cover || props.cover || props["Featured Image"] || props.Image
-  if (coverProp && coverProp.type === "files" && coverProp.files?.length > 0) {
-    const file = coverProp.files[0]
-    if (file.external?.url) featuredImage = file.external.url
-    else if (file.file?.url) featuredImage = file.file.url
+
+  // Priority check for explicit image property names
+  const explicitImageKeys = [
+    "Image in link",
+    "image in link",
+    "Image Link",
+    "image link",
+    "Image URL",
+    "image url",
+    "Image",
+    "image",
+    "Cover",
+    "cover",
+    "Featured Image",
+    "featured image",
+    "Thumbnail",
+    "thumbnail",
+    "Photo",
+    "photo",
+    "Picture",
+    "picture",
+    "Hero",
+    "hero",
+    "Banner",
+    "banner",
+    "Link",
+    "link",
+  ]
+
+  let resolvedImage: string | null = null
+  for (const key of explicitImageKeys) {
+    if (props[key]) {
+      const url = extractImageUrlFromProp(props[key])
+      if (url) {
+        resolvedImage = url
+        break
+      }
+    }
+  }
+
+  // If not found in explicit keys, scan all properties whose key contains image/cover/thumb/photo/pic/hero
+  if (!resolvedImage) {
+    for (const [key, val] of Object.entries(props)) {
+      if (/image|cover|photo|thumb|pic|hero|banner/i.test(key)) {
+        const url = extractImageUrlFromProp(val)
+        if (url) {
+          resolvedImage = url
+          break
+        }
+      }
+    }
+  }
+
+  if (resolvedImage) {
+    featuredImage = resolvedImage
   }
 
   // Tags
@@ -373,8 +454,18 @@ export async function fetchNotionNotes(): Promise<{ notes: ParsedNotionNote[]; d
       const content = await getNotionPageMarkdown(page.id, notion)
       const excerpt = meta.excerpt || content.slice(0, 160).replace(/[#*`_[\]]/g, "").trim() + "…"
 
+      // If featuredImage is still the placeholder, fallback to the first image inside the note content
+      let featuredImage = meta.featuredImage
+      if (featuredImage === "/placeholder.jpg" || !featuredImage) {
+        const contentImg = content.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/i)
+        if (contentImg && contentImg[1]) {
+          featuredImage = contentImg[1]
+        }
+      }
+
       notes.push({
         ...meta,
+        featuredImage,
         excerpt,
         content: content || "*(No content)*",
       })

@@ -67,6 +67,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </p>
           <h1 className="mt-5 font-serif text-5xl tracking-tight text-balance">{post.title}</h1>
           <p className="mt-5 text-lg leading-relaxed text-muted-foreground">{post.excerpt}</p>
+          {post.featuredImage && !post.featuredImage.startsWith("/placeholder") && (
+            <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-secondary/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.featuredImage}
+                alt={post.title}
+                className="w-full h-auto max-h-[550px] object-cover"
+              />
+            </div>
+          )}
           <div className="mt-12 border-t border-border pt-10">
             <Markdown content={post.content} />
           </div>

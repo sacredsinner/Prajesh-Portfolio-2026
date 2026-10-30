@@ -1,12 +1,12 @@
 import type { ReactNode } from "react"
 import { SITE_URL } from "@/lib/site"
 
-// Small, safe Markdown renderer for notes written in the admin. Supports
+// Small, safe Markdown renderer for notes written in the admin or synced from Notion. Supports
 // ## / ### headings, paragraphs, **bold**, *italic*, `code`, [links](url),
-// "- " and "1. " lists and "> " quotes. It builds React elements, never raw
+// ![images](url), "- " and "1. " lists and "> " quotes. It builds React elements, never raw
 // HTML, so nothing typed into a note can inject markup or scripts.
 
-const INLINE = /(\*\*[^*\n]+\*\*|\*[^*\s][^*\n]*\*|_[^_\s][^_\n]*_|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\))/g
+const INLINE = /(!\[[^\]]*\]\([^)\s]+\)|\*\*[^*\n]+\*\*|\*[^*\s][^*\n]*\*|_[^_\s][^_\n]*_|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\))/g
 
 function safeHref(href: string) {
   return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? href : null
@@ -25,7 +25,19 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
     const start = match.index ?? 0
     if (start > last) nodes.push(text.slice(last, start))
     const key = `${keyPrefix}-${index++}`
-    if (token.startsWith("**")) {
+    if (token.startsWith("![")) {
+      const [, alt, rawSrc] = /^!\[([^\]]*)\]\(([^)\s]+)\)$/.exec(token) ?? []
+      const src = rawSrc ? safeHref(rawSrc) : null
+      if (src) {
+        nodes.push(
+          <span key={key} className="my-6 block overflow-hidden rounded-xl border border-border bg-secondary/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={alt || "Note visual"} className="w-full h-auto object-cover max-h-[600px]" loading="lazy" />
+            {alt ? <span className="block border-t border-border bg-secondary/30 p-2 text-center text-xs text-muted-foreground">{alt}</span> : null}
+          </span>
+        )
+      }
+    } else if (token.startsWith("**")) {
       nodes.push(<strong key={key} className="font-semibold">{token.slice(2, -2)}</strong>)
     } else if (token.startsWith("`")) {
       nodes.push(<code key={key} className="bg-secondary px-1 font-mono text-[0.9em]">{token.slice(1, -1)}</code>)
@@ -56,6 +68,23 @@ export function Markdown({ content }: { content: string }) {
       {blocks.map((lines, index) => {
         const key = `block-${index}`
         const first = lines[0].trim()
+
+        // Standalone image block
+        const imgMatch = /^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/.exec(first)
+        if (lines.length === 1 && imgMatch) {
+          const [, alt, rawSrc] = imgMatch
+          const src = safeHref(rawSrc)
+          if (src) {
+            return (
+              <figure key={key} className="my-8 overflow-hidden rounded-xl border border-border bg-secondary/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt={alt || "Note visual"} className="w-full h-auto object-cover max-h-[650px]" loading="lazy" />
+                {alt ? <figcaption className="border-t border-border bg-secondary/30 p-2.5 text-center text-xs text-muted-foreground">{alt}</figcaption> : null}
+              </figure>
+            )
+          }
+        }
+
         if (lines.length === 1 && /^#{1,2}\s/.test(first)) {
           return <h2 key={key} className="pt-6 font-serif text-3xl leading-tight md:text-4xl">{renderInline(first.replace(/^#{1,2}\s+/, ""), key)}</h2>
         }
