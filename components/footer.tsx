@@ -10,7 +10,6 @@ const footerLinks = [
   { href: "/blog", label: "Notes" },
   { href: "/clients", label: "Clients" },
   { href: "/design-system", label: "Design System" },
-  { href: "/promo", label: "Promo Studio" },
   { href: "/contact", label: "Contact" },
 ]
 
