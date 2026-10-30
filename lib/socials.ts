@@ -434,6 +434,15 @@ export async function fetchBufferProfiles(token: string): Promise<BufferFetchRes
   }
 }
 
+function toPublicUrl(url?: string): string | undefined {
+  if (!url) return undefined
+  if (url.startsWith("http://") || url.startsWith("https://")) return url
+  const base = process.env.NEXT_PUBLIC_SITE_URL || process.env.BETTER_AUTH_URL || "https://shakyaprajesh.com.np"
+  const cleanBase = base.replace(/\/$/, "")
+  const cleanPath = url.startsWith("/") ? url : `/${url}`
+  return `${cleanBase}${cleanPath}`
+}
+
 // Dispatches a post directly to Buffer via GraphQL, REST, or the live Buffer MCP Bridge
 export async function pushToBufferApi(
   text: string,
@@ -455,6 +464,8 @@ export async function pushToBufferApi(
       updateIds: [updateId],
     }
   }
+
+  const publicMediaUrl = toPublicUrl(options.mediaUrl)
 
   // Live Buffer GraphQL & REST dispatch
   const socials = await getSocials()
@@ -516,7 +527,7 @@ export async function pushToBufferApi(
             schedulingType,
             dueAt: options.scheduled_at,
             saveToDraft: Boolean(options.draft),
-            assets: options.mediaUrl ? [{ url: options.mediaUrl }] : undefined,
+            assets: publicMediaUrl ? [{ url: publicMediaUrl }] : undefined,
           },
         },
       }
@@ -556,7 +567,7 @@ export async function pushToBufferApi(
     if (options.scheduled_at) {
       formData.append("scheduled_at", String(Math.floor(new Date(options.scheduled_at).getTime() / 1000)))
     }
-    if (options.mediaUrl) formData.append("media[photo]", options.mediaUrl)
+    if (publicMediaUrl) formData.append("media[photo]", publicMediaUrl)
     for (const pid of matchedIds.length > 0 ? matchedIds : ["default"]) {
       formData.append("profile_ids[]", pid)
     }
