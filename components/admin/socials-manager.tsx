@@ -29,6 +29,7 @@ import {
   addSocialIdea,
   deleteSocialIdea,
   generateAiHooks,
+  generateSocialImageAction,
   toggleChannelConnected,
   setAllChannelsConnected,
 } from "@/app/actions/socials"
@@ -40,16 +41,73 @@ interface SocialsManagerProps {
 
 type BufferSubTab = "queue" | "drafts" | "sent" | "settings"
 
+function FacebookIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  )
+}
+
 const PLATFORM_CONFIG: Record<
   SocialPlatform,
-  { name: string; maxChars: number; shortName: string; color: string; badge: string }
+  {
+    name: string
+    maxChars: number
+    shortName: string
+    color: string
+    badge: string
+    icon: (props: { className?: string }) => React.ReactNode
+  }
 > = {
-  twitter: { name: "X / Twitter", maxChars: 280, shortName: "X", color: "text-sky-400", badge: "bg-sky-500/10 text-sky-400 border-sky-500/20" },
-  linkedin: { name: "LinkedIn", maxChars: 3000, shortName: "in", color: "text-blue-500", badge: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  instagram: { name: "Instagram", maxChars: 2200, shortName: "IG", color: "text-pink-500", badge: "bg-pink-500/10 text-pink-500 border-pink-500/20" },
-  threads: { name: "Threads", maxChars: 500, shortName: "Threads", color: "text-violet-400", badge: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
-  bluesky: { name: "Bluesky", maxChars: 300, shortName: "Bsky", color: "text-cyan-400", badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
-  facebook: { name: "Facebook", maxChars: 5000, shortName: "FB", color: "text-blue-600", badge: "bg-blue-600/10 text-blue-600 border-blue-600/20" },
+  facebook: {
+    name: "Facebook",
+    maxChars: 5000,
+    shortName: "FB",
+    color: "text-[#1877F2]",
+    badge: "bg-[#1877F2]/10 text-[#1877F2] border-[#1877F2]/20",
+    icon: (p) => <FacebookIcon {...p} />,
+  },
+  twitter: {
+    name: "X / Twitter",
+    maxChars: 280,
+    shortName: "X",
+    color: "text-foreground",
+    badge: "bg-secondary text-foreground border-border",
+    icon: (p) => <span className={`font-mono font-bold leading-none ${p.className}`}>𝕏</span>,
+  },
+  linkedin: {
+    name: "LinkedIn",
+    maxChars: 3000,
+    shortName: "in",
+    color: "text-[#0A66C2]",
+    badge: "bg-[#0A66C2]/10 text-[#0A66C2] border-[#0A66C2]/20",
+    icon: (p) => <span className={`font-mono font-bold leading-none ${p.className}`}>in</span>,
+  },
+  instagram: {
+    name: "Instagram",
+    maxChars: 2200,
+    shortName: "IG",
+    color: "text-pink-500",
+    badge: "bg-pink-500/10 text-pink-500 border-pink-500/20",
+    icon: (p) => <span className={`font-mono font-bold leading-none ${p.className}`}>IG</span>,
+  },
+  threads: {
+    name: "Threads",
+    maxChars: 500,
+    shortName: "Threads",
+    color: "text-violet-400",
+    badge: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+    icon: (p) => <span className={`font-mono font-bold leading-none ${p.className}`}>@</span>,
+  },
+  bluesky: {
+    name: "Bluesky",
+    maxChars: 300,
+    shortName: "Bsky",
+    color: "text-cyan-400",
+    badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+    icon: (p) => <span className={`font-mono font-bold leading-none ${p.className}`}>🦋</span>,
+  },
 }
 
 export function SocialsManager({ initial }: SocialsManagerProps) {
@@ -58,10 +116,21 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   const [selectedChannelId, setSelectedChannelId] = React.useState<string>("all")
   const [activeTab, setActiveTab] = React.useState<BufferSubTab>("queue")
 
+  // Connected-only filter: removes disconnected platforms from the platform view
+  const connectedChannels = React.useMemo(
+    () => data.channels.filter((c) => c.connected),
+    [data.channels]
+  )
+
+  const availablePlatforms = React.useMemo(() => {
+    const list = Array.from(new Set(connectedChannels.map((c) => c.platform)))
+    return list.length > 0 ? list : (["facebook", "twitter", "linkedin"] as SocialPlatform[])
+  }, [connectedChannels])
+
   // Composer State
   const [composerExpanded, setComposerExpanded] = React.useState(false)
   const [postContent, setPostContent] = React.useState("")
-  const [selectedPlatforms, setSelectedPlatforms] = React.useState<SocialPlatform[]>(["twitter", "linkedin"])
+  const [selectedPlatforms, setSelectedPlatforms] = React.useState<SocialPlatform[]>(availablePlatforms)
   const [mediaUrl, setMediaUrl] = React.useState("")
   const [showMediaInput, setShowMediaInput] = React.useState(false)
   const [scheduleDate, setScheduleDate] = React.useState("")
@@ -80,11 +149,18 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     "New portfolio refresh shipped! Built with Next.js 16 and typography-driven layout principles.",
   ])
 
+  // Nano Banana AI Image Generator State
+  const [showImageGen, setShowImageGen] = React.useState(false)
+  const [imagePrompt, setImagePrompt] = React.useState("")
+  const [imageRatio, setImageRatio] = React.useState<"16:9" | "1:1">("16:9")
+  const [isGeneratingImg, setIsGeneratingImg] = React.useState(false)
+
   const [copiedMcp, setCopiedMcp] = React.useState(false)
 
-  // Filter posts based on active channel and sub-tab
-  const activeChannel = data.channels.find((c) => c.id === selectedChannelId)
+  // Active channel
+  const activeChannel = connectedChannels.find((c) => c.id === selectedChannelId)
 
+  // Filter posts based on active channel and sub-tab
   const filteredPosts = React.useMemo(() => {
     return data.posts.filter((post) => {
       // Channel filtering
@@ -137,7 +213,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
       return
     }
     if (selectedPlatforms.length === 0) {
-      toast.error("Select at least one channel.")
+      toast.error("Select at least one connected channel.")
       return
     }
 
@@ -145,7 +221,6 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     if (!publishNow && !asDraft && scheduleDate) {
       scheduledFor = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
     } else if (!publishNow && !asDraft) {
-      // Default to next slot tomorrow 5pm
       const nextSlot = new Date()
       nextSlot.setDate(nextSlot.getDate() + 1)
       nextSlot.setHours(17, 0, 0, 0)
@@ -171,6 +246,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         setMediaUrl("")
         setComposerExpanded(false)
         setShowAiPanel(false)
+        setShowImageGen(false)
         if (publishNow) setActiveTab("sent")
         else if (asDraft) setActiveTab("drafts")
         else setActiveTab("queue")
@@ -241,6 +317,36 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     }
   }
 
+  // Nano Banana AI Image Generator
+  const handleGenerateImage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    const promptToUse = imagePrompt.trim() || postContent.trim()
+    if (!promptToUse) {
+      toast.error("Enter a prompt or write post text first.")
+      return
+    }
+
+    setIsGeneratingImg(true)
+    const toastId = toast.loading("Generating visual with Nano Banana (Gemini)...")
+    try {
+      const res = await generateSocialImageAction({
+        prompt: promptToUse,
+        aspectRatio: imageRatio,
+      })
+      if (res.ok && res.imageUrl) {
+        setMediaUrl(res.imageUrl)
+        setShowImageGen(false)
+        toast.success("Image generated and attached to your post!", { id: toastId })
+      } else {
+        toast.error(res.error || "Could not generate image.", { id: toastId })
+      }
+    } catch {
+      toast.error("Error generating image.", { id: toastId })
+    } finally {
+      setIsGeneratingImg(false)
+    }
+  }
+
   const copyMcpConfig = () => {
     const code = JSON.stringify(
       {
@@ -265,12 +371,15 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
   return (
     <div className="flex flex-col md:flex-row gap-6 min-h-[700px]">
-      {/* ── LEFT SIDEBAR: BUFFER CHANNELS ── */}
+      {/* ── LEFT SIDEBAR: CONNECTED CHANNELS ONLY ── */}
       <aside className="w-full md:w-64 shrink-0 space-y-4">
         <div className="rounded-xl border border-border bg-card p-3 space-y-1">
-          <p className="px-2 py-1 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
-            Channels
-          </p>
+          <div className="flex items-center justify-between px-2 py-1">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+              Connected Channels
+            </p>
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" title="Connected" />
+          </div>
 
           {/* All Channels Option */}
           <button
@@ -291,8 +400,8 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
             <span className="text-[11px] opacity-70">{queueCount}</span>
           </button>
 
-          {/* Individual Channel List */}
-          {data.channels.map((chan) => {
+          {/* Connected Channel List (Disconnected channels are removed) */}
+          {connectedChannels.map((chan) => {
             const conf = PLATFORM_CONFIG[chan.platform]
             const isSelected = selectedChannelId === chan.id
             const count = data.posts.filter(
@@ -313,13 +422,9 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="relative size-6 shrink-0 rounded-full bg-secondary flex items-center justify-center text-[10px] font-mono">
-                    {conf.shortName}
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full border-2 border-background ${
-                        chan.connected ? "bg-emerald-500" : "bg-muted-foreground"
-                      }`}
-                    />
+                  <div className="relative size-6 shrink-0 rounded-full bg-secondary flex items-center justify-center text-[11px]">
+                    <conf.icon className="size-3.5" />
+                    <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border-2 border-background bg-emerald-500" />
                   </div>
                   <div className="truncate text-left leading-tight">
                     <p className="truncate">{chan.name}</p>
@@ -407,10 +512,10 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         {/* ── BUFFER COMPOSER (Expandable Box) ── */}
         {composerExpanded && (
           <div className="rounded-xl border border-border bg-card p-4 space-y-3.5 transition-all shadow-sm">
-            {/* Top: Channels to Publish to */}
+            {/* Top: Channels to Publish to (Only connected platforms) */}
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] text-muted-foreground mr-1">Post to:</span>
-              {(Object.keys(PLATFORM_CONFIG) as SocialPlatform[]).map((platform) => {
+              {availablePlatforms.map((platform) => {
                 const conf = PLATFORM_CONFIG[platform]
                 const isSelected = selectedPlatforms.includes(platform)
                 return (
@@ -418,14 +523,15 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     key={platform}
                     type="button"
                     onClick={() => togglePlatform(platform)}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium border transition-colors ${
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium border transition-colors ${
                       isSelected
                         ? "bg-foreground text-background border-foreground"
                         : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
                     }`}
                   >
-                    {isSelected && <Check className="size-2.5" />}
+                    <conf.icon className="size-3" />
                     <span>{conf.name}</span>
+                    {isSelected && <Check className="size-2.5" />}
                   </button>
                 )
               })}
@@ -437,7 +543,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 rows={4}
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
-                placeholder="What would you like to share?..."
+                placeholder="What would you like to share on your connected channels?..."
                 className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-foreground transition-colors resize-y leading-relaxed"
               />
 
@@ -455,15 +561,41 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
               </div>
             </div>
 
-            {/* Media Attachment (Optional) */}
-            {showMediaInput && (
+            {/* Attached Media Preview Card */}
+            {mediaUrl && (
+              <div className="relative rounded-lg border border-border bg-secondary/30 p-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-12 shrink-0 rounded overflow-hidden bg-background border border-border">
+                    <img src={mediaUrl} alt="Attached asset" className="size-full object-cover" />
+                  </div>
+                  <div className="truncate text-xs">
+                    <div className="flex items-center gap-1 font-medium text-foreground truncate">
+                      <Sparkles className="size-3 text-amber-400" />
+                      <span>Attached Visual (Nano Banana)</span>
+                    </div>
+                    <p className="font-mono text-[10px] text-muted-foreground truncate">{mediaUrl}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMediaUrl("")}
+                  className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  title="Remove attachment"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Manual Media URL Input (Optional) */}
+            {showMediaInput && !mediaUrl && (
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={mediaUrl}
                     onChange={(e) => setMediaUrl(e.target.value)}
-                    placeholder="Paste image URL or /images/generated-social-visual.jpg..."
+                    placeholder="Paste image URL (e.g. /images/generated-social-visual.jpg)..."
                     className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-foreground"
                   />
                   <button
@@ -477,26 +609,100 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     <X className="size-3.5" />
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                  <span>Quick attach:</span>
-                  <button
-                    type="button"
-                    onClick={() => setMediaUrl("/images/generated-social-visual.jpg")}
-                    className="rounded bg-secondary px-2 py-0.5 hover:text-foreground hover:underline transition-colors"
-                  >
-                    ✦ AI Brand Visual (Nano Banana)
-                  </button>
-                </div>
               </div>
             )}
 
-            {/* AI Hooks Drawer / Dropdown */}
+            {/* Nano Banana Image Generator Drawer */}
+            {showImageGen && (
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <Sparkles className="size-3.5 text-amber-400" />
+                    <span>Nano Banana AI Image Generator</span>
+                    <span className="rounded bg-secondary px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground">
+                      Gemini
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowImageGen(false)}
+                    className="text-muted-foreground hover:text-foreground text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleGenerateImage} className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={imagePrompt}
+                      onChange={(e) => setImagePrompt(e.target.value)}
+                      placeholder="Describe the image you want Nano Banana to create..."
+                      className="flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
+                    />
+                    {postContent && (
+                      <button
+                        type="button"
+                        onClick={() => setImagePrompt(postContent)}
+                        className="shrink-0 rounded-md border border-border bg-secondary/50 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        Use post text
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <span>Ratio:</span>
+                      <button
+                        type="button"
+                        onClick={() => setImageRatio("16:9")}
+                        className={`rounded px-2 py-0.5 border text-[10px] ${
+                          imageRatio === "16:9"
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        16:9 (Landscape)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImageRatio("1:1")}
+                        className={`rounded px-2 py-0.5 border text-[10px] ${
+                          imageRatio === "1:1"
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        1:1 (FB / IG Square)
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isGeneratingImg || (!imagePrompt.trim() && !postContent.trim())}
+                      className="flex items-center gap-1 rounded-md bg-foreground px-3 py-1 text-xs font-medium text-background hover:bg-foreground/90 disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                      {isGeneratingImg ? (
+                        <RefreshCw className="size-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-3" />
+                      )}
+                      <span>{isGeneratingImg ? "Generating..." : "Generate & Attach"}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* AI Hooks Drawer */}
             {showAiPanel && (
               <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-medium">
                     <Sparkles className="size-3.5 text-amber-400" />
-                    <span>AI Hook Ideas (Gemini)</span>
+                    <span>AI Hook Starters (Gemini)</span>
                   </div>
                   <button
                     type="button"
@@ -512,7 +718,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     type="text"
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="Enter topic (e.g. Design token ROI)..."
+                    placeholder="Topic (e.g. Design token ROI)..."
                     className="flex-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-foreground"
                   />
                   <button
@@ -552,11 +758,18 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowMediaInput((prev) => !prev)}
-                  className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                  onClick={() => {
+                    setShowImageGen((prev) => !prev)
+                    if (!imagePrompt && postContent) setImagePrompt(postContent)
+                  }}
+                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                    showImageGen || mediaUrl
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                      : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
                 >
-                  <ImageIcon className="size-3.5" />
-                  <span>Attach Image</span>
+                  <Sparkles className="size-3.5 text-amber-400" />
+                  <span>Nano Banana Image</span>
                 </button>
                 <button
                   type="button"
@@ -565,6 +778,14 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 >
                   <Sparkles className="size-3.5 text-amber-400" />
                   <span>AI Hooks</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMediaInput((prev) => !prev)}
+                  className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <ImageIcon className="size-3.5" />
+                  <span>Custom URL</span>
                 </button>
               </div>
 
@@ -645,14 +866,19 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                                 : "Scheduled"}
                             </span>
 
-                            {post.platforms.map((plat) => (
-                              <span
-                                key={plat}
-                                className={`rounded px-1.5 py-0.5 text-[10px] font-medium border ${PLATFORM_CONFIG[plat].badge}`}
-                              >
-                                {PLATFORM_CONFIG[plat].shortName}
-                              </span>
-                            ))}
+                            {post.platforms.map((plat) => {
+                              const conf = PLATFORM_CONFIG[plat]
+                              if (!conf) return null
+                              return (
+                                <span
+                                  key={plat}
+                                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border ${conf.badge}`}
+                                >
+                                  <conf.icon className="size-2.5" />
+                                  <span>{conf.shortName}</span>
+                                </span>
+                              )
+                            })}
                           </div>
 
                           {/* Message Body */}
@@ -661,9 +887,13 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                           </p>
 
                           {post.mediaUrl && (
-                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <ExternalLink className="size-3" />
-                              <span className="truncate max-w-sm">{post.mediaUrl}</span>
+                            <div className="flex items-center gap-2 pt-1">
+                              <div className="size-10 rounded overflow-hidden border border-border shrink-0 bg-secondary/30">
+                                <img src={post.mediaUrl} alt="Attached" className="size-full object-cover" />
+                              </div>
+                              <span className="text-[11px] text-muted-foreground font-mono truncate max-w-sm">
+                                {post.mediaUrl}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -711,13 +941,22 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 >
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      {post.platforms.map((p) => (
-                        <span key={p} className="text-[10px] font-mono text-muted-foreground uppercase">
-                          {p}
-                        </span>
-                      ))}
+                      {post.platforms.map((p) => {
+                        const conf = PLATFORM_CONFIG[p]
+                        return (
+                          <span key={p} className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
+                            {conf ? <conf.icon className="size-2.5" /> : null}
+                            <span>{p}</span>
+                          </span>
+                        )
+                      })}
                     </div>
                     <p className="text-sm leading-relaxed">{post.content}</p>
+                    {post.mediaUrl && (
+                      <div className="size-10 rounded overflow-hidden border border-border mt-1">
+                        <img src={post.mediaUrl} alt="Attached" className="size-full object-cover" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
@@ -725,6 +964,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                       onClick={() => {
                         setPostContent(post.content)
                         setSelectedPlatforms(post.platforms)
+                        if (post.mediaUrl) setMediaUrl(post.mediaUrl)
                         setComposerExpanded(true)
                       }}
                       className="rounded border border-border px-2.5 py-1 text-xs hover:bg-secondary"
@@ -775,6 +1015,11 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                       )}
                     </div>
                     <p className="text-sm leading-relaxed">{post.content}</p>
+                    {post.mediaUrl && (
+                      <div className="size-10 rounded overflow-hidden border border-border mt-1">
+                        <img src={post.mediaUrl} alt="Attached" className="size-full object-cover" />
+                      </div>
+                    )}
                   </div>
                   <button
                     type="button"

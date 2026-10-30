@@ -7,6 +7,7 @@ import {
   getSocials,
   saveSocials,
   pushToBufferApi,
+  generateNanoBananaImage,
   type SocialPost,
   type SocialIdea,
   type SocialPlatform,
@@ -226,4 +227,16 @@ Rules:
 
   return { ok: true, hooks: fallbackHooks }
 }
+
+export async function generateSocialImageAction(input: {
+  prompt: string
+  aspectRatio?: "1:1" | "16:9" | "4:5"
+}): Promise<{ ok: boolean; imageUrl?: string; error?: string }> {
+  await requireAdmin()
+  if (!input.prompt?.trim()) {
+    return { ok: false, error: "Please enter a prompt to generate an image." }
+  }
+  return generateNanoBananaImage(input.prompt.trim(), { aspectRatio: input.aspectRatio })
+}
+
 

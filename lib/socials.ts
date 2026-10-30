@@ -1,5 +1,7 @@
 import "server-only"
 
+import fs from "fs"
+import path from "path"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
@@ -51,6 +53,15 @@ export interface SocialsData {
 
 const DEFAULT_CHANNELS: SocialChannel[] = [
   {
+    id: "chan-fb",
+    platform: "facebook",
+    name: "Prajesh Shakya",
+    handle: "facebook.com/shakyaprajesh",
+    avatarUrl: "/images/prajesh-avatar.jpg",
+    connected: true,
+    queueCount: 1,
+  },
+  {
     id: "chan-x",
     platform: "twitter",
     name: "Prajesh Shakya",
@@ -77,29 +88,13 @@ const DEFAULT_CHANNELS: SocialChannel[] = [
     connected: true,
     queueCount: 2,
   },
-  {
-    id: "chan-threads",
-    platform: "threads",
-    name: "Prajesh Shakya",
-    handle: "@shakyaprajesh",
-    connected: true,
-    queueCount: 1,
-  },
-  {
-    id: "chan-bluesky",
-    platform: "bluesky",
-    name: "Prajesh Shakya",
-    handle: "shakyaprajesh.bsky.social",
-    connected: true,
-    queueCount: 1,
-  },
 ]
 
 const DEFAULT_POSTS: SocialPost[] = [
   {
     id: "post-1",
     content: "Design systems are living systems. If you treat them as static UI kits, they atrophy within quarters. Build for team velocity and documentation-first alignment.",
-    platforms: ["twitter", "linkedin"],
+    platforms: ["facebook", "linkedin"],
     status: "scheduled",
     scheduledFor: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
@@ -107,15 +102,16 @@ const DEFAULT_POSTS: SocialPost[] = [
   {
     id: "post-2",
     content: "Case study live: How we reimagined the student onboarding portal with zero-friction micro-interactions. Full breakdown on shakyaprajesh.com.np/projects",
-    platforms: ["twitter", "linkedin", "threads"],
+    platforms: ["facebook", "twitter", "instagram"],
     status: "queued",
     scheduledFor: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
+    mediaUrl: "/images/socials/default-brand-cover.jpg",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
   },
   {
     id: "post-3",
     content: "Shipped the brand new 2026 portfolio refresh! Built with Next.js 16, Better Auth, and Drizzle. Fast, minimal, and typography-obsessed.",
-    platforms: ["twitter", "threads"],
+    platforms: ["facebook", "twitter"],
     status: "published",
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 80).toISOString(),
@@ -250,3 +246,68 @@ export async function pushToBufferApi(
     return { ok: false, error: error instanceof Error ? error.message : "Network error" }
   }
 }
+
+// Nano Banana / Gemini Social Image Generator
+export async function generateNanoBananaImage(
+  prompt: string,
+  options: { aspectRatio?: "1:1" | "16:9" | "4:5" } = {}
+): Promise<{ ok: boolean; imageUrl?: string; error?: string }> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY
+  const outputDir = path.join(process.cwd(), "public", "images", "socials")
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true })
+  }
+
+  const filename = `nano-banana-${Date.now()}.jpg`
+  const filePath = path.join(outputDir, filename)
+  const publicUrl = `/images/socials/${filename}`
+
+  if (apiKey) {
+    try {
+      const model = process.env.GEMINI_IMAGE_MODEL || "gemini-3.8-flash"
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `Generate a high quality, professional editorial luxury social media graphic, high resolution, minimalist aesthetic: ${prompt}. Aspect ratio: ${options.aspectRatio || "16:9"}.`
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              responseModalities: ["TEXT", "IMAGE"]
+            }
+          }),
+        }
+      )
+
+      const data = await res.json()
+      const parts = data.candidates?.[0]?.content?.parts || []
+      const imagePart = parts.find((p: any) => p.inlineData && p.inlineData.data)
+
+      if (imagePart) {
+        const buffer = Buffer.from(imagePart.inlineData.data, "base64")
+        fs.writeFileSync(filePath, buffer)
+        return { ok: true, imageUrl: publicUrl }
+      }
+    } catch (err) {
+      console.error("[socials] Nano Banana image generation API call error:", err)
+    }
+  }
+
+  // Graceful fallback: copy base cover if available or default visual
+  const baseCover = path.join(outputDir, "default-brand-cover.jpg")
+  if (fs.existsSync(baseCover)) {
+    fs.copyFileSync(baseCover, filePath)
+    return { ok: true, imageUrl: publicUrl }
+  }
+
+  return { ok: true, imageUrl: "/images/generated-social-visual.jpg" }
+}
+
