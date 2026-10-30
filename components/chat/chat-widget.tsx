@@ -11,10 +11,10 @@ import {
   RotateCcw,
   Calendar,
   ArrowUpRight,
-  ChevronDown,
   AlertCircle,
 } from "lucide-react"
 import { BOOKING_URL } from "@/lib/site"
+import { PrajAvatar } from "@/components/chat/praj-avatar"
 
 const INITIAL_MESSAGES: Array<{
   id: string
@@ -142,7 +142,6 @@ function FormattedText({ text }: { text: string }) {
 }
 
 function InlineContent({ content }: { content: string }) {
-  // Parse bold text **bold** and markdown/plain links
   const parts = content.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s)]+)/g)
 
   return (
@@ -233,7 +232,7 @@ export function ChatWidget() {
 
   return (
     <div className="fixed bottom-5 right-5 z-50">
-      {/* Floating launcher trigger */}
+      {/* Floating launcher trigger with Praj's animated avatar */}
       {!isOpen && (
         <motion.button
           initial={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -241,18 +240,17 @@ export function ChatWidget() {
           exit={{ opacity: 0, scale: 0.9, y: 10 }}
           transition={{ duration: 0.2 }}
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2.5 rounded-full border border-border bg-foreground px-4 py-2.5 text-background shadow-lg transition-all hover:scale-[1.03] active:scale-[0.98]"
+          className="group relative flex items-center gap-3 rounded-full border border-border/80 bg-foreground/95 backdrop-blur-md pl-1.5 pr-4 py-1.5 text-background shadow-xl transition-all hover:scale-[1.03] active:scale-[0.98]"
           aria-label="Open AI Brand Strategist chat"
         >
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <div className="flex items-center gap-1.5 text-xs font-medium tracking-wide">
-            <Sparkles className="h-3.5 w-3.5 text-amber-300 transition-transform group-hover:rotate-12" />
-            <span>Ask Praj</span>
-            <span className="text-[10px] uppercase opacity-75 font-mono tracking-wider ml-0.5">
-              • AI Strategist
+          <PrajAvatar size="sm" isSpeaking={false} showStatus={true} />
+          <div className="flex flex-col text-left">
+            <div className="flex items-center gap-1 text-xs font-medium tracking-wide">
+              <span>Ask Praj</span>
+              <Sparkles className="h-3 w-3 text-amber-300 transition-transform group-hover:rotate-12" />
+            </div>
+            <span className="text-[10px] uppercase opacity-75 font-mono tracking-wider">
+              AI Brand Strategist
             </span>
           </div>
         </motion.button>
@@ -270,20 +268,44 @@ export function ChatWidget() {
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 bg-muted/30">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background font-serif text-sm font-semibold text-foreground">
-                  P
-                </div>
+              <div className="flex items-center gap-3">
+                <PrajAvatar size="md" isSpeaking={isStreaming} showStatus={true} />
                 <div>
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-serif text-sm font-semibold tracking-tight text-foreground">
                       Praj
                     </h3>
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+                      • Strategist
+                    </span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-sans tracking-wide">
-                    AI Brand Strategist for Prajesh Shakya
-                  </p>
+
+                  {isStreaming ? (
+                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
+                      <span className="flex items-end gap-0.5 h-3">
+                        <motion.span
+                          className="w-0.5 bg-emerald-500 rounded-full"
+                          animate={{ height: ["3px", "11px", "3px"] }}
+                          transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut" }}
+                        />
+                        <motion.span
+                          className="w-0.5 bg-emerald-500 rounded-full"
+                          animate={{ height: ["9px", "3px", "9px"] }}
+                          transition={{ repeat: Infinity, duration: 0.6, delay: 0.2, ease: "easeInOut" }}
+                        />
+                        <motion.span
+                          className="w-0.5 bg-emerald-500 rounded-full"
+                          animate={{ height: ["5px", "13px", "5px"] }}
+                          transition={{ repeat: Infinity, duration: 0.6, delay: 0.4, ease: "easeInOut" }}
+                        />
+                      </span>
+                      <span>Praj is speaking...</span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground font-sans tracking-wide">
+                      AI Brand Strategist for Prajesh Shakya
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -320,10 +342,14 @@ export function ChatWidget() {
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                    className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
                   >
+                    {!isUser && (
+                      <PrajAvatar size="xs" isSpeaking={isStreaming} className="mt-1" />
+                    )}
+
                     <div
-                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 ${
+                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
                         isUser
                           ? "bg-foreground text-background font-sans text-[13.5px]"
                           : "border border-border/70 bg-card/60 text-foreground"
@@ -341,7 +367,8 @@ export function ChatWidget() {
 
               {/* Streaming loading indicator */}
               {isStreaming && (
-                <div className="flex justify-start">
+                <div className="flex items-start gap-2.5 justify-start">
+                  <PrajAvatar size="xs" isSpeaking={true} className="mt-1" />
                   <div className="flex items-center gap-1.5 rounded-2xl border border-border/70 bg-card/60 px-3.5 py-2.5 text-xs text-muted-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-foreground/70 animate-bounce [animation-delay:-0.3s]" />
                     <span className="h-1.5 w-1.5 rounded-full bg-foreground/70 animate-bounce [animation-delay:-0.15s]" />
