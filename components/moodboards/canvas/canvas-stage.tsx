@@ -60,10 +60,26 @@ export function CanvasStage({
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+
+    // Never capture or start dragging when clicking buttons, inputs, links, or overlay controls
+    const targetEl = e.target as HTMLElement | null
+    if (
+      targetEl &&
+      (targetEl.closest("button, a, input, textarea, select, [role='button'], [data-control]") ||
+        targetEl.closest("[data-prevent-canvas-drag]"))
+    ) {
+      return
+    }
+
     stopAnimation()
     drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false }
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    try {
+      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    } catch {
+      // Ignore if element is not capturable
+    }
   }
+
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drag.current) return
     const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y
@@ -72,15 +88,48 @@ export function CanvasStage({
     setDragging(true)
     setView({ ...view, x: drag.current.vx + dx, y: drag.current.vy + dy })
   }
+
   const onPointerUp = (e: React.PointerEvent) => {
+    const el = e.currentTarget as HTMLElement
+    if (el && el.hasPointerCapture(e.pointerId)) {
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch {}
+    }
+
     const moved = drag.current?.moved
+    const wasDragging = drag.current !== null
     drag.current = null
     setDragging(false)
+
+    if (!wasDragging) return
+
+    // Check if the click target was a UI control or button
+    const targetEl = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
+    if (
+      targetEl &&
+      (targetEl.closest("button, a, input, textarea, select, [role='button'], [data-control]") ||
+        targetEl.closest("[data-prevent-canvas-drag]"))
+    ) {
+      return
+    }
+
     if (!moved && onPickItem) {
-      // Pointer capture makes e.target the stage, so look up what's under the cursor.
-      const target = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-item]")
+      // Find what canvas item was clicked under the cursor
+      const target = targetEl?.closest<HTMLElement>("[data-item]")
       onPickItem(target ? canvas.items.find((i) => i.id === target.dataset.item) ?? null : null)
     }
+  }
+
+  const onPointerCancel = (e: React.PointerEvent) => {
+    const el = e.currentTarget as HTMLElement
+    if (el && el.hasPointerCapture(e.pointerId)) {
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch {}
+    }
+    drag.current = null
+    setDragging(false)
   }
 
   return (
@@ -93,7 +142,7 @@ export function CanvasStage({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onPointerCancel={onPointerCancel}
     >
       <div
         className="absolute left-0 top-0 origin-top-left"
@@ -194,10 +243,45 @@ function edgePoints(a: CanvasItem, b: CanvasItem) {
 
 export function ZoomControls({ scale, onZoom, onFit }: { scale: number; onZoom: (factor: number) => void; onFit: () => void }) {
   return (
-    <div className="absolute bottom-4 left-4 z-[1020] flex items-center gap-1 rounded-full border border-border bg-background/90 p-1 text-sm shadow-sm backdrop-blur">
-      <button type="button" onClick={() => onZoom(1 / 1.25)} className="h-8 w-8 rounded-full hover:bg-secondary" aria-label="Zoom out">−</button>
-      <button type="button" onClick={onFit} className="min-w-14 rounded-full px-2 text-xs tabular-nums hover:bg-secondary" title="Fit to content">{Math.round(scale * 100)}%</button>
-      <button type="button" onClick={() => onZoom(1.25)} className="h-8 w-8 rounded-full hover:bg-secondary" aria-label="Zoom in">+</button>
+    <div
+      data-control="true"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      className="absolute bottom-4 left-4 z-[1020] flex items-center gap-1 rounded-full border border-border bg-background/90 p-1 text-sm shadow-sm backdrop-blur"
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onZoom(1 / 1.25)
+        }}
+        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-secondary active:scale-95"
+        aria-label="Zoom out"
+      >
+        −
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onFit()
+        }}
+        className="min-w-14 cursor-pointer rounded-full px-2 text-xs tabular-nums transition hover:bg-secondary active:scale-95"
+        title="Fit to content"
+      >
+        {Math.round(scale * 100)}%
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onZoom(1.25)
+        }}
+        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-secondary active:scale-95"
+        aria-label="Zoom in"
+      >
+        +
+      </button>
     </div>
   )
 }
@@ -217,7 +301,14 @@ export function MiniMap({ canvas, view, viewport, bounds, onJump }: { canvas: Ca
     onJump(-(cx - vw / 2) * view.scale, -(cy - vh / 2) * view.scale)
   }
   return (
-    <svg width={W} height={H} onPointerDown={(e) => e.stopPropagation()} onClick={jump} className="absolute bottom-4 right-4 z-[1020] cursor-crosshair rounded-lg border border-border bg-background/90 shadow-sm backdrop-blur">
+    <svg
+      data-control="true"
+      width={W}
+      height={H}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={jump}
+      className="absolute bottom-4 right-4 z-[1020] cursor-crosshair rounded-lg border border-border bg-background/90 shadow-sm backdrop-blur"
+    >
       {canvas.items.map((i) => <rect key={i.id} x={ox + (i.x - world.x) * k} y={oy + (i.y - world.y) * k} width={Math.max(1, i.w * k)} height={Math.max(1, i.h * k)} fill={i.type === "frame" ? "rgba(27,26,22,0.08)" : "rgba(27,26,22,0.45)"} />)}
       <rect x={ox + (vx - world.x) * k} y={oy + (vy - world.y) * k} width={vw * k} height={vh * k} fill="none" stroke="#1B1A16" strokeWidth={1} />
     </svg>
