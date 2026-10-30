@@ -31,14 +31,15 @@ export async function generateMetadata({
 
   // The SEO fields in /admin win when they're filled in.
   const title = row?.seoTitle?.trim() || `${project.title} — Prajesh Shakya`
-  const description = row?.seoDescription?.trim() || project.overview
+  const description = row?.seoDescription?.trim() || `${project.title}: ${project.overview}`
+  const canonical = canonicalUrl(`/projects/${project.slug}`)
   // A page's openGraph replaces the layout's whole, so the site name is set again here.
   const image = hasImage(project.thumbnail) ? { url: project.thumbnail, alt: project.title } : DEFAULT_SHARE_IMAGE
   return {
     title,
     description,
-    alternates: { canonical: `/projects/${project.slug}` },
-    openGraph: { title, description, url: `/projects/${project.slug}`, siteName: SITE_NAME, images: [image] },
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, siteName: SITE_NAME, type: "article", images: [{ ...image, width: 1200, height: 630 }] },
     twitter: { card: "summary_large_image", title, description, images: [image.url] },
   }
 }

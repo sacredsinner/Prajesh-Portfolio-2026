@@ -18,7 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const post = await getPublishedPost(slug)
   if (!post) return { title: "Note Not Found" }
   const title = post.seoTitle || `${post.title} — Prajesh Shakya`
-  const description = post.seoDescription || post.excerpt
+  const description = post.seoDescription?.trim() || `${post.title}: ${post.excerpt}`
+  const canonical = canonicalUrl(`/blog/${post.slug}`)
   const image = post.featuredImage && !post.featuredImage.startsWith("/placeholder") ? post.featuredImage : undefined
   // A page's openGraph replaces the layout's whole, so the site name and, for notes
   // without a cover, the site's share image are set again here.
@@ -27,8 +28,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title,
     description,
     keywords: post.seoKeywords?.split(",").map((keyword) => keyword.trim()).filter(Boolean),
-    alternates: { canonical: `/blog/${post.slug}`, types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } },
-    openGraph: { title, description, type: "article", url: `/blog/${post.slug}`, siteName: SITE_NAME, publishedTime: post.publishedAt?.toISOString(), modifiedTime: post.updatedAt?.toISOString(), authors: [post.author], tags: post.tags, images: [shareImage] },
+    alternates: { canonical, types: { "application/rss+xml": [{ url: "/blog/rss.xml", title: "Notes — Prajesh Shakya" }] } },
+    openGraph: { title, description, type: "article", url: canonical, siteName: SITE_NAME, publishedTime: post.publishedAt?.toISOString(), modifiedTime: post.updatedAt?.toISOString(), authors: [post.author], tags: post.tags, images: [shareImage] },
     twitter: { card: "summary_large_image", title, description, images: [shareImage.url] },
   }
 }
