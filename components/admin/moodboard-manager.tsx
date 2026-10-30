@@ -118,6 +118,15 @@ export function MoodboardManager({ boards }: { boards: AdminMoodboard[] }) {
               className="w-full rounded-full border border-border bg-background pl-9 pr-3 py-1.5 text-xs outline-none focus:border-foreground"
             />
           </div>
+          <a
+            href="/m/demo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-border px-4 py-1.5 text-xs font-medium hover:bg-secondary transition-colors inline-flex items-center gap-1.5"
+            title="Launch interactive client presentation demo"
+          >
+            <span>Demo Studio</span> ↗
+          </a>
           <button
             onClick={() => setEditing({ title: "", clientName: "", clientEmail: "", intro: "" })}
             className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"

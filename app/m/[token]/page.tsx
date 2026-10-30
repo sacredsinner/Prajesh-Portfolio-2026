@@ -9,12 +9,20 @@ import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
 import { moodboardComments, moodboards } from "@/lib/db/schema"
+import { DEMO_MOODBOARD, DEMO_CANVAS, DEMO_COMMENTS } from "@/lib/demo-board"
 
 // A client's moodboard: /m/<token>. Private (unguessable link, not indexed).
 export const dynamic = "force-dynamic"
 
 async function load(token: string) {
-  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return undefined
+  if (token === "demo") {
+    return {
+      ...DEMO_MOODBOARD,
+      canvas: DEMO_CANVAS,
+      sections: [],
+    }
+  }
+  if (!/^[A-Za-z0-9_-]{4,64}$/.test(token)) return undefined
   await ensureSchema()
   const [row] = await db.select().from(moodboards).where(and(eq(moodboards.shareToken, token), eq(moodboards.shared, true))).limit(1)
   return row
@@ -29,10 +37,13 @@ export default async function MoodboardPage({ params }: { params: Promise<{ toke
   const { token } = await params
   const row = await load(token)
   if (!row) notFound()
+  const isDemo = token === "demo"
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null)
   const isAdmin = isAdminUser(session?.user)
-  if (!isAdmin) await db.update(moodboards).set({ lastViewedAt: new Date() }).where(eq(moodboards.id, row.id))
-  const comments = await db.select().from(moodboardComments).where(eq(moodboardComments.moodboardId, row.id)).orderBy(asc(moodboardComments.createdAt))
+  if (!isAdmin && !isDemo) await db.update(moodboards).set({ lastViewedAt: new Date() }).where(eq(moodboards.id, row.id))
+  const comments = isDemo
+    ? DEMO_COMMENTS
+    : await db.select().from(moodboardComments).where(eq(moodboardComments.moodboardId, row.id)).orderBy(asc(moodboardComments.createdAt))
   const approved = row.status === "approved"
   const when = (date: Date) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kathmandu" }).format(date)
 
