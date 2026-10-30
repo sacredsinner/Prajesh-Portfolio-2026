@@ -157,6 +157,7 @@ export const blogPosts = pgTable("blog_posts", {
   seoDescription: text("seo_description"),
   seoKeywords: text("seo_keywords"),
   featured: boolean("featured").notNull().default(false),
+  notionPageId: text("notion_page_id").unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

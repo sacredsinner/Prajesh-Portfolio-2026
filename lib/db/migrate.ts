@@ -148,6 +148,7 @@ const STATEMENTS = [
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS analytics jsonb NOT NULL DEFAULT '{"views":0,"appreciations":0,"saves":0,"comments":0}'::jsonb`,
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS og_image text`,
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS cover_crop jsonb`,
+  `ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS notion_page_id text UNIQUE`,
   // High-performance composite indexes for instant lookups
   `CREATE INDEX IF NOT EXISTS idx_projects_status_featured ON projects (status, featured DESC, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_blog_posts_published ON blog_posts (published, featured DESC, published_at DESC)`,
