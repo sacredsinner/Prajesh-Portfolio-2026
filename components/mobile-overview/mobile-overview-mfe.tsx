@@ -121,12 +121,12 @@ export function MobileOverviewMfe({ data, isAdmin = false, userEmail, isDemo = f
     const toastId = toast.loading("Syncing notes from Notion...")
     try {
       const result = await syncNotionNotesAction()
-      if (result.success) {
-        toast.success(`Notion sync complete: ${result.syncedCount} notes updated`, { id: toastId })
-        emitAction("notion_synced", { count: result.syncedCount })
+      if (result.ok) {
+        toast.success(`Notion synced: ${result.added} added, ${result.updated} updated (${result.total} total)`, { id: toastId })
+        emitAction("notion_synced", { added: result.added, updated: result.updated, total: result.total })
         router.refresh()
       } else {
-        toast.error(`Notion sync failed: ${result.error}`, { id: toastId })
+        toast.error(result.errors?.[0] || "Could not sync Notion notes", { id: toastId })
       }
     } catch (err: any) {
       toast.error(`Sync error: ${err.message || "Unknown error"}`, { id: toastId })

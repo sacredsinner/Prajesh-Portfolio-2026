@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { CommandPalette } from "@/components/admin/command-palette"
-import { Search, ExternalLink, LogOut } from "lucide-react"
+import { Search, ExternalLink, LogOut, Smartphone } from "lucide-react"
 
 export type AdminSection =
   | "overview"
@@ -105,6 +105,16 @@ export function AdminHeader({
               ⌘K
             </kbd>
           </button>
+
+          <Link
+            href="/overview"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <Smartphone className="size-3" />
+            <span>Mobile MFE</span>
+          </Link>
 
           <Link
             href="/"

@@ -1,4 +1,5 @@
-import OverviewPage, { metadata, viewport, dynamic } from "@/app/overview/page"
+import OverviewPage, { metadata, viewport } from "@/app/overview/page"
 
-export { metadata, viewport, dynamic }
+export const dynamic = "force-dynamic"
+export { metadata, viewport }
 export default OverviewPage

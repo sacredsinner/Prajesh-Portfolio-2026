@@ -33,16 +33,6 @@
       "connected": true,
       "queueCount": 1,
       "bufferProfileId": "6a97d494065799be4671b603"
-    },
-    {
-      "id": "chan-x",
-      "platform": "twitter",
-      "name": "Prajesh Shakya",
-      "handle": "@shakyaprajesh",
-      "avatarUrl": "/images/prajesh-avatar.jpg",
-      "connected": false,
-      "queueCount": 0,
-      "bufferProfileId": "buf_profile_x_prajesh"
     }
   ],
   "posts": [

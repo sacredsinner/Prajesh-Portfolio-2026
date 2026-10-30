@@ -92,6 +92,13 @@ export async function createSocialPost(input: {
     mediaUrl: input.mediaUrl,
   })
 
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: res.error || "Buffer rejected the post. Please check the error details.",
+    }
+  }
+
   const bufferUpdateId = res.updateIds?.[0] || `buf_${Date.now()}`
   const bufferSynced = true
   const bufferMessage = input.publishNow
@@ -146,6 +153,13 @@ export async function publishSocialPostNow(id: string): Promise<{
     now: true,
     mediaUrl: target.mediaUrl,
   })
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: res.error || "Failed to publish post via Buffer.",
+    }
+  }
 
   const updatedPosts = data.posts.map((p) =>
     p.id === id

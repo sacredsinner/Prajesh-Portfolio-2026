@@ -29,6 +29,7 @@ import {
   Sparkles,
   ExternalLink,
   LogOut,
+  Smartphone,
 } from "lucide-react"
 import { toast } from "sonner"
 import { seedDemoProjects } from "@/app/actions/cms"
@@ -88,6 +89,13 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
           >
             <LayoutDashboard className="size-4" />
             <span>Overview & Dashboard</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runCommand(() => router.push("/overview"))}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Smartphone className="size-4 text-emerald-500" />
+            <span>Mobile Overview (MFE)</span>
           </CommandItem>
           <CommandItem
             onSelect={() => runCommand(() => router.push("/admin?tab=projects"))}

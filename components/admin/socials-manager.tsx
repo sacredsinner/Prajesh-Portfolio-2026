@@ -218,7 +218,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
   // Improvement 1: Live Platform Mockup Preview
   const [composerView, setComposerView] = React.useState<"write" | "preview">("write")
-  const [previewPlatform, setPreviewPlatform] = React.useState<"facebook" | "instagram" | "linkedin" | "twitter">("instagram")
+  const [previewPlatform, setPreviewPlatform] = React.useState<"facebook" | "instagram" | "linkedin">("instagram")
 
   // Improvement 3: Weekly Calendar View
   const [queueView, setQueueView] = React.useState<"timeline" | "calendar">("timeline")
@@ -240,7 +240,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
 
   const availablePlatforms = React.useMemo(() => {
     const list = Array.from(new Set(connectedChannels.map((c) => c.platform)))
-    return list.length > 0 ? list : (["facebook", "twitter", "linkedin"] as SocialPlatform[])
+    return list.length > 0 ? list : (["facebook", "instagram", "linkedin"] as SocialPlatform[])
   }, [connectedChannels])
 
   // Composer State
@@ -331,6 +331,10 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
     }
     if (selectedPlatforms.length === 0) {
       toast.error("Select at least one connected channel.")
+      return
+    }
+    if (selectedPlatforms.includes("instagram") && !mediaUrl.trim()) {
+      toast.error("Instagram posts require an image attachment. Please pick a preset or generate a visual.")
       return
     }
 
@@ -860,7 +864,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                     Realistic Feed Preview:
                   </span>
                   <div className="flex items-center gap-1 flex-wrap">
-                    {(["instagram", "facebook", "linkedin", "twitter"] as const).map((plat) => (
+                    {(["instagram", "facebook", "linkedin"] as const).map((plat) => (
                       <button
                         key={plat}
                         type="button"
@@ -875,9 +879,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                           ? "Instagram"
                           : plat === "facebook"
                           ? "Facebook"
-                          : plat === "linkedin"
-                          ? "LinkedIn"
-                          : "X / Twitter"}
+                          : "LinkedIn"}
                       </button>
                     ))}
                   </div>
@@ -975,53 +977,7 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                   </div>
                 )}
 
-                {/* 3. X / Twitter Mockup */}
-                {previewPlatform === "twitter" && (
-                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card p-3.5 space-y-2 shadow-sm font-sans">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="size-9 rounded-full overflow-hidden bg-secondary border border-border">
-                          <img src="/images/prajesh-avatar.jpg" alt="Prajesh" className="size-full object-cover" />
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <span className="font-bold">Prajesh Shakya</span>
-                          <span className="text-muted-foreground font-mono">@shakyaprajesh · Just now</span>
-                        </div>
-                      </div>
-                      <span className="font-mono text-xs font-bold">𝕏</span>
-                    </div>
-
-                    <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed pt-0.5">
-                      {postContent || "Short, punchy contrarian takes and micro-insights perform best on 𝕏."}
-                    </p>
-
-                    {mediaUrl && (
-                      <div className="rounded-xl overflow-hidden border border-border/60 bg-black aspect-video max-h-56">
-                        <img src={mediaUrl} alt="Attached" className="size-full object-cover" />
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-muted-foreground pt-2 text-xs border-t border-border/40">
-                      <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
-                        <MessageSquare className="size-3.5" /> 18
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-emerald-500 cursor-pointer">
-                        <Repeat2 className="size-3.5" /> 24
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-pink-500 cursor-pointer">
-                        <Heart className="size-3.5" /> 156
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
-                        <BarChart2 className="size-3.5" /> 2.4K
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-foreground cursor-pointer">
-                        <Bookmark className="size-3.5" />
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. Instagram Feed Mockup */}
+                {/* 3. Instagram Feed Mockup */}
                 {previewPlatform === "instagram" && (
                   <div className="max-w-md mx-auto rounded-xl border border-border bg-card overflow-hidden shadow-sm font-sans text-xs">
                     {/* Header */}

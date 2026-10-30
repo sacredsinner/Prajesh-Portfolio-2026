@@ -63,37 +63,27 @@ const DEFAULT_CHANNELS: SocialChannel[] = [
     avatarUrl: "/images/prajesh-avatar.jpg",
     connected: true,
     queueCount: 1,
-    bufferProfileId: "buf_profile_fb_prajesh",
-  },
-  {
-    id: "chan-x",
-    platform: "twitter",
-    name: "Prajesh Shakya",
-    handle: "@shakyaprajesh",
-    avatarUrl: "/images/prajesh-avatar.jpg",
-    connected: true,
-    queueCount: 2,
-    bufferProfileId: "buf_profile_x_prajesh",
-  },
-  {
-    id: "chan-li",
-    platform: "linkedin",
-    name: "Prajesh Shakya",
-    handle: "in/shakyaprajesh",
-    avatarUrl: "/images/prajesh-avatar.jpg",
-    connected: true,
-    queueCount: 1,
-    bufferProfileId: "buf_profile_li_prajesh",
+    bufferProfileId: "6a98e114065799be467a4645",
   },
   {
     id: "chan-ig",
     platform: "instagram",
-    name: "Prajesh Shakya",
-    handle: "@shakyaprajesh",
+    name: "madebyprajesh",
+    handle: "@madebyprajesh",
     avatarUrl: "/images/prajesh-avatar.jpg",
     connected: true,
     queueCount: 2,
-    bufferProfileId: "buf_profile_ig_prajesh",
+    bufferProfileId: "6a97d475065799be4671b5c3",
+  },
+  {
+    id: "chan-li",
+    platform: "linkedin",
+    name: "prajeshshakya",
+    handle: "in/prajeshshakya",
+    avatarUrl: "/images/prajesh-avatar.jpg",
+    connected: true,
+    queueCount: 1,
+    bufferProfileId: "6a97d494065799be4671b603",
   },
 ]
 
@@ -318,10 +308,9 @@ export async function fetchBufferProfiles(token: string): Promise<BufferFetchRes
       ok: true,
       source: "bridge",
       channels: [
-        { id: "buf_profile_fb_prajesh", service: "facebook", name: "Prajesh Shakya", avatar: "/images/prajesh-avatar.jpg" },
-        { id: "buf_profile_x_prajesh", service: "twitter", name: "Prajesh Shakya", avatar: "/images/prajesh-avatar.jpg" },
-        { id: "buf_profile_li_prajesh", service: "linkedin", name: "Prajesh Shakya", avatar: "/images/prajesh-avatar.jpg" },
-        { id: "buf_profile_ig_prajesh", service: "instagram", name: "Prajesh Shakya", avatar: "/images/prajesh-avatar.jpg" },
+        { id: "6a98e114065799be467a4645", service: "facebook", name: "Prajesh Shakya", avatar: "/images/prajesh-avatar.jpg" },
+        { id: "6a97d475065799be4671b5c3", service: "instagram", name: "madebyprajesh", avatar: "/images/prajesh-avatar.jpg" },
+        { id: "6a97d494065799be4671b603", service: "linkedin", name: "prajeshshakya", avatar: "/images/prajesh-avatar.jpg" },
       ],
     }
   }
@@ -467,13 +456,20 @@ export async function pushToBufferApi(
 
   const publicMediaUrl = toPublicUrl(options.mediaUrl)
 
+  if (targetPlatforms.includes("instagram") && !publicMediaUrl) {
+    return {
+      ok: false,
+      error: "Instagram posts require an image attachment. Please pick a preset or generate an image.",
+    }
+  }
+
   // Live Buffer GraphQL & REST dispatch
   const socials = await getSocials()
   const matchedIds: string[] = []
 
   for (const plat of targetPlatforms) {
     const chan = socials.channels.find(
-      (c) => c.connected && (c.platform === plat || (plat === "twitter" && (c.platform as any) === "x"))
+      (c) => c.connected && c.platform === plat
     )
     if (chan?.bufferProfileId) {
       matchedIds.push(chan.bufferProfileId)
@@ -485,9 +481,7 @@ export async function pushToBufferApi(
     if (profResult.ok && profResult.channels) {
       for (const plat of targetPlatforms) {
         const found = profResult.channels.find(
-          (c) =>
-            c.service === plat ||
-            (plat === "twitter" && (c.service === "x" || c.service === "twitter"))
+          (c) => c.service === plat
         )
         if (found) {
           matchedIds.push(found.id)
@@ -496,8 +490,16 @@ export async function pushToBufferApi(
     }
   }
 
+  if (matchedIds.length === 0) {
+    return {
+      ok: false,
+      error: "No connected Buffer channels matched your selection (Facebook, Instagram, LinkedIn).",
+    }
+  }
+
   const updateIds: string[] = []
   let anySuccess = false
+  let lastError: string | undefined
 
   for (const channelId of matchedIds) {
     try {
@@ -561,10 +563,16 @@ export async function pushToBufferApi(
           updateIds.push(post.id)
           anySuccess = true
         } else if (json.data?.createPost?.message) {
+          lastError = json.data.createPost.message
           console.warn("[buffer] createPost error message:", json.data.createPost.message)
+        } else if (Array.isArray(json.errors) && json.errors.length > 0) {
+          lastError = json.errors[0].message
         }
+      } else {
+        lastError = `Buffer HTTP ${res.status}`
       }
     } catch (err) {
+      lastError = err instanceof Error ? err.message : "Network error contacting Buffer"
       console.warn("[buffer] GraphQL createPost error:", err)
     }
   }
@@ -573,36 +581,10 @@ export async function pushToBufferApi(
     return { ok: true, updateIds }
   }
 
-  // REST fallback
-  try {
-    const formData = new URLSearchParams()
-    formData.append("access_token", token)
-    formData.append("text", text)
-    if (options.now) formData.append("now", "true")
-    if (options.scheduled_at) {
-      formData.append("scheduled_at", String(Math.floor(new Date(options.scheduled_at).getTime() / 1000)))
-    }
-    if (publicMediaUrl) formData.append("media[photo]", publicMediaUrl)
-    for (const pid of matchedIds.length > 0 ? matchedIds : ["default"]) {
-      formData.append("profile_ids[]", pid)
-    }
-
-    const res = await fetch("https://api.bufferapp.com/1/updates/create.json", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData.toString(),
-    })
-
-    const result = await res.json()
-    if (res.ok && result.success) {
-      const restIds = (result.updates || []).map((u: any) => u.id).filter(Boolean)
-      return { ok: true, updateIds: restIds.length > 0 ? restIds : [`buf_${Date.now()}`] }
-    }
-  } catch (err) {
-    console.warn("[buffer] REST fallback error:", err)
+  return {
+    ok: false,
+    error: lastError || "Failed to publish post via Buffer API.",
   }
-
-  return { ok: true, updateIds: [`buf_live_${Date.now()}`] }
 }
 
 export const NANO_BANANA_PRESETS = [
