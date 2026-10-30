@@ -177,6 +177,57 @@
   animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both;
 }
 
+/* Hero Text Interactive Hover Effects */
+@media (hover: hover) and (pointer: fine) {
+  .hero-interactive-title {
+    cursor: default;
+  }
+
+  /* Sibling dimming when hovering the title container */
+  .hero-interactive-title:hover .hero-title-word {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0);
+  }
+
+  /* Focused word elevation & italic flourish */
+  .hero-interactive-title .hero-title-word:hover {
+    opacity: 1;
+    transform: translate3d(0, -3px, 0);
+    font-style: italic;
+    color: var(--foreground);
+  }
+}
+
+.hero-title-word {
+  display: inline-block;
+  will-change: transform, opacity, font-style;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              font-style 0.25s ease-out,
+              color 0.25s ease-out;
+}
+
+.hero-interactive-kicker {
+  transition: letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-interactive-kicker:hover {
+    letter-spacing: 0.22em;
+    color: var(--foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title-word,
+  .hero-interactive-kicker {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-animate-kicker,
   .hero-animate-title,

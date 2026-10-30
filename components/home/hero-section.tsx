@@ -2,22 +2,37 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { HeroMotion } from "@/components/home/hero-motion"
 
+const TITLE_WORDS = [
+  "Crafting",
+  "Authentic",
+  "Brand",
+  "Identities",
+  "That",
+  "Resonate",
+]
+
 // Entrance animations are GPU-accelerated CSS for instant LCP and 0ms TBT.
 export function HeroSection() {
   return (
     <section className="min-h-screen flex items-center pt-20 text-center">
       <div className="page-container py-24 md:py-32">
         <HeroMotion className="mx-auto max-w-4xl">
-          <span className="hero-animate-kicker block text-xs uppercase tracking-widest text-muted-foreground mb-6">
+          <span className="hero-animate-kicker hero-interactive-kicker block text-xs uppercase tracking-widest text-muted-foreground mb-6 cursor-default">
             Brand Identity Designer | Creative Strategist
           </span>
           <h1
-            className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance"
+            className="hero-animate-title hero-interactive-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none"
+            aria-label="Crafting Authentic Brand Identities That Resonate"
           >
-            Crafting Authentic Brand Identities That Resonate
+            {TITLE_WORDS.map((word, idx) => (
+              <span key={word}>
+                <span className="hero-title-word">{word}</span>
+                {idx < TITLE_WORDS.length - 1 ? " " : ""}
+              </span>
+            ))}
           </h1>
           <p
-            className="hero-animate-fade mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl"
+            className="hero-animate-fade mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl transition-colors duration-300 hover:text-foreground/90 cursor-default"
           >
             Hi, I&apos;m Prajesh — I turn ideas into distinctive brands through strategy, design, and meaningful visual identities.
           </p>
