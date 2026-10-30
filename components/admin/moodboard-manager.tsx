@@ -138,6 +138,16 @@ export function MoodboardManager({ boards }: { boards: AdminMoodboard[] }) {
             />
           </div>
           <a
+            href="/moodboard-designer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-1.5 text-xs font-semibold text-neutral-950 shadow-sm hover:brightness-110 transition-all inline-flex items-center gap-1.5"
+            title="Launch the modern AI Moodboard Designer inspired by Adobe Firefly"
+          >
+            <Sparkles className="size-3.5 fill-current" />
+            <span>AI Moodboard Designer</span> ↗
+          </a>
+          <a
             href="/m/apple"
             target="_blank"
             rel="noopener noreferrer"
