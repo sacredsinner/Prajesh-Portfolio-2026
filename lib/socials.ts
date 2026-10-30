@@ -503,6 +503,27 @@ export async function pushToBufferApi(
     try {
       const mode = options.now ? "shareNow" : options.draft ? "saveDraft" : "addToQueue"
       const schedulingType = options.scheduled_at ? "customScheduled" : "automatic"
+      const targetChan = socials.channels.find((c) => c.bufferProfileId === channelId)
+      const isInstagram = targetChan?.platform === "instagram"
+
+      const inputPayload: Record<string, any> = {
+        channelId,
+        text,
+        mode,
+        schedulingType,
+        dueAt: options.scheduled_at,
+        saveToDraft: Boolean(options.draft),
+        assets: publicMediaUrl ? [{ image: { url: publicMediaUrl } }] : undefined,
+      }
+
+      if (isInstagram) {
+        inputPayload.metadata = {
+          instagram: {
+            type: "post",
+            shouldShareToFeed: true,
+          },
+        }
+      }
 
       const gqlMutation = {
         query: `mutation CreatePost($input: CreatePostInput!) {
@@ -520,15 +541,7 @@ export async function pushToBufferApi(
           }
         }`,
         variables: {
-          input: {
-            channelId,
-            text,
-            mode,
-            schedulingType,
-            dueAt: options.scheduled_at,
-            saveToDraft: Boolean(options.draft),
-            assets: publicMediaUrl ? [{ image: { url: publicMediaUrl } }] : undefined,
-          },
+          input: inputPayload,
         },
       }
 
@@ -547,6 +560,8 @@ export async function pushToBufferApi(
         if (post?.id) {
           updateIds.push(post.id)
           anySuccess = true
+        } else if (json.data?.createPost?.message) {
+          console.warn("[buffer] createPost error message:", json.data.createPost.message)
         }
       }
     } catch (err) {
