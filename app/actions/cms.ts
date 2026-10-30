@@ -15,6 +15,7 @@ import { enquiryAutoReplyEmail, enquiryNotificationEmail } from "@/lib/email-tem
 import { addLead } from "@/lib/resend-contacts"
 import { ensureSchema } from "@/lib/db/migrate"
 import { DEMO_PROJECTS } from "@/lib/demo-projects"
+import { syncNotionNotesToDatabase } from "@/lib/notion"
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -283,7 +284,6 @@ export async function deletePost(id: string) { await requireAdmin(); const [remo
 
 export async function syncNotionNotesAction() {
   await requireAdmin()
-  const { syncNotionNotesToDatabase } = await import("@/lib/notion")
   return syncNotionNotesToDatabase()
 }
 
