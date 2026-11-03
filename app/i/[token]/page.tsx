@@ -32,7 +32,13 @@ export default async function DocumentPage({ params }: { params: Promise<{ token
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null)
   const isAdmin = isAdminUser(session?.user)
   // Note the client's first visit (not Prajesh's own previews).
-  if (!isAdmin && !row.viewedAt) await db.update(invoices).set({ viewedAt: new Date() }).where(eq(invoices.id, row.id))
+  if (!isAdmin && !row.viewedAt) {
+    try {
+      await db.update(invoices).set({ viewedAt: new Date() }).where(eq(invoices.id, row.id))
+    } catch {
+      // Ignored if database is not reachable
+    }
+  }
 
   const business = await getBusinessSettings()
   const currency = currencyOf(row)

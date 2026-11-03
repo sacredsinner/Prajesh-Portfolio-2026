@@ -312,6 +312,24 @@ function parseDateToIso(str: string | undefined | null): string {
   if (!str) return today()
   const trimmed = str.trim()
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+
+  // Handle DD-Mon-YY or DD-Mon-YYYY (e.g. 12-Aug-26, 28-Nov-25, 1-Jun-26)
+  const dmyMatch = trimmed.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/)
+  if (dmyMatch) {
+    const day = Number(dmyMatch[1])
+    const monthStr = dmyMatch[2].toLowerCase()
+    let year = Number(dmyMatch[3])
+    if (year < 100) year += 2000
+    const months: Record<string, string> = {
+      jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+      jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+    }
+    const month = months[monthStr]
+    if (month && day >= 1 && day <= 31) {
+      return `${year}-${month}-${String(day).padStart(2, "0")}`
+    }
+  }
+
   const d = new Date(trimmed)
   if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
   return today()

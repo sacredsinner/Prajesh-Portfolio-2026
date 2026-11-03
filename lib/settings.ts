@@ -36,9 +36,14 @@ function merge(value: unknown): BusinessSettings {
 }
 
 export async function getBusinessSettings(): Promise<BusinessSettings> {
-  await ensureSchema()
-  const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, "business")).limit(1)
-  return merge(row?.value)
+  try {
+    await ensureSchema()
+    const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, "business")).limit(1)
+    return merge(row?.value)
+  } catch (error) {
+    console.warn("[settings] Database unavailable in getBusinessSettings, using defaults:", error)
+    return merge(DEFAULT_BUSINESS_SETTINGS)
+  }
 }
 
 export async function saveBusinessSettings(value: BusinessSettings) {
