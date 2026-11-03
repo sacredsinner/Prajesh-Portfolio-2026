@@ -3,67 +3,10 @@ import type { Overview } from "@/lib/overview"
 // Realistic fallback data for Studio Overview when database is offline or demo mode is active.
 export const FALLBACK_OVERVIEW: Overview = {
   enquiries: {
-    newCount: 2,
-    monthCount: 6,
-    totalCount: 28,
-    recent: [
-      {
-        id: "enq-01",
-        name: "Siddhartha Vaidya",
-        company: "Himalayan Silk & Co.",
-        email: "siddhartha@himalayansilk.com",
-        message:
-          "Hi Prajesh, We are looking to rebrand our heritage handloom label for the European market. Loved your work with Aurora Wellness and the Apple Guitars case study. Would love to align on timelines for Q1.",
-        status: "new",
-        notes: "Requested luxury parchment stationery direction and brand guidelines.",
-        packageInterest: "Identity Architecture",
-        budget: "$12,000 - $18,000",
-        timeline: "Q1 2026",
-        createdAt: new Date(Date.now() - 3 * 3600 * 1000),
-      },
-      {
-        id: "enq-02",
-        name: "Elena Rostova",
-        company: "Aetheric Audio",
-        email: "elena@aetheric.io",
-        message:
-          "Prajesh, the typography specimen and physical board were exceptional. We have greenlit the design system phase and would like to review the next milestone.",
-        status: "in_progress",
-        notes: "Quote #Q-2026-004 accepted. Milestone 2 in progress.",
-        packageInterest: "Digital Craft & System",
-        budget: "$20,000+",
-        timeline: "Immediate",
-        createdAt: new Date(Date.now() - 22 * 3600 * 1000),
-      },
-      {
-        id: "enq-03",
-        name: "Marcus Chen",
-        company: "Kavya Capital",
-        email: "marcus@kavyacap.com",
-        message:
-          "We are setting up a venture fund focused on climate-tech in South Asia. Need an editorial, high-trust identity and bespoke web presence.",
-        status: "new",
-        notes: "Initial intake completed. Send bespoke proposal link.",
-        packageInterest: "Complete Brand Ecosystem",
-        budget: "$25,000+",
-        timeline: "Q2 2026",
-        createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000),
-      },
-      {
-        id: "enq-04",
-        name: "Sarah Jenkins",
-        company: "Studio Monolith",
-        email: "sarah@monolith.design",
-        message:
-          "Thank you for the seamless brand handoff Prajesh! The guidelines are in production and the client is ecstatic.",
-        status: "completed",
-        notes: "Final invoice paid. Testimonial collected.",
-        packageInterest: "Identity Architecture",
-        budget: "$10,000 - $15,000",
-        timeline: "Completed",
-        createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000),
-      },
-    ],
+    newCount: 0,
+    monthCount: 0,
+    totalCount: 0,
+    recent: [],
   },
   money: {
     outstanding: ["$8,500", "€4,200"],
