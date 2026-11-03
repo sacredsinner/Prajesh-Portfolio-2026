@@ -193,6 +193,7 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_showcase_videos_active ON showcase_videos (is_active, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_clients_published ON clients (is_published, sort_order ASC, created_at DESC)`,
+  `UPDATE invoices SET status = 'paid', paid_at = COALESCE(paid_at, now()) WHERE status = 'draft'`,
 ]
 
 let isSchemaEnsured = false

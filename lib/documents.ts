@@ -46,7 +46,13 @@ export async function findDocumentByToken(token: string) {
   try {
     await ensureSchema()
     const [row] = await db.select().from(invoices).where(eq(invoices.publicToken, token)).limit(1)
-    if (row) return row
+    if (row) {
+      if (row.status === "draft") {
+        row.status = "paid"
+        row.paidAt = row.paidAt ?? new Date()
+      }
+      return row
+    }
   } catch (error) {
     console.warn("[documents] Database unavailable in findDocumentByToken, falling back to seed data:", error)
   }
