@@ -6,7 +6,10 @@
 function buildScene06(api, rootGroup, CONFIG) {
   var s = CONFIG.scenes.s06;
   var g = api.create("group", "Scene_06_Motion_Graphics");
-  api.parent(g, rootGroup);
+  api.set(g, { "groupMode": 0 });
+  if (rootGroup) {
+    api.parent(g, rootGroup);
+  }
 
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
@@ -16,24 +19,13 @@ function buildScene06(api, rootGroup, CONFIG) {
   api.keyframe(g, s.end, { "opacity": 0 });
   api.magicEasing(g, "opacity", s.end, "EaseInOut");
 
-  // Inset hairline frame
-  var frameBorder = api.create("basicShape", "S06_Hairline_Frame");
-  api.set(frameBorder, {
-    "generator": "rectangle",
-    "generator.radius.x": 1920 / 2 - 48,
-    "generator.radius.y": 1080 / 2 - 48,
-    "stroke.color": CONFIG.colors.hairline,
-    "stroke.width": 1.0,
-    "fill.color": "#00000000"
-  });
-  api.parent(frameBorder, g);
-
   // Section Header
   var header = api.create("textShape", "S06_Header");
   api.set(header, {
-    "text": "06 // GENERATIVE KINETIC MOIRÉ · GOLDEN RATIO · PS MONOGRAM",
-    "font": CONFIG.fonts.mono,
-    "fontSize": 12,
+    "text": "06 // GENERATIVE KINETIC MOIRÉ · PS MONOGRAM · WAVE PHYSICS",
+    "font.font": CONFIG.fonts.mono.font,
+    "font.style": CONFIG.fonts.mono.style,
+    "fontSize": 14,
     "letterSpacing": 0.2,
     "position.x": 0,
     "position.y": 440,
@@ -42,30 +34,14 @@ function buildScene06(api, rootGroup, CONFIG) {
   });
   api.parent(header, g);
 
-  // Golden Ratio Construction Circles (Hairline guides)
-  var goldenRadii = [80, 130, 210, 340];
-  for (var gr = 0; gr < goldenRadii.length; gr++) {
-    var guide = api.create("basicShape", "S06_GoldenGuide_" + gr);
-    api.set(guide, {
-      "generator": "ellipse",
-      "generator.radius.x": goldenRadii[gr],
-      "generator.radius.y": goldenRadii[gr],
-      "stroke.color": CONFIG.colors.accentBlue,
-      "stroke.width": 0.75,
-      "fill.color": "#00000000",
-      "opacity": 40
-    });
-    api.parent(guide, g);
-  }
-
-  // 6 Concentric Kinetic Rings with Traveling Waveform (Maarleveld Engine)
+  // 6 Concentric Kinetic Rings with Traveling Waveform
   var rings = [
-    { r: 90,  count: 18, w: 2.0, h: 10 },
-    { r: 150, count: 26, w: 2.2, h: 14 },
-    { r: 220, count: 36, w: 2.5, h: 18 },
-    { r: 300, count: 48, w: 2.8, h: 22 },
-    { r: 390, count: 62, w: 3.0, h: 26 },
-    { r: 490, count: 78, w: 3.2, h: 30 }
+    { r: 85,  count: 18, w: 2.2, h: 12 },
+    { r: 145, count: 26, w: 2.4, h: 16 },
+    { r: 215, count: 36, w: 2.6, h: 20 },
+    { r: 295, count: 48, w: 2.8, h: 24 },
+    { r: 385, count: 62, w: 3.0, h: 28 },
+    { r: 485, count: 78, w: 3.2, h: 32 }
   ];
 
   for (var rIdx = 0; rIdx < rings.length; rIdx++) {
@@ -79,7 +55,7 @@ function buildScene06(api, rootGroup, CONFIG) {
     api.keyframe(ringGroup, s.end, { "rotation": rotDir * 24 });
     api.magicEasing(ringGroup, "rotation", s.end, "Linear");
 
-    var wavePeak1 = s.start + 60 + rIdx * 10;
+    var wavePeak1 = s.start + 60 + rIdx * 12;
     var wavePeak2 = wavePeak1 + 140;
 
     for (var i = 0; i < cfg.count; i++) {
@@ -90,12 +66,11 @@ function buildScene06(api, rootGroup, CONFIG) {
 
       var dash = api.create("basicShape", "S06_D_" + (rIdx + 1) + "_" + i);
       api.set(dash, {
-        "generator": "rectangle",
-        "generator.radius.x": cfg.w,
-        "generator.radius.y": cfg.h,
         "position.x": x,
         "position.y": y,
         "rotation": deg + 90,
+        "generator.radius.x": cfg.w,
+        "generator.radius.y": cfg.h,
         "material.materialColor": (rIdx === 2 || rIdx === 4) ? CONFIG.colors.primaryWhite : CONFIG.colors.secondaryGray
       });
       api.parent(dash, ringGroup);
@@ -104,7 +79,7 @@ function buildScene06(api, rootGroup, CONFIG) {
       var f1Start = Math.max(s.start, wavePeak1 - 10);
       var f1End = Math.min(s.end, wavePeak1 + 10);
       api.keyframe(dash, f1Start, { "scale.y": 1.0 });
-      api.keyframe(dash, wavePeak1, { "scale.y": 2.4 });
+      api.keyframe(dash, wavePeak1, { "scale.y": 2.5 });
       api.keyframe(dash, f1End, { "scale.y": 1.0 });
       api.magicEasing(dash, "scale.y", wavePeak1, "EaseInOut");
 
@@ -112,7 +87,7 @@ function buildScene06(api, rootGroup, CONFIG) {
         var f2Start = Math.max(s.start, wavePeak2 - 10);
         var f2End = Math.min(s.end, wavePeak2 + 10);
         api.keyframe(dash, f2Start, { "scale.y": 1.0 });
-        api.keyframe(dash, wavePeak2, { "scale.y": 2.4 });
+        api.keyframe(dash, wavePeak2, { "scale.y": 2.5 });
         api.keyframe(dash, f2End, { "scale.y": 1.0 });
         api.magicEasing(dash, "scale.y", wavePeak2, "EaseInOut");
       }
@@ -125,11 +100,10 @@ function buildScene06(api, rootGroup, CONFIG) {
 
   var coreBox = api.create("basicShape", "S06_Core_Hex");
   api.set(coreBox, {
-    "generator": "rectangle",
-    "generator.radius.x": 36,
-    "generator.radius.y": 36,
-    "generator.cornerRadius": 8,
+    "generator.sides": 4,
     "rotation": 45,
+    "generator.radius.x": 42,
+    "generator.radius.y": 42,
     "position.x": 0,
     "position.y": 0,
     "material.materialColor": CONFIG.colors.accentBlue
@@ -139,10 +113,11 @@ function buildScene06(api, rootGroup, CONFIG) {
   var monoText = api.create("textShape", "S06_PS_Text");
   api.set(monoText, {
     "text": "PS",
-    "font": CONFIG.fonts.serif,
-    "fontSize": 34,
+    "font.font": CONFIG.fonts.serif.font,
+    "font.style": CONFIG.fonts.serif.style,
+    "fontSize": 40,
     "position.x": 0,
-    "position.y": -12,
+    "position.y": -8,
     "horizontalAlignment": 1,
     "material.materialColor": CONFIG.colors.primaryWhite
   });
@@ -150,7 +125,7 @@ function buildScene06(api, rootGroup, CONFIG) {
 
   // Breathing rotation & scale oscillation on core
   api.keyframe(monoGroup, s.start + 30, { "scale.x": 0.8, "scale.y": 0.8 });
-  api.keyframe(monoGroup, s.start + 180, { "scale.x": 1.15, "scale.y": 1.15 });
+  api.keyframe(monoGroup, s.start + 180, { "scale.x": 1.2, "scale.y": 1.2 });
   api.keyframe(monoGroup, s.end - 30, { "scale.x": 1.0, "scale.y": 1.0 });
   api.magicEasing(monoGroup, "scale.x", s.start + 180, "EaseInOut");
 

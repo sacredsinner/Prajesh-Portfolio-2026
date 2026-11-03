@@ -6,7 +6,10 @@
 function buildScene04(api, rootGroup, CONFIG) {
   var s = CONFIG.scenes.s04;
   var g = api.create("group", "Scene_04_Portfolio_Explosion");
-  api.parent(g, rootGroup);
+  api.set(g, { "groupMode": 0 });
+  if (rootGroup) {
+    api.parent(g, rootGroup);
+  }
 
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
@@ -16,24 +19,13 @@ function buildScene04(api, rootGroup, CONFIG) {
   api.keyframe(g, s.end, { "opacity": 0 });
   api.magicEasing(g, "opacity", s.end, "EaseInOut");
 
-  // Hairline perimeter frame
-  var frameBorder = api.create("basicShape", "S04_Hairline_Frame");
-  api.set(frameBorder, {
-    "generator": "rectangle",
-    "generator.radius.x": 1920 / 2 - 48,
-    "generator.radius.y": 1080 / 2 - 48,
-    "stroke.color": CONFIG.colors.hairline,
-    "stroke.width": 1.0,
-    "fill.color": "#00000000"
-  });
-  api.parent(frameBorder, g);
-
   // Section Header
   var header = api.create("textShape", "S04_Header");
   api.set(header, {
     "text": "04 // PORTFOLIO DISCIPLINES & GLOBAL REACH",
-    "font": CONFIG.fonts.mono,
-    "fontSize": 12,
+    "font.font": CONFIG.fonts.mono.font,
+    "font.style": CONFIG.fonts.mono.style,
+    "fontSize": 14,
     "letterSpacing": 0.2,
     "position.x": 0,
     "position.y": 420,
@@ -46,7 +38,8 @@ function buildScene04(api, rootGroup, CONFIG) {
   var centerTitle = api.create("textShape", "S04_CenterTitle");
   api.set(centerTitle, {
     "text": "Distinctive Identities Across 8 Sectors",
-    "font": CONFIG.fonts.serif,
+    "font.font": CONFIG.fonts.serif.font,
+    "font.style": CONFIG.fonts.serif.style,
     "fontSize": 56,
     "letterSpacing": -0.02,
     "position.x": 0,
@@ -82,15 +75,13 @@ function buildScene04(api, rootGroup, CONFIG) {
     // Panel card box
     var card = api.create("basicShape", "S04_Card_" + i);
     api.set(card, {
-      "generator": "rectangle",
+      "generator.sides": 4,
+      "rotation": 45,
       "generator.radius.x": 140,
-      "generator.radius.y": 75,
-      "generator.cornerRadius": 6,
+      "generator.radius.y": 65,
       "position.x": p.x,
       "position.y": p.y,
-      "material.materialColor": CONFIG.colors.surfaceDark,
-      "stroke.color": (i === 0 || i === 7) ? CONFIG.colors.accentBlue : CONFIG.colors.hairline,
-      "stroke.width": 1.0
+      "material.materialColor": (i === 0 || i === 7) ? CONFIG.colors.accentBlue : CONFIG.colors.surfaceCard
     });
     api.parent(card, panelGroup);
 
@@ -98,12 +89,13 @@ function buildScene04(api, rootGroup, CONFIG) {
     var numTag = api.create("textShape", "S04_Num_" + i);
     api.set(numTag, {
       "text": p.num,
-      "font": CONFIG.fonts.mono,
-      "fontSize": 12,
-      "position.x": p.x - 110,
-      "position.y": p.y + 40,
+      "font.font": CONFIG.fonts.mono.font,
+      "font.style": CONFIG.fonts.mono.style,
+      "fontSize": 13,
+      "position.x": p.x - 100,
+      "position.y": p.y + 20,
       "horizontalAlignment": 0,
-      "material.materialColor": CONFIG.colors.accentBlue
+      "material.materialColor": (i === 0 || i === 7) ? CONFIG.colors.primaryWhite : CONFIG.colors.accentBlue
     });
     api.parent(numTag, panelGroup);
 
@@ -111,7 +103,8 @@ function buildScene04(api, rootGroup, CONFIG) {
     var titleTag = api.create("textShape", "S04_TitleTag_" + i);
     api.set(titleTag, {
       "text": p.title,
-      "font": CONFIG.fonts.sans,
+      "font.font": CONFIG.fonts.sans.font,
+      "font.style": CONFIG.fonts.sans.style,
       "fontSize": 14,
       "letterSpacing": 0.1,
       "position.x": p.x,

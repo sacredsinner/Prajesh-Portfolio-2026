@@ -6,45 +6,35 @@
 function buildScene01(api, rootGroup, CONFIG) {
   var s = CONFIG.scenes.s01;
   var g = api.create("group", "Scene_01_Darkness");
-  api.parent(g, rootGroup);
+  api.set(g, { "groupMode": 0 });
+  if (rootGroup) {
+    api.parent(g, rootGroup);
+  }
 
   // Scene Visibility Keyframes (Active: 0 - 240)
   api.keyframe(g, s.start, { "opacity": 0 });
-  api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  api.keyframe(g, s.start + 20, { "opacity": 100 });
+  api.magicEasing(g, "opacity", s.start + 20, "EaseOut");
   api.keyframe(g, s.end - 20, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
   api.magicEasing(g, "opacity", s.end, "EaseInOut");
 
   // Subtle camera drift on group scale
-  api.keyframe(g, s.start, { "scale.x": 0.96, "scale.y": 0.96 });
-  api.keyframe(g, s.end, { "scale.x": 1.04, "scale.y": 1.04 });
+  api.keyframe(g, s.start, { "scale.x": 0.95, "scale.y": 0.95 });
+  api.keyframe(g, s.end, { "scale.x": 1.05, "scale.y": 1.05 });
   api.magicEasing(g, "scale.x", s.end, "EaseInOut");
   api.magicEasing(g, "scale.y", s.end, "EaseInOut");
-
-  // Inset hairline frame (48px margin)
-  var frameBorder = api.create("basicShape", "S01_Hairline_Frame");
-  api.set(frameBorder, {
-    "generator": "rectangle",
-    "generator.radius.x": 1920 / 2 - 48,
-    "generator.radius.y": 1080 / 2 - 48,
-    "position.x": 0,
-    "position.y": 0,
-    "stroke.color": CONFIG.colors.hairline,
-    "stroke.width": 1.0,
-    "fill.color": "#00000000"
-  });
-  api.parent(frameBorder, g);
 
   // Corner specs (Geist Mono)
   var specTL = api.create("textShape", "S01_Spec_TL");
   api.set(specTL, {
     "text": "[ 01 / 10 ] INITIALIZING BRAND FILM",
-    "font": CONFIG.fonts.mono,
-    "fontSize": 12,
-    "letterSpacing": 0.08,
-    "position.x": - (1920 / 2 - 64),
-    "position.y": (1080 / 2 - 64),
+    "font.font": CONFIG.fonts.mono.font,
+    "font.style": CONFIG.fonts.mono.style,
+    "fontSize": 14,
+    "letterSpacing": 0.1,
+    "position.x": -880,
+    "position.y": 480,
     "horizontalAlignment": 0,
     "material.materialColor": CONFIG.colors.mutedGray
   });
@@ -53,11 +43,12 @@ function buildScene01(api, rootGroup, CONFIG) {
   var specTR = api.create("textShape", "S01_Spec_TR");
   api.set(specTR, {
     "text": "REC ● 00:00:00 // 60 FPS",
-    "font": CONFIG.fonts.mono,
-    "fontSize": 12,
-    "letterSpacing": 0.08,
-    "position.x": (1920 / 2 - 64),
-    "position.y": (1080 / 2 - 64),
+    "font.font": CONFIG.fonts.mono.font,
+    "font.style": CONFIG.fonts.mono.style,
+    "fontSize": 14,
+    "letterSpacing": 0.1,
+    "position.x": 880,
+    "position.y": 480,
     "horizontalAlignment": 2,
     "material.materialColor": CONFIG.colors.accentBlue
   });
@@ -67,9 +58,10 @@ function buildScene01(api, rootGroup, CONFIG) {
   var promptText = api.create("textShape", "S01_Domain_Prompt");
   api.set(promptText, {
     "text": "shakyaprajesh.com.np",
-    "font": CONFIG.fonts.mono,
-    "fontSize": 42,
-    "letterSpacing": 0.05,
+    "font.font": CONFIG.fonts.mono.font,
+    "font.style": CONFIG.fonts.mono.style,
+    "fontSize": 48,
+    "letterSpacing": 0.06,
     "position.x": -20,
     "position.y": 0,
     "horizontalAlignment": 1,
@@ -77,18 +69,19 @@ function buildScene01(api, rootGroup, CONFIG) {
   });
   api.parent(promptText, g);
 
-  // Fade-in type reveal
-  api.keyframe(promptText, s.start + 30, { "opacity": 0 });
-  api.keyframe(promptText, s.start + 80, { "opacity": 100 });
-  api.magicEasing(promptText, "opacity", s.start + 80, "EaseOut");
+  // Fade-in reveal for domain text
+  api.keyframe(promptText, s.start + 20, { "opacity": 0 });
+  api.keyframe(promptText, s.start + 70, { "opacity": 100 });
+  api.magicEasing(promptText, "opacity", s.start + 70, "EaseOut");
 
-  // Glowing Blinking Cursor
+  // Glowing Blinking Cursor (capsule dash)
   var cursor = api.create("basicShape", "S01_Cursor");
   api.set(cursor, {
-    "generator": "rectangle",
-    "generator.radius.x": 3,
-    "generator.radius.y": 24,
-    "position.x": 260,
+    "generator.sides": 4,
+    "rotation": 45,
+    "generator.radius.x": 4,
+    "generator.radius.y": 28,
+    "position.x": 300,
     "position.y": 0,
     "material.materialColor": CONFIG.colors.accentBlue
   });

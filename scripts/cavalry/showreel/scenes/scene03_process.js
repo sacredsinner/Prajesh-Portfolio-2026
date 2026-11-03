@@ -6,7 +6,10 @@
 function buildScene03(api, rootGroup, CONFIG) {
   var s = CONFIG.scenes.s03;
   var g = api.create("group", "Scene_03_Process");
-  api.parent(g, rootGroup);
+  api.set(g, { "groupMode": 0 });
+  if (rootGroup) {
+    api.parent(g, rootGroup);
+  }
 
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
@@ -16,24 +19,13 @@ function buildScene03(api, rootGroup, CONFIG) {
   api.keyframe(g, s.end, { "opacity": 0 });
   api.magicEasing(g, "opacity", s.end, "EaseInOut");
 
-  // Hairline perimeter frame
-  var frameBorder = api.create("basicShape", "S03_Hairline_Frame");
-  api.set(frameBorder, {
-    "generator": "rectangle",
-    "generator.radius.x": 1920 / 2 - 48,
-    "generator.radius.y": 1080 / 2 - 48,
-    "stroke.color": CONFIG.colors.hairline,
-    "stroke.width": 1.0,
-    "fill.color": "#00000000"
-  });
-  api.parent(frameBorder, g);
-
   // Scene Section Header
   var header = api.create("textShape", "S03_Header");
   api.set(header, {
     "text": "03 // STRATEGY · ARCHITECTURE · FORM",
-    "font": CONFIG.fonts.mono,
-    "fontSize": 13,
+    "font.font": CONFIG.fonts.mono.font,
+    "font.style": CONFIG.fonts.mono.style,
+    "fontSize": 14,
     "letterSpacing": 0.2,
     "position.x": 0,
     "position.y": 380,
@@ -45,11 +37,12 @@ function buildScene03(api, rootGroup, CONFIG) {
   var mainTitle = api.create("textShape", "S03_Title");
   api.set(mainTitle, {
     "text": "The Methodical Craft of enduring brand systems",
-    "font": CONFIG.fonts.serif,
-    "fontSize": 48,
+    "font.font": CONFIG.fonts.serif.font,
+    "font.style": CONFIG.fonts.serif.style,
+    "fontSize": 52,
     "letterSpacing": -0.015,
     "position.x": 0,
-    "position.y": 320,
+    "position.y": 310,
     "horizontalAlignment": 1,
     "material.materialColor": CONFIG.colors.primaryWhite
   });
@@ -69,18 +62,16 @@ function buildScene03(api, rootGroup, CONFIG) {
     var cardGroup = api.create("group", "S03_CardGroup_" + i);
     api.parent(cardGroup, g);
 
-    // Card background panel
+    // Card background panel (using basicShape sides:4 rotation:45)
     var cardBg = api.create("basicShape", "S03_CardBg_" + i);
     api.set(cardBg, {
-      "generator": "rectangle",
-      "generator.radius.x": 105,
+      "generator.sides": 4,
+      "rotation": 45,
+      "generator.radius.x": 100,
       "generator.radius.y": 140,
-      "generator.cornerRadius": 8,
       "position.x": c.x,
       "position.y": c.y,
-      "material.materialColor": c.accent ? CONFIG.colors.surfaceCard : CONFIG.colors.surfaceDark,
-      "stroke.color": c.accent ? CONFIG.colors.accentBlue : CONFIG.colors.hairline,
-      "stroke.width": 1.0
+      "material.materialColor": c.accent ? CONFIG.colors.accentBlue : CONFIG.colors.surfaceCard
     });
     api.parent(cardBg, cardGroup);
 
@@ -88,13 +79,14 @@ function buildScene03(api, rootGroup, CONFIG) {
     var cardPill = api.create("textShape", "S03_CardLabel_" + i);
     api.set(cardPill, {
       "text": c.label,
-      "font": CONFIG.fonts.mono,
-      "fontSize": 11,
+      "font.font": CONFIG.fonts.mono.font,
+      "font.style": CONFIG.fonts.mono.style,
+      "fontSize": 12,
       "letterSpacing": 0.1,
       "position.x": c.x,
-      "position.y": c.y + 100,
+      "position.y": c.y + 70,
       "horizontalAlignment": 1,
-      "material.materialColor": c.accent ? CONFIG.colors.accentBlue : CONFIG.colors.mutedGray
+      "material.materialColor": c.accent ? CONFIG.colors.primaryWhite : CONFIG.colors.accentBlue
     });
     api.parent(cardPill, cardGroup);
 
@@ -102,35 +94,24 @@ function buildScene03(api, rootGroup, CONFIG) {
     var cardDesc = api.create("textShape", "S03_CardDesc_" + i);
     api.set(cardDesc, {
       "text": c.sub,
-      "font": CONFIG.fonts.sans,
-      "fontSize": 14,
+      "font.font": CONFIG.fonts.sans.font,
+      "font.style": CONFIG.fonts.sans.style,
+      "fontSize": 15,
       "position.x": c.x,
-      "position.y": c.y - 80,
+      "position.y": c.y - 40,
       "horizontalAlignment": 1,
-      "material.materialColor": CONFIG.colors.secondaryGray
+      "material.materialColor": CONFIG.colors.primaryWhite
     });
     api.parent(cardDesc, cardGroup);
 
     // Floating parallax motion on cards
-    var drift = (i % 2 === 0) ? 18 : -18;
+    var drift = (i % 2 === 0) ? 20 : -20;
     api.keyframe(cardGroup, s.start + 20, { "position.y": -drift });
     api.keyframe(cardGroup, s.start + 160, { "position.y": drift });
     api.keyframe(cardGroup, s.end - 20, { "position.y": -drift });
     api.magicEasing(cardGroup, "position.y", s.start + 160, "EaseInOut");
     api.magicEasing(cardGroup, "position.y", s.end - 20, "EaseInOut");
   }
-
-  // Connecting motion path line (central hairline)
-  var line = api.create("basicShape", "S03_ConnectPath");
-  api.set(line, {
-    "generator": "rectangle",
-    "generator.radius.x": 550,
-    "generator.radius.y": 0.5,
-    "position.x": 0,
-    "position.y": -20,
-    "material.materialColor": CONFIG.colors.hairline
-  });
-  api.parent(line, g);
 
   return g;
 }
