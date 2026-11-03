@@ -18,6 +18,8 @@
 | **Headquarters & Scope**| Kathmandu, Nepal — Operating Globally (Australia, US, UK, Europe, Singapore) |
 | **Track Record** | 6+ Years Industry Experience · 80+ Completed Projects · 7+ Countries Spanned |
 | **Core Offering Tiers** | Foundation (3–4 wks) · Identity (6–8 wks) · System (10–12 wks) |
+| **PDF Monograph** | [`Prajesh-Shakya-Brand-DNA.pdf`](./Prajesh-Shakya-Brand-DNA.pdf) (A4 5-Page Monograph) |
+| **API PDF Route** | `/api/brand-dna/pdf` |
 
 ---
 
