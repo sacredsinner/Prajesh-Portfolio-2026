@@ -11,7 +11,9 @@
     "seed:moodboards": "tsx scripts/seed-moodboards.ts",
     "migrate:invoices": "tsx scripts/migrate-invoices.ts",
     "generate:pdf": "tsx scripts/generate-brand-dna-pdf.ts",
-    "sync:notion:dna": "tsx scripts/populate-notion-brand-dna.ts"
+    "sync:notion:dna": "tsx scripts/populate-notion-brand-dna.ts",
+    "render:logo": "tsx scripts/cavalry/render_logo_animation.ts",
+    "generate:lottie": "tsx scripts/generate-lottie.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.107",

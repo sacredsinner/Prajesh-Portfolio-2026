@@ -2,7 +2,8 @@
 
 import { BRAND_MARK_RULES } from "@/lib/design-system/tokens"
 import { BrandMark } from "@/components/brand-mark"
-import { Check, X, ShieldCheck } from "lucide-react"
+import { AnimatedLogo } from "@/components/brand/animated-logo"
+import { Check, X, ShieldCheck, Activity } from "lucide-react"
 
 export function BrandmarkBreakdown() {
   return (
@@ -103,6 +104,28 @@ export function BrandmarkBreakdown() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Interactive Logo Animation Concept Preview */}
+      <div className="rounded-xl border border-border bg-card p-6 md:p-8 space-y-6">
+        <div className="border-b border-border pb-4 flex flex-col md:flex-row md:items-baseline justify-between gap-2">
+          <div>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono flex items-center gap-1.5">
+              <Activity className="size-3.5" /> Motion & Kinetic Identity
+            </span>
+            <h3 className="font-serif text-2xl mt-1">Logo Animation Concepts</h3>
+          </div>
+          <span className="text-xs font-mono text-muted-foreground">
+            3 Modes: Trace · Spatial · Stamp (60 FPS)
+          </span>
+        </div>
+
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+          Grounded in the 45° isometric diamond grid and continuous path geometry. Explore the interactive 60 FPS animation concepts below. Detailed frame-by-frame choreographies, sound design palettes, and Cavalry scene scripts are codified in{" "}
+          <span className="font-mono text-xs text-foreground">LOGO_ANIMATION_CONCEPT.md</span>.
+        </p>
+
+        <AnimatedLogo autoPlay={false} showControls={true} size={130} />
       </div>
 
       {/* Dos & Don'ts */}
