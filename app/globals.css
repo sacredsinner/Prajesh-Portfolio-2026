@@ -157,7 +157,7 @@
 @keyframes hero-rise {
   from {
     opacity: 0;
-    transform: translate3d(0, 16px, 0);
+    transform: translate3d(0, 22px, 0);
   }
   to {
     opacity: 1;
@@ -166,15 +166,15 @@
 }
 
 .hero-animate-kicker {
-  animation: hero-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: hero-rise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .hero-animate-title {
-  animation: hero-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+  animation: hero-rise 1.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
 .hero-animate-fade {
-  animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both;
+  animation: hero-rise 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 }
 
 @keyframes hero-morph {
@@ -242,8 +242,8 @@
 }
 
 .hero-interactive-kicker {
-  transition: letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              color 0.3s ease;
+  transition: letter-spacing 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.45s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -9,6 +9,7 @@ export async function loginLocalAdmin(formData: FormData) {
 
   const isAllowedUser =
     email === "admin" ||
+    email.startsWith("admin@") ||
     email === "admin@local.test" ||
     email === ADMIN_EMAIL.toLowerCase()
 

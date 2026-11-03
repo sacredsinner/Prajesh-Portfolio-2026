@@ -14,21 +14,21 @@ export function HeroSection() {
           </span>
           <InteractiveHeroTitle />
           <p
-            className="hero-animate-fade mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl transition-colors duration-300 hover:text-foreground/90 cursor-default"
+            className="hero-animate-fade mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl transition-colors duration-500 hover:text-foreground/90 cursor-default"
           >
             Hi, I&apos;m Prajesh — I turn ideas into distinctive brands through strategy, design, and meaningful visual identities.
           </p>
           <div className="hero-animate-fade mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-foreground text-background text-sm tracking-wide hover:bg-foreground/90 transition-colors group"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-foreground text-background text-sm tracking-wide hover:bg-foreground/90 transition-all duration-500 group"
             >
               Start a Project
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1" />
             </Link>
             <Link
               href="/projects"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-foreground text-sm tracking-wide hover:bg-foreground hover:text-background transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-foreground text-sm tracking-wide hover:bg-foreground hover:text-background transition-all duration-500"
             >
               View Work
             </Link>

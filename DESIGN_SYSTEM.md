@@ -130,14 +130,20 @@ import {
   RADIUS_TOKENS,
   MOTION_TOKENS,
   BRAND_MARK_RULES,
+  BRAND_DNA,
   calculateContrast,
   exportDesignTokensCss,
   exportDesignSystemJson,
 } from "@/lib/design-system"
 
-// Example: Calculate contrast between any two colors
+// Example: Access core brand DNA and calculate contrast
+const { purpose, essence } = BRAND_DNA.core
 const ratio = calculateContrast("#F5F5F3", "#1B1A16") // 14.2
 ```
+
+### Brand Strategy & Brand DNA Manual
+
+For the complete strategic blueprint covering purpose, vision, mission, archetype, tone of voice, client empathy maps, and brand anti-patterns, see **[BRAND_DNA.md](./BRAND_DNA.md)**.
 
 ### Live Hub & Interactive Explorer
 

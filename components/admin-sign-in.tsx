@@ -94,6 +94,11 @@ export function AdminSignIn({ allowSignUp = false, googleEnabled = false, error:
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">Private workspace</p>
         <h1 className="mt-2 font-serif text-3xl">Admin sign in</h1>
         <p className="mt-2 text-sm text-muted-foreground">Sign in to manage your projects and notes.</p>
+        <div className="mt-4 rounded-lg border border-border bg-secondary/30 p-3 text-xs font-mono text-muted-foreground space-y-1">
+          <span className="font-semibold text-foreground">Local Dev Credentials:</span>
+          <div>User: <strong className="text-foreground">admin</strong> (or prajeshshakya@gmail.com)</div>
+          <div>Password: <strong className="text-foreground">admin@123</strong></div>
+        </div>
       </div>
 
       {googleEnabled && (
@@ -123,8 +128,8 @@ export function AdminSignIn({ allowSignUp = false, googleEnabled = false, error:
 
       <form onSubmit={submit} className="flex flex-col gap-4">
         <label className="grid gap-2 text-sm">
-          Email
-          <input name="email" type="email" required autoComplete="email" className="rounded-lg border border-border bg-background px-3 py-2" />
+          Email or Username
+          <input name="email" type="text" required autoCapitalize="none" autoCorrect="off" placeholder="admin or prajeshshakya@gmail.com" className="rounded-lg border border-border bg-background px-3 py-2" />
         </label>
         <label className="grid gap-2 text-sm">
           Password

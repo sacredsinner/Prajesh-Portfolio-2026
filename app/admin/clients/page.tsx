@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
 export default async function AdminClientsPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session || !isAdminUser(session.user)) redirect("/admin")
-  const clients = await listClients()
+  const clients = await listClients().catch(() => [])
   return (
     <main className="min-h-screen bg-background px-4 py-6 sm:px-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">

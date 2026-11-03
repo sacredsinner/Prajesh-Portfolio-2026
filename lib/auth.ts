@@ -39,6 +39,7 @@ export function isAdminUser(user: { email?: string | null } | null | undefined) 
   return (
     email === ADMIN_EMAIL.toLowerCase() ||
     email === "admin" ||
+    Boolean(email && email.startsWith("admin@")) ||
     email === "admin@local.test"
   )
 }

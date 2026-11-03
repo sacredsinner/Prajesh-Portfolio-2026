@@ -128,12 +128,13 @@ export function AdminHeader({
 
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              document.cookie = "dev_admin_session=; path=/; max-age=0;"
               authClient.signOut().then(() => {
                 router.push("/admin")
                 router.refresh()
               })
-            }
+            }}
             className="flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:border-destructive transition-colors"
           >
             <LogOut className="size-3" />

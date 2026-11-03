@@ -24,7 +24,7 @@ The visual language follows the **Prajesh Shakya Design System**:
 - **Hairlines over Shadows**: Structural hierarchy defined by crisp 1px borders (`#D9D7CD`) and generous negative space rather than synthetic drop shadows.
 - **PS Monogram**: Continuous-stroke interlocking monogram engineered on a strict 45° isometric grid.
 
-> Detailed design guidelines, tokens, and contrast matrices are documented in [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md).
+> Detailed strategic brand architecture, tone of voice, and client empathy models are codified in [BRAND_DNA.md](./BRAND_DNA.md). Visual guidelines, tokens, and contrast matrices are documented in [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md).
 
 ---
 

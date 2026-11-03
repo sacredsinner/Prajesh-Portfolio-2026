@@ -10,6 +10,8 @@ import { db } from "@/lib/db"
 import { ensureSchema } from "@/lib/db/migrate"
 import { contacts } from "@/lib/db/schema"
 import { getPricing } from "@/lib/pricing"
+import { DEFAULT_BUSINESS_SETTINGS } from "@/lib/settings"
+import { DEFAULT_PRICING } from "@/lib/packages"
 
 export const metadata: Metadata = { title: "Invoices · Content studio", robots: { index: false, follow: false } }
 
@@ -18,12 +20,12 @@ export const dynamic = "force-dynamic"
 export default async function AdminInvoicesPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session || !isAdminUser(session.user)) redirect("/admin")
-  await ensureSchema()
+  await ensureSchema().catch(() => {})
   const [documents, settings, pricing, enquiries] = await Promise.all([
-    listDocuments(),
-    getInvoiceSettings(),
-    getPricing(),
-    db.select({ name: contacts.name, email: contacts.email, company: contacts.company }).from(contacts).orderBy(desc(contacts.createdAt)).limit(200),
+    listDocuments().catch(() => []),
+    getInvoiceSettings().catch(() => DEFAULT_BUSINESS_SETTINGS),
+    getPricing().catch(() => DEFAULT_PRICING),
+    db.select({ name: contacts.name, email: contacts.email, company: contacts.company }).from(contacts).orderBy(desc(contacts.createdAt)).limit(200).catch(() => []),
   ])
   // One entry per email address, newest first, to fill in a client's details.
   const seen = new Set<string>()

@@ -17,13 +17,18 @@ export const dynamic = "force-dynamic"
 export default async function AdminNewsletterPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session || !isAdminUser(session.user)) redirect("/admin")
-  await ensureSchema()
+  await ensureSchema().catch(() => {})
   const [issues, subscribers, readiness, notes, sent] = await Promise.all([
-    listIssues().then(refreshIssueStatuses),
-    listSubscribers(),
-    sendReadiness(),
-    db.select({ id: blogPosts.id, title: blogPosts.title, slug: blogPosts.slug, publishedAt: blogPosts.publishedAt }).from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.publishedAt)),
-    sentNoteIds(),
+    listIssues().then(refreshIssueStatuses).catch(() => []),
+    listSubscribers().catch(() => ({
+      rows: [],
+      resendError: null,
+      truncated: false,
+      counts: { subscribed: 0, unsubscribed: 0, pending: 0 },
+    })),
+    sendReadiness().catch(() => ({ ready: false as const, reason: "Database offline locally", recipients: null })),
+    db.select({ id: blogPosts.id, title: blogPosts.title, slug: blogPosts.slug, publishedAt: blogPosts.publishedAt }).from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.publishedAt)).catch(() => []),
+    sentNoteIds().catch(() => [] as string[]),
   ])
   return (
     <main className="min-h-screen bg-background px-4 py-6 sm:px-8">

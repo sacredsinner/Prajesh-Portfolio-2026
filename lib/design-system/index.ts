@@ -8,8 +8,10 @@ import {
   type ColorToken,
   type TypographyToken,
 } from "./tokens"
+import { BRAND_DNA } from "../brand-dna"
 
 export * from "./tokens"
+export { BRAND_DNA } from "../brand-dna"
 
 /**
  * Calculates WCAG 2.1 relative luminance
@@ -82,6 +84,7 @@ export function exportDesignSystemJson(): string {
       radii: RADIUS_TOKENS,
       motion: MOTION_TOKENS,
       brandMark: BRAND_MARK_RULES,
+      brandDna: BRAND_DNA,
     },
     null,
     2
