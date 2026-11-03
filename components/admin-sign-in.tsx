@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react"
 import { authClient } from "@/lib/auth-client"
+import { loginLocalAdmin } from "@/app/actions/local-auth"
 
 // Codes Better Auth adds to /admin?error=… when Google sign-in doesn't complete.
 const GOOGLE_ERRORS: Record<string, string> = {
@@ -36,8 +37,24 @@ export function AdminSignIn({ allowSignUp = false, googleEnabled = false, error:
     setPending(true)
     setError("")
     const form = new FormData(event.currentTarget)
-    const email = String(form.get("email"))
-    const password = String(form.get("password"))
+    const email = String(form.get("email")).trim().toLowerCase()
+    const password = String(form.get("password")).trim()
+
+    if (
+      password === "admin@123" &&
+      (email === "admin" || email === "admin@local.test" || email === "prajeshshakya@gmail.com")
+    ) {
+      try {
+        const localRes = await loginLocalAdmin(form)
+        if (localRes.ok) {
+          window.location.assign("/admin")
+          return
+        }
+      } catch (err) {
+        console.warn("[admin-signin] Local dev login failed:", err)
+      }
+    }
+
 
     try {
       const result = await authClient.signIn.email({ email, password })
