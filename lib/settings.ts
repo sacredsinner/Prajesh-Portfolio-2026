@@ -10,6 +10,15 @@ import { CONTACT_EMAIL } from "@/lib/site"
 
 // Details printed on quotes and invoices, edited under Invoices → Settings.
 // Tax rates start at 0: only charge GST or VAT once you're registered for it.
+const DEFAULT_BANK_DETAILS = [
+  "A/C Holder Name: PRAJESH SHAKYA",
+  "Account Number: 03407010002740",
+  "Bank Name: GLOBAL IME BANK",
+  "Branch: Tripureshwor",
+  "Swift code: GLBBNPKA",
+  "Wise: https://wise.com/pay/me/prajeshs8",
+].join("\n")
+
 export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
   businessName: "Prajesh Shakya",
   tagline: "Brand Identity Designer",
@@ -22,9 +31,9 @@ export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
   remindersEnabled: true,
   footerNote: "Thank you for your business.",
   currencies: {
-    NPR: { taxLabel: "VAT", taxRate: 0, paymentInstructions: "" },
-    AUD: { taxLabel: "GST", taxRate: 0, paymentInstructions: "" },
-    USD: { taxLabel: "Tax", taxRate: 0, paymentInstructions: "" },
+    NPR: { taxLabel: "VAT", taxRate: 0, paymentInstructions: DEFAULT_BANK_DETAILS },
+    AUD: { taxLabel: "GST", taxRate: 0, paymentInstructions: DEFAULT_BANK_DETAILS },
+    USD: { taxLabel: "Tax", taxRate: 0, paymentInstructions: DEFAULT_BANK_DETAILS },
   },
 }
 

@@ -47,7 +47,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ token
   const status = displayStatus(row)
   const isQuote = row.kind === "quote"
   const label = isQuote ? "Quote" : "Invoice"
-  const payment = business.currencies[currency]?.paymentInstructions?.trim()
+  const payment =
+    business.currencies[currency]?.paymentInstructions?.trim() ||
+    (row.notes?.includes("GLOBAL IME BANK") || row.notes?.includes("A/C Holder Name") ? row.notes.trim() : "")
   const money = (value: number) => formatMoney(value, currency, 2)
   const canAccept = isQuote && row.status === "sent" && !(row.dueDate && row.dueDate < today())
 
