@@ -73,7 +73,50 @@ export async function listDocuments() {
   try {
     await requireAdmin()
     await ensureSchema()
-    return await db.select().from(invoices).orderBy(desc(invoices.issueDate), desc(invoices.createdAt))
+    const rows = await db.select().from(invoices).orderBy(desc(invoices.issueDate), desc(invoices.createdAt))
+    if (rows && rows.length > 0) {
+      return rows
+    }
+
+    // If database table is empty, auto-seed with initial invoices
+    try {
+      const seedFile = resolve(process.cwd(), "data/invoices-seed.json")
+      if (existsSync(seedFile)) {
+        const raw = readFileSync(seedFile, "utf-8")
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          try {
+            for (const item of parsed) {
+              await db.insert(invoices).values({
+                kind: item.kind || "invoice",
+                number: item.number,
+                status: item.status || "draft",
+                clientName: item.clientName,
+                clientCompany: item.clientCompany || null,
+                clientEmail: item.clientEmail || null,
+                clientAddress: item.clientAddress || null,
+                currency: item.currency || "AUD",
+                items: item.items || [],
+                taxLabel: item.taxLabel || null,
+                taxRate: String(item.taxRate || "0"),
+                total: String(item.total || "0"),
+                issueDate: item.issueDate,
+                dueDate: item.dueDate || null,
+                notes: item.notes || null,
+                paymentLink: item.paymentLink || null,
+                publicToken: item.publicToken || `token-${item.number}`,
+              }).onConflictDoNothing()
+            }
+            const seeded = await db.select().from(invoices).orderBy(desc(invoices.issueDate), desc(invoices.createdAt))
+            if (seeded && seeded.length > 0) return seeded
+          } catch (insertErr) {
+            console.warn("[invoices] Auto-seed insert skipped:", insertErr)
+          }
+        }
+      }
+    } catch {}
+
+    return rows
   } catch (error) {
     console.warn("[invoices] Database query failed, checking fallback:", error)
     try {
