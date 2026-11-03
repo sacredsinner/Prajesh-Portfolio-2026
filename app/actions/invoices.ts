@@ -35,6 +35,7 @@ const itemSchema = z.object({
   description: z.string().trim().min(1, "Describe every line item.").max(600),
   quantity: z.coerce.number().min(0, "Quantities can't be negative.").max(100000),
   unitPrice: z.coerce.number().min(-100000000).max(100000000),
+  discount: z.coerce.number().min(0).max(100000000).optional().default(0),
 })
 
 const documentSchema = z.object({
@@ -257,4 +258,212 @@ export async function acceptQuote(input: unknown): Promise<PlainResult> {
   revalidatePath(`/i/${row.publicToken}`)
   revalidatePath("/admin/invoices")
   return { ok: true }
+}
+
+function parseDateToIso(str: string | undefined | null): string {
+  if (!str) return today()
+  const trimmed = str.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  const d = new Date(trimmed)
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
+  return today()
+}
+
+export type CsvImportResult = { ok: true; count: number; updated: number } | { ok: false; error: string }
+
+export async function importInvoicesFromCSV(csvText: string): Promise<CsvImportResult> {
+  await requireAdmin()
+  await ensureSchema()
+
+  if (!csvText || typeof csvText !== "string" || !csvText.trim()) {
+    return { ok: false, error: "Empty CSV content provided." }
+  }
+
+  // Parse lines considering quotes and multi-line fields
+  const lines: string[] = []
+  let current = ""
+  let inQuotes = false
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i]
+    if (char === '"') {
+      inQuotes = !inQuotes
+      current += char
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (current.trim().length > 0) lines.push(current)
+      current = ""
+      if (char === "\r" && csvText[i + 1] === "\n") i++
+    } else {
+      current += char
+    }
+  }
+  if (current.trim().length > 0) lines.push(current)
+
+  if (lines.length < 2) return { ok: false, error: "CSV does not contain enough rows." }
+
+  const splitRow = (row: string) => {
+    const values: string[] = []
+    let val = ""
+    let quoted = false
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i]
+      if (c === '"') {
+        if (quoted && row[i + 1] === '"') {
+          val += '"'
+          i++
+        } else {
+          quoted = !quoted
+        }
+      } else if (c === "," && !quoted) {
+        values.push(val.trim())
+        val = ""
+      } else {
+        val += c
+      }
+    }
+    values.push(val.trim())
+    return values
+  }
+
+  const rawHeaders = splitRow(lines[0])
+  const headers = rawHeaders.map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, "_"))
+
+  // Group items by document key: (type + number + customer)
+  type GroupedDoc = {
+    kind: "quote" | "invoice"
+    number: string
+    clientName: string
+    clientEmail: string | null
+    currency: "NPR" | "AUD" | "USD"
+    issueDate: string
+    dueDate: string | null
+    notes: string | null
+    paymentLink: string | null
+    taxRate: number
+    items: { id: string; description: string; quantity: number; unitPrice: number; discount?: number }[]
+    specifiedTotal?: number
+  }
+
+  const docsMap = new Map<string, GroupedDoc>()
+
+  for (let i = 1; i < lines.length; i++) {
+    const vals = splitRow(lines[i])
+    if (!vals || vals.length === 0 || !vals.some((v) => v.length > 0)) continue
+    const row: Record<string, string> = {}
+    headers.forEach((h, idx) => {
+      row[h] = vals[idx] ?? ""
+    })
+
+    const customer = row.customer || row.client_name || row.client || "Client"
+    const rawType = (row.type || row.kind || "invoice").toLowerCase().trim()
+    const kind: "quote" | "invoice" = rawType.includes("quote") ? "quote" : "invoice"
+    const rawNum = (row.number || row.invoice_number || `${i}`).trim()
+    const number = rawNum.startsWith("INV-") || rawNum.startsWith("Q-") ? rawNum : `${kind === "quote" ? "Q" : "INV"}-${rawNum.padStart(2, "0")}`
+
+    const rawCurrency = (row.currency || "USD").toUpperCase().trim()
+    const currency = rawCurrency === "NPR" || rawCurrency === "AUD" || rawCurrency === "USD" ? rawCurrency : "USD"
+
+    const issueDate = parseDateToIso(row.date || row.issue_date || row.created_at)
+    const dueDate = row.due_date ? parseDateToIso(row.due_date) : null
+    const notes = [row.notes, row.payment_terms ? `Payment terms: ${row.payment_terms}` : null, row.terms].filter(Boolean).join("\n\n") || null
+
+    const key = `${kind}:${number}`
+
+    if (!docsMap.has(key)) {
+      docsMap.set(key, {
+        kind,
+        number,
+        clientName: customer,
+        clientEmail: row.email || row.client_email || null,
+        currency,
+        issueDate,
+        dueDate,
+        notes,
+        paymentLink: row.notes?.includes("https://wise.com") ? "https://wise.com/pay/me/prajeshs8" : null,
+        taxRate: Number(row.tax) || 0,
+        items: [],
+        specifiedTotal: row.total ? Number(row.total) : undefined,
+      })
+    }
+
+    const doc = docsMap.get(key)!
+    const itemTitle = (row.item || row.item_title || "").trim()
+    const itemDesc = (row.description || "").trim()
+    const fullDesc = [itemTitle, itemDesc].filter(Boolean).join(" - ") || "Service"
+    const quantity = Math.max(1, Number(row.quantity) || 1)
+    const unitPrice = Number(row.unit_cost || row.unit_price || row.price || 0)
+    const discount = Math.abs(Number(row.discount || 0))
+
+    // Avoid duplicate line items if repeated in CSV
+    const existingSameItem = doc.items.find((it) => it.description === fullDesc && it.quantity === quantity && it.unitPrice === unitPrice)
+    if (!existingSameItem) {
+      doc.items.push({
+        id: `item-${doc.items.length + 1}`,
+        description: fullDesc,
+        quantity,
+        unitPrice,
+        discount: discount > 0 ? discount : undefined,
+      })
+    }
+  }
+
+  let insertedCount = 0
+  let updatedCount = 0
+
+  for (const doc of docsMap.values()) {
+    if (doc.items.length === 0) {
+      doc.items.push({
+        id: "item-1",
+        description: "Services",
+        quantity: 1,
+        unitPrice: doc.specifiedTotal ?? 0,
+      })
+    }
+
+    const calculated = documentTotals(doc.items, doc.taxRate)
+    const total = (doc.specifiedTotal !== undefined && doc.specifiedTotal > 0 ? doc.specifiedTotal : calculated.total).toFixed(2)
+
+    const [existing] = await db.select().from(invoices).where(eq(invoices.number, doc.number)).limit(1)
+
+    if (existing) {
+      await db
+        .update(invoices)
+        .set({
+          clientName: doc.clientName,
+          clientEmail: doc.clientEmail ?? existing.clientEmail,
+          currency: doc.currency,
+          items: doc.items,
+          total,
+          taxRate: doc.taxRate.toFixed(2),
+          issueDate: doc.issueDate,
+          dueDate: doc.dueDate,
+          notes: doc.notes ?? existing.notes,
+          paymentLink: doc.paymentLink ?? existing.paymentLink,
+          updatedAt: new Date(),
+        })
+        .where(eq(invoices.id, existing.id))
+      updatedCount++
+    } else {
+      await db.insert(invoices).values({
+        kind: doc.kind,
+        number: doc.number,
+        status: "draft",
+        clientName: doc.clientName,
+        clientEmail: doc.clientEmail,
+        currency: doc.currency,
+        items: doc.items,
+        total,
+        taxRate: doc.taxRate.toFixed(2),
+        issueDate: doc.issueDate,
+        dueDate: doc.dueDate,
+        notes: doc.notes,
+        paymentLink: doc.paymentLink,
+        publicToken: newToken(),
+      })
+      insertedCount++
+    }
+  }
+
+  revalidatePath("/admin/invoices")
+  return { ok: true, count: insertedCount, updated: updatedCount }
 }

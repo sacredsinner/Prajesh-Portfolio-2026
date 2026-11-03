@@ -45,8 +45,23 @@
       "status": "published",
       "publishedAt": "2026-10-30T19:57:35.723Z",
       "mediaUrl": "/images/socials/preset-4.jpg",
-      "bufferUpdateId": "buf_ig_demo_1793390255723",
+      "bufferUpdateId": "6ae50448a1145743496bc3a0",
+      "externalUrl": "https://www.instagram.com/p/DfIfVWjm_QU/",
       "createdAt": "2026-10-30T19:57:35.723Z"
+    },
+    {
+      "id": "post-2",
+      "content": "Case study live: How we reimagined the student onboarding portal with zero-friction micro-interactions. Full breakdown on shakyaprajesh.com.np/projects",
+      "platforms": [
+        "facebook",
+        "instagram"
+      ],
+      "status": "published",
+      "publishedAt": "2026-10-30T20:51:27.908Z",
+      "mediaUrl": "/images/socials/default-brand-cover.jpg",
+      "bufferUpdateId": "6ae5034fb84259308b9eb291",
+      "externalUrl": "https://www.instagram.com/p/DfIe3AxD38A/",
+      "createdAt": "2026-10-30T18:00:00.000Z"
     },
     {
       "id": "post-1",
@@ -56,30 +71,16 @@
         "linkedin"
       ],
       "status": "scheduled",
-      "scheduledFor": "2026-11-01T17:00:00.000Z",
-      "bufferUpdateId": "buf_upd_10928374",
+      "scheduledFor": "2026-11-04T17:00:00.000Z",
+      "bufferUpdateId": "6ae50197406ab8a0188035c5",
       "createdAt": "2026-10-30T16:00:00.000Z"
-    },
-    {
-      "id": "post-2",
-      "content": "Case study live: How we reimagined the student onboarding portal with zero-friction micro-interactions. Full breakdown on shakyaprajesh.com.np/projects",
-      "platforms": [
-        "facebook",
-        "twitter",
-        "instagram"
-      ],
-      "status": "queued",
-      "scheduledFor": "2026-11-02T17:00:00.000Z",
-      "mediaUrl": "/images/socials/default-brand-cover.jpg",
-      "bufferUpdateId": "buf_upd_10928375",
-      "createdAt": "2026-10-30T18:00:00.000Z"
     },
     {
       "id": "post-3",
       "content": "Shipped the brand new 2026 portfolio refresh! Built with Next.js 16, Better Auth, and Drizzle. Fast, minimal, and typography-obsessed.",
       "platforms": [
         "facebook",
-        "twitter"
+        "linkedin"
       ],
       "status": "published",
       "publishedAt": "2026-10-29T10:00:00.000Z",

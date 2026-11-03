@@ -29,6 +29,7 @@ export interface SocialPost {
   publishedAt?: string
   mediaUrl?: string
   bufferUpdateId?: string
+  externalUrl?: string
   bufferError?: string
   createdAt: string
 }
@@ -503,8 +504,8 @@ export async function pushToBufferApi(
 
   for (const channelId of matchedIds) {
     try {
-      const mode = options.now ? "shareNow" : options.draft ? "saveDraft" : "addToQueue"
-      const schedulingType = options.scheduled_at ? "customScheduled" : "automatic"
+      const mode = options.now ? "shareNow" : options.scheduled_at ? "customScheduled" : "addToQueue"
+      const schedulingType = "automatic"
       const targetChan = socials.channels.find((c) => c.bufferProfileId === channelId)
       const isInstagram = targetChan?.platform === "instagram"
 

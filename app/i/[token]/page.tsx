@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm"
 import { Download } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { AcceptQuoteForm } from "@/components/documents/accept-quote-form"
+import { PaymentPanel } from "@/components/documents/payment-panel"
 import { auth, isAdminUser } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { invoices } from "@/lib/db/schema"
@@ -106,11 +107,13 @@ export default async function DocumentPage({ params }: { params: Promise<{ token
           </section>
 
           {!isQuote && status !== "paid" && (payment || row.paymentLink) && (
-            <section className="space-y-4 border-t border-border py-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">How to pay</p>
-              {payment && <p className="whitespace-pre-line text-sm leading-relaxed">{payment}</p>}
-              {row.paymentLink && <a href={row.paymentLink} target="_blank" rel="noopener noreferrer" className="inline-flex bg-foreground px-6 py-3 text-sm tracking-wide text-background print:hidden">Pay online ↗</a>}
-            </section>
+            <PaymentPanel
+              paymentInstructions={payment || ""}
+              paymentLink={row.paymentLink}
+              currency={currency}
+              total={String(totals.total)}
+              documentNumber={row.number}
+            />
           )}
           {row.notes && (
             <section className="space-y-3 border-t border-border py-6">

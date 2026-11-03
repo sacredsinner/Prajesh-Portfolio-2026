@@ -1,156 +1,148 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
-interface Narrative {
-  anchorWord: string
-  prefix: string[]
-  suffix: string[]
+interface SentenceConfig {
+  anchorSlot: number
+  anchorWord?: string
+  words: string[]
 }
 
-const NARRATIVES: Record<string, Narrative> = {
-  brand: {
-    anchorWord: "Brand",
-    prefix: ["Defining", "Strategic"],
-    suffix: ["Systems", "Built", "To", "Endure"],
+// 6-slot aligned sentence mapping:
+// Every narrative maps 1:1 to the 6 slots so the anchor word never leaves its horizontal slot.
+const SENTENCES: Record<string | number, SentenceConfig> = {
+  default: {
+    anchorSlot: -1,
+    words: ["Crafting", "Authentic", "Brand", "Identities", "That", "Resonate"],
   },
-  authentic: {
-    anchorWord: "Authentic",
-    prefix: ["Uncovering", "The"],
-    suffix: ["Truth", "Behind", "Every", "Founder"],
-  },
-  identities: {
-    anchorWord: "Identities",
-    prefix: ["Designing", "Timeless"],
-    suffix: ["For", "Ambitious", "Companies"],
-  },
-  crafting: {
+  // Hover on "Crafting" (Slot 0)
+  0: {
+    anchorSlot: 0,
     anchorWord: "Crafting",
-    prefix: [],
-    suffix: ["Distinct", "Worlds", "Through", "Vision", "&", "Precision"],
+    words: ["Crafting", "Timeless", "Visual", "Worlds", "With", "Precision"],
   },
-  resonate: {
+  // Hover on "Authentic" (Slot 1)
+  1: {
+    anchorSlot: 1,
+    anchorWord: "Authentic",
+    words: ["Uncovering", "Authentic", "Truth", "Behind", "Every", "Founder"],
+  },
+  // Hover on "Brand" (Slot 2)
+  2: {
+    anchorSlot: 2,
+    anchorWord: "Brand",
+    words: ["Defining", "Strategic", "Brand", "Systems", "Built", "To Endure"],
+  },
+  // Hover on "Identities" (Slot 3)
+  3: {
+    anchorSlot: 3,
+    anchorWord: "Identities",
+    words: ["Designing", "Timeless", "Brand", "Identities", "That", "Endure"],
+  },
+  // Hover on "Resonate" (Slot 5)
+  5: {
+    anchorSlot: 5,
     anchorWord: "Resonate",
-    prefix: ["Creating", "Human", "Work", "That", "Will", "Truly"],
-    suffix: [],
+    words: ["Creating", "Human", "Brand", "Identities", "That", "Resonate"],
   },
 }
 
-const DEFAULT_WORDS = [
-  { word: "Crafting", key: "crafting" },
-  { word: "Authentic", key: "authentic" },
-  { word: "Brand", key: "brand" },
-  { word: "Identities", key: "identities" },
-  { word: "That", key: "that" },
-  { word: "Resonate", key: "resonate" },
-]
+const DEFAULT_WORDS = SENTENCES.default.words
 
 export function InteractiveHeroTitle() {
-  const [activeKey, setActiveKey] = useState<string | null>(null)
-  const [isReverting, setIsReverting] = useState(false)
+  const [activeSlot, setActiveSlot] = useState<number>(-1)
   const [mounted, setMounted] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const revertAnimationRef = useRef<NodeJS.Timeout | null>(null)
+  const releaseTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     setMounted(true)
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      if (revertAnimationRef.current) clearTimeout(revertAnimationRef.current)
+      if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
     }
   }, [])
 
-  const handleMouseEnter = (key: string) => {
-    if (!NARRATIVES[key]) return
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    if (revertAnimationRef.current) clearTimeout(revertAnimationRef.current)
-    setIsReverting(false)
-    setActiveKey(key)
+  const handleSlotEnter = (slotIndex: number) => {
+    if (!SENTENCES[slotIndex]) return
+    if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
+    setActiveSlot(slotIndex)
   }
 
   const handleContainerLeave = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    // Generous, slow release hold (950ms)
-    timeoutRef.current = setTimeout(() => {
-      setIsReverting(true)
-      setActiveKey(null)
-      // Reset isReverting after slow animation completes (1200ms)
-      revertAnimationRef.current = setTimeout(() => {
-        setIsReverting(false)
-      }, 1200)
-    }, 950)
+    if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
+    // Generous, slow release hold (850ms) before silky smooth return
+    releaseTimerRef.current = setTimeout(() => {
+      setActiveSlot(-1)
+    }, 850)
   }
 
-  // Pre-hydration or non-hover devices fallback to clean canonical H1
-  if (!mounted || !activeKey || !NARRATIVES[activeKey]) {
+  const currentConfig = activeSlot !== -1 && SENTENCES[activeSlot] ? SENTENCES[activeSlot] : SENTENCES.default
+  const hasActiveAnchor = activeSlot !== -1
+
+  // Server render / pre-hydration: Render canonical heading directly for fast LCP & SEO
+  if (!mounted) {
     return (
-      <h1
-        className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none transition-all duration-1000"
-        aria-label="Crafting Authentic Brand Identities That Resonate"
-        onMouseLeave={handleContainerLeave}
-      >
-        {DEFAULT_WORDS.map((item, idx) => (
-          <span key={item.key}>
-            <span
-              onMouseEnter={() => handleMouseEnter(item.key)}
-              className={`hero-title-word inline-block cursor-pointer transition-all duration-1000 ease-out hover:-translate-y-1 hover:italic ${
-                isReverting ? "animate-hero-return" : ""
-              }`}
-              style={isReverting ? { animationDelay: `${idx * 50}ms` } : undefined}
-            >
-              {item.word}
+      <div className="min-h-[130px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[210px] flex items-center justify-center">
+        <h1
+          className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none"
+          aria-label="Crafting Authentic Brand Identities That Resonate"
+        >
+          {DEFAULT_WORDS.map((word, idx) => (
+            <span key={word} className="inline-block px-1">
+              {word}
+              {idx < DEFAULT_WORDS.length - 1 ? " " : ""}
             </span>
-            {idx < DEFAULT_WORDS.length - 1 ? " " : ""}
-          </span>
-        ))}
-      </h1>
+          ))}
+        </h1>
+      </div>
     )
   }
 
-  const activeNarrative = NARRATIVES[activeKey]
-
   return (
-    <h1
-      className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none transition-all duration-1000"
-      aria-label="Crafting Authentic Brand Identities That Resonate"
-      onMouseLeave={handleContainerLeave}
-    >
-      {/* Prefix morph words */}
-      {activeNarrative.prefix.map((word, idx) => (
-        <span key={`p-${activeKey}-${idx}`}>
-          <span
-            className="inline-block animate-hero-morph text-foreground/80 font-normal tracking-normal transition-all duration-1000 ease-out"
-            style={{ animationDelay: `${idx * 40}ms` }}
-          >
-            {word}
-          </span>
-          {" "}
-        </span>
-      ))}
-
-      {/* The Anchored Word */}
-      <span>
-        <span
-          onMouseEnter={() => handleMouseEnter(activeKey)}
-          className="inline-block font-serif italic text-foreground -translate-y-1.5 transition-all duration-1000 ease-out cursor-default scale-[1.02]"
-        >
-          {activeNarrative.anchorWord}
-        </span>
-        {activeNarrative.suffix.length > 0 ? " " : ""}
-      </span>
-
-      {/* Suffix morph words */}
-      {activeNarrative.suffix.map((word, idx) => (
-        <span key={`s-${activeKey}-${idx}`}>
-          <span
-            className="inline-block animate-hero-morph text-foreground/80 font-normal tracking-normal transition-all duration-1000 ease-out"
-            style={{ animationDelay: `${(idx + activeNarrative.prefix.length) * 40}ms` }}
-          >
-            {word}
-          </span>
-          {idx < activeNarrative.suffix.length - 1 ? " " : ""}
-        </span>
-      ))}
-    </h1>
+    <div className="min-h-[130px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[210px] flex items-center justify-center">
+      <h1
+        className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none transition-all duration-700"
+        aria-label="Crafting Authentic Brand Identities That Resonate"
+        onMouseLeave={handleContainerLeave}
+      >
+        {currentConfig.words.map((word, idx) => {
+          const isAnchor = idx === currentConfig.anchorSlot
+          return (
+            <span
+              key={idx}
+              className="inline-block relative cursor-pointer px-1 py-0.5 align-baseline"
+              onMouseEnter={() => handleSlotEnter(idx)}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={word}
+                  initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
+                  animate={{
+                    opacity: isAnchor ? 1 : hasActiveAnchor ? 0.72 : 1,
+                    y: isAnchor ? -4 : 0,
+                    scale: isAnchor ? 1.02 : 1,
+                    filter: "blur(0px)",
+                  }}
+                  exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+                  transition={{
+                    duration: 0.9,
+                    ease: [0.16, 1, 0.3, 1],
+                    delay: isAnchor ? 0 : idx * 0.02,
+                  }}
+                  className={`inline-block will-change-[transform,opacity,filter] ${
+                    isAnchor
+                      ? "text-foreground font-serif italic"
+                      : "text-foreground"
+                  }`}
+                >
+                  {word}
+                </motion.span>
+              </AnimatePresence>
+              {idx < currentConfig.words.length - 1 ? "\u00A0" : ""}
+            </span>
+          )
+        })}
+      </h1>
+    </div>
   )
 }

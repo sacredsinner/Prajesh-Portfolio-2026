@@ -3,7 +3,7 @@ import { fromCents, toCents, type Currency } from "@/lib/money"
 // Quotes and invoices share one shape ("documents"). Client-safe: no server imports.
 
 export type DocumentKind = "quote" | "invoice"
-export type InvoiceItem = { id: string; description: string; quantity: number; unitPrice: number }
+export type InvoiceItem = { id: string; description: string; quantity: number; unitPrice: number; discount?: number }
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "converted"
 export type InvoiceStatus = "draft" | "sent" | "paid" | "void"
@@ -23,12 +23,18 @@ export const STATUS_LABELS: Record<DisplayStatus, string> = {
 
 export const KIND_LABELS: Record<DocumentKind, string> = { quote: "Quote", invoice: "Invoice" }
 
-export function lineAmount(item: Pick<InvoiceItem, "quantity" | "unitPrice">) {
-  return fromCents(Math.round((Number(item.quantity) || 0) * toCents(Number(item.unitPrice) || 0)))
+export function lineAmount(item: Pick<InvoiceItem, "quantity" | "unitPrice"> & { discount?: number }) {
+  const gross = Math.round((Number(item.quantity) || 0) * toCents(Number(item.unitPrice) || 0))
+  const discountCents = Math.round(toCents(Number(item.discount) || 0))
+  return fromCents(Math.max(0, gross - discountCents))
 }
 
-export function documentTotals(items: Pick<InvoiceItem, "quantity" | "unitPrice">[], taxRate: number) {
-  const subtotalCents = items.reduce((sum, item) => sum + Math.round((Number(item.quantity) || 0) * toCents(Number(item.unitPrice) || 0)), 0)
+export function documentTotals(items: (Pick<InvoiceItem, "quantity" | "unitPrice"> & { discount?: number })[], taxRate: number) {
+  const subtotalCents = items.reduce((sum, item) => {
+    const gross = Math.round((Number(item.quantity) || 0) * toCents(Number(item.unitPrice) || 0))
+    const discountCents = Math.round(toCents(Number(item.discount) || 0))
+    return sum + Math.max(0, gross - discountCents)
+  }, 0)
   const taxCents = Math.round((subtotalCents * (Number(taxRate) || 0)) / 100)
   return { subtotal: fromCents(subtotalCents), tax: fromCents(taxCents), total: fromCents(subtotalCents + taxCents) }
 }

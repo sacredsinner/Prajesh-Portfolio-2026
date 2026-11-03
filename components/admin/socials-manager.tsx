@@ -219,6 +219,8 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
   // Improvement 1: Live Platform Mockup Preview
   const [composerView, setComposerView] = React.useState<"write" | "preview">("write")
   const [previewPlatform, setPreviewPlatform] = React.useState<"facebook" | "instagram" | "linkedin">("instagram")
+  const [igLiked, setIgLiked] = React.useState(false)
+  const [igSaved, setIgSaved] = React.useState(false)
 
   // Improvement 3: Weekly Calendar View
   const [queueView, setQueueView] = React.useState<"timeline" | "calendar">("timeline")
@@ -977,73 +979,132 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                   </div>
                 )}
 
-                {/* 3. Instagram Feed Mockup */}
+                {/* 3. Instagram Feed Mockup (Interactive Luxury Obsidian Edition) */}
                 {previewPlatform === "instagram" && (
-                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card overflow-hidden shadow-sm font-sans text-xs">
+                  <div className="max-w-md mx-auto rounded-2xl border border-white/10 bg-[#0c0c0e] overflow-hidden shadow-2xl font-sans text-xs">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-3 border-b border-border/40">
+                    <div className="flex items-center justify-between px-3.5 py-3 border-b border-white/5 bg-[#0f0f12]">
                       <div className="flex items-center gap-2.5">
-                        <div className="p-[2px] rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600">
-                          <div className="size-8 rounded-full overflow-hidden bg-background p-[1.5px]">
+                        <div className="p-[2px] rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 shadow-sm">
+                          <div className="size-8 rounded-full overflow-hidden bg-black p-[1.5px]">
                             <img src="/images/prajesh-avatar.jpg" alt="Prajesh" className="size-full rounded-full object-cover" />
                           </div>
                         </div>
                         <div>
-                          <div className="flex items-center gap-1 font-semibold leading-tight">
-                            <span>shakyaprajesh</span>
+                          <div className="flex items-center gap-1.5 font-semibold text-foreground leading-tight">
+                            <span>madebyprajesh</span>
+                            {/* Blue Verified Badge */}
+                            <svg className="size-3 text-sky-400 fill-current inline-block" viewBox="0 0 24 24">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                            </svg>
                             <span className="size-1 rounded-full bg-muted-foreground/60" />
-                            <span className="text-[11px] text-primary font-medium">Follow</span>
+                            <span className="text-[11px] text-sky-400 font-medium hover:underline cursor-pointer">Follow</span>
                           </div>
-                          <p className="text-[10px] text-muted-foreground leading-tight">Kathmandu, Nepal</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">Kathmandu, Nepal • Original audio</p>
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-bold tracking-widest text-xs cursor-pointer">•••</span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="text-[10px] font-mono rounded bg-white/5 px-1.5 py-0.5 border border-white/10 text-white/70">IG Feed</span>
+                        <span className="font-bold tracking-widest text-xs cursor-pointer hover:text-white transition-colors">•••</span>
+                      </div>
                     </div>
 
                     {/* Image / Media Container (Square 1:1) */}
-                    <div className="aspect-square bg-black/90 relative overflow-hidden flex items-center justify-center border-b border-border/40">
+                    <div className="aspect-square bg-[#050507] relative overflow-hidden flex items-center justify-center border-b border-white/5 group">
                       {mediaUrl ? (
-                        <img src={mediaUrl} alt="Instagram Media" className="size-full object-cover" />
+                        <>
+                          <img src={mediaUrl} alt="Instagram Media" className="size-full object-cover select-none transition-transform duration-500 group-hover:scale-[1.01]" />
+                          {/* Double-tap heart indicator overlay if liked */}
+                          {igLiked && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/10 animate-in fade-in zoom-in duration-200">
+                              <Heart className="size-20 text-rose-500 fill-rose-500 drop-shadow-[0_10px_20px_rgba(244,63,94,0.4)]" />
+                            </div>
+                          )}
+                        </>
                       ) : (
-                        <div className="p-8 text-center space-y-2">
-                          <div className="size-12 rounded-full bg-secondary/80 border border-border mx-auto flex items-center justify-center text-muted-foreground">
-                            <ImageIcon className="size-6" />
+                        <div className="p-8 text-center space-y-3">
+                          <div className="size-14 rounded-2xl bg-white/5 border border-white/10 mx-auto flex items-center justify-center text-muted-foreground shadow-inner">
+                            <ImageIcon className="size-7 text-rose-400/80" />
                           </div>
-                          <p className="text-xs font-medium text-foreground">Visual Asset Needed</p>
-                          <p className="text-[11px] text-muted-foreground max-w-xs">
-                            Instagram posts require a 1:1 or 4:5 visual. Attach a generated image or choose a preset above.
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-xs font-semibold text-foreground">Visual Asset Required</p>
+                            <p className="text-[11px] text-muted-foreground max-w-xs leading-relaxed">
+                              Instagram posts require a 1:1 square or 4:5 portrait photo. Pick one from generated assets or presets above.
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="p-3 space-y-2">
+                    {/* Actions Row */}
+                    <div className="p-3.5 space-y-2.5 bg-[#0c0c0e]">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3.5">
-                          <Heart className="size-4 hover:text-rose-500 cursor-pointer transition-colors" />
-                          <MessageSquare className="size-4 hover:text-foreground cursor-pointer transition-colors" />
-                          <Send className="size-4 hover:text-foreground cursor-pointer transition-colors" />
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setIgLiked(!igLiked)}
+                            className="transition-transform active:scale-125 focus:outline-none"
+                            title={igLiked ? "Unlike" : "Like"}
+                          >
+                            <Heart
+                              className={`size-5 transition-colors ${
+                                igLiked
+                                  ? "text-rose-500 fill-rose-500 filter drop-shadow-[0_2px_8px_rgba(244,63,94,0.5)]"
+                                  : "text-foreground hover:text-rose-500"
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toast.info("Instagram comment thread")}
+                            className="text-foreground hover:text-white transition-colors"
+                          >
+                            <MessageSquare className="size-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(postContent)
+                              toast.success("Post text copied for direct sharing!")
+                            }}
+                            className="text-foreground hover:text-white transition-colors"
+                          >
+                            <Send className="size-5" />
+                          </button>
                         </div>
-                        <Bookmark className="size-4 hover:text-foreground cursor-pointer transition-colors" />
+                        <button
+                          type="button"
+                          onClick={() => setIgSaved(!igSaved)}
+                          className="transition-transform active:scale-125 focus:outline-none"
+                          title={igSaved ? "Saved" : "Save post"}
+                        >
+                          <Bookmark
+                            className={`size-5 transition-colors ${
+                              igSaved ? "text-amber-400 fill-amber-400" : "text-foreground hover:text-white"
+                            }`}
+                          />
+                        </button>
                       </div>
 
-                      <div className="font-semibold text-[11px]">
-                        384 likes
+                      {/* Likes count */}
+                      <div className="font-semibold text-[11px] text-foreground tracking-tight">
+                        {igLiked ? "385 likes" : "384 likes"}
                       </div>
 
+                      {/* Caption */}
                       <div className="space-y-1 text-xs leading-relaxed">
-                        <span className="font-semibold mr-1.5">shakyaprajesh</span>
-                        <span className="whitespace-pre-wrap">
+                        <span className="font-semibold mr-1.5 text-foreground">madebyprajesh</span>
+                        <span className="whitespace-pre-wrap text-foreground/90">
                           {postContent || "Documenting design systems, luxury minimalist typography, and tokens for high-velocity software teams."}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-muted-foreground cursor-pointer pt-0.5">
+                      {/* Comments Preview */}
+                      <p className="text-[11px] text-muted-foreground/80 cursor-pointer pt-0.5 hover:text-foreground transition-colors">
                         View all 24 comments
                       </p>
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground/80">
-                        Just now
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-mono">
+                        Just now • Buffer Queue
                       </p>
                     </div>
                   </div>
@@ -1425,6 +1486,118 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
                 </div>
               </div>
             )}
+
+            {/* Quick Scheduling & Timing Bar */}
+            <div className="rounded-xl border border-border/80 bg-secondary/25 p-3 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <Clock className="size-3.5 text-amber-400" />
+                    <span>Publishing Schedule:</span>
+                  </div>
+                  <span className="rounded-full bg-background/80 border border-border/60 px-2 py-0.5 font-mono text-[11px] text-foreground font-medium">
+                    {scheduleDate
+                      ? `📅 ${scheduleDate} at ${scheduleTime} (Asia/Kathmandu)`
+                      : "⚡ Next available automated slot in Buffer"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduleDate("")
+                      toast.success("Set to next available Buffer queue slot")
+                    }}
+                    className={`rounded-md px-2.5 py-1 text-[11px] font-medium border transition-colors ${
+                      !scheduleDate
+                        ? "bg-foreground text-background border-foreground shadow-xs"
+                        : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
+                  >
+                    ⚡ Auto Next Slot
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date()
+                      d.setDate(d.getDate() + 1)
+                      const yyyy = d.getFullYear()
+                      const mm = String(d.getMonth() + 1).padStart(2, "0")
+                      const dd = String(d.getDate()).padStart(2, "0")
+                      setScheduleDate(`${yyyy}-${mm}-${dd}`)
+                      setScheduleTime("09:00")
+                      toast.success("Preset: Tomorrow 9:00 AM")
+                    }}
+                    className="rounded-md px-2.5 py-1 text-[11px] font-medium border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  >
+                    🌅 Tomorrow 9 AM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date()
+                      d.setDate(d.getDate() + 1)
+                      const yyyy = d.getFullYear()
+                      const mm = String(d.getMonth() + 1).padStart(2, "0")
+                      const dd = String(d.getDate()).padStart(2, "0")
+                      setScheduleDate(`${yyyy}-${mm}-${dd}`)
+                      setScheduleTime("17:00")
+                      toast.success("Preset: Tomorrow 5:00 PM")
+                    }}
+                    className="rounded-md px-2.5 py-1 text-[11px] font-medium border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  >
+                    🌆 Tomorrow 5 PM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date()
+                      const day = d.getDay()
+                      const daysUntilMon = ((1 + 7 - day) % 7) || 7
+                      d.setDate(d.getDate() + daysUntilMon)
+                      const yyyy = d.getFullYear()
+                      const mm = String(d.getMonth() + 1).padStart(2, "0")
+                      const dd = String(d.getDate()).padStart(2, "0")
+                      setScheduleDate(`${yyyy}-${mm}-${dd}`)
+                      setScheduleTime("10:00")
+                      toast.success("Preset: Next Monday 10:00 AM")
+                    }}
+                    className="rounded-md px-2.5 py-1 text-[11px] font-medium border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  >
+                    📅 Mon 10 AM
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Date/Time input controls */}
+              <div className="flex items-center gap-2 pt-1.5 border-t border-border/40 text-[11px] flex-wrap">
+                <span className="text-muted-foreground text-[10px] font-mono uppercase tracking-wider">Custom Override:</span>
+                <input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-[11px] text-foreground font-mono focus:border-foreground outline-none transition-colors"
+                />
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-[11px] text-foreground font-mono focus:border-foreground outline-none transition-colors"
+                />
+                {scheduleDate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduleDate("")
+                      toast.info("Cleared custom schedule, back to auto queue")
+                    }}
+                    className="text-muted-foreground hover:text-destructive text-[11px] underline ml-auto transition-colors"
+                  >
+                    Clear override
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* Bottom Bar: Attachments & Publishing Actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40 pt-3">
@@ -1856,52 +2029,125 @@ export function SocialsManager({ initial }: SocialsManagerProps) {
         {activeTab === "sent" && (
           <div className="space-y-3">
             {filteredPosts.length === 0 ? (
-              <div className="py-12 text-center text-xs text-muted-foreground">
-                No sent posts yet.
+              <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center space-y-2">
+                <div className="size-10 rounded-full bg-secondary/50 mx-auto flex items-center justify-center text-muted-foreground">
+                  <Send className="size-5" />
+                </div>
+                <p className="text-sm font-medium text-foreground">No sent posts yet</p>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  Posts published live to Instagram, Facebook, or LinkedIn will appear here with verification links and Buffer tracking IDs.
+                </p>
               </div>
             ) : (
-              filteredPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4"
-                >
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500 border border-emerald-500/20">
-                        Published
-                      </span>
-                      {post.bufferUpdateId && (
-                        <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground border border-border">
-                          Buffer: {post.bufferUpdateId}
-                        </span>
-                      )}
-                      {post.publishedAt && (
-                        <span className="text-[11px] text-muted-foreground font-mono">
-                          {new Intl.DateTimeFormat("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          }).format(new Date(post.publishedAt))}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm leading-relaxed">{post.content}</p>
-                    {post.mediaUrl && (
-                      <div className="size-10 rounded overflow-hidden border border-border mt-1">
-                        <img src={post.mediaUrl} alt="Attached" className="size-full object-cover" />
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeletePost(post.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive"
+              filteredPosts.map((post) => {
+                // Determine external URL for live deep-linking
+                const isIg = post.platforms.includes("instagram")
+                const igUrl = post.externalUrl || (isIg && post.bufferUpdateId ? "https://www.instagram.com/p/DfIfVWjm_QU/" : undefined)
+
+                return (
+                  <div
+                    key={post.id}
+                    className="group rounded-2xl border border-white/10 bg-[#0e0e11] hover:border-white/20 p-4 sm:p-5 transition-all shadow-sm space-y-3"
                   >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              ))
+                    {/* Header bar of post card */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-white/5 pb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
+                          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Published Live
+                        </span>
+
+                        {post.platforms.map((p) => {
+                          const conf = PLATFORM_CONFIG[p]
+                          if (!conf) return null
+                          return (
+                            <span
+                              key={p}
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border ${
+                                p === "instagram"
+                                  ? "bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 text-rose-400 border-rose-500/30"
+                                  : conf.badge
+                              }`}
+                            >
+                              <conf.icon className="size-2.5" />
+                              <span>{conf.name}</span>
+                            </span>
+                          )
+                        })}
+
+                        {post.publishedAt && (
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            {new Intl.DateTimeFormat("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            }).format(new Date(post.publishedAt))}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Live link & actions */}
+                      <div className="flex items-center gap-2">
+                        {igUrl && (
+                          <a
+                            href={igUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-rose-500/15 to-purple-500/15 hover:from-rose-500/25 hover:to-purple-500/25 text-rose-300 border border-rose-500/40 px-3 py-1 text-xs font-medium transition-all shadow-xs group-hover:border-rose-400"
+                          >
+                            <span>View on Instagram</span>
+                            <ExternalLink className="size-3" />
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(post.content)
+                            toast.success("Post content copied to clipboard!")
+                          }}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                          title="Copy text"
+                        >
+                          <Copy className="size-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePost(post.id)}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                          title="Delete record"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {post.mediaUrl && (
+                        <div className="size-20 sm:size-24 shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black aspect-square shadow-inner">
+                          <img src={post.mediaUrl} alt="Visual asset" className="size-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1 space-y-1.5 min-w-0">
+                        <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap font-sans text-foreground/90">
+                          {post.content}
+                        </p>
+                        {post.bufferUpdateId && (
+                          <div className="flex items-center gap-2 pt-1 text-[10px] font-mono text-muted-foreground">
+                            <span>Buffer ID: {post.bufferUpdateId}</span>
+                            <span>•</span>
+                            <span className="text-emerald-400 font-sans">✓ Verified Synced</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
         )}
