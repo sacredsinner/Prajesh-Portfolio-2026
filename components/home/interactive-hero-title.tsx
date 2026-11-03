@@ -40,12 +40,6 @@ const SENTENCES: Record<string | number, SentenceConfig> = {
     anchorWord: "Identities",
     words: ["Designing", "Timeless", "Brand", "Identities", "That", "Endure"],
   },
-  // Hover on "That" (Slot 4)
-  4: {
-    anchorSlot: 4,
-    anchorWord: "That",
-    words: ["Shaping", "Distinct", "Brands", "Stories", "That", "Inspire"],
-  },
   // Hover on "Resonate" (Slot 5)
   5: {
     anchorSlot: 5,
@@ -60,97 +54,30 @@ export function InteractiveHeroTitle() {
   const [activeSlot, setActiveSlot] = useState<number>(-1)
   const [mounted, setMounted] = useState(false)
   const releaseTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const enterTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const lastSwitchedTimeRef = useRef<number>(0)
-  const lastMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
   useEffect(() => {
     setMounted(true)
     return () => {
       if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
-      if (enterTimerRef.current) clearTimeout(enterTimerRef.current)
     }
   }, [])
 
-  const handleSlotEnter = (slotIndex: number, e: React.MouseEvent) => {
+  const handleSlotEnter = (slotIndex: number) => {
     if (!SENTENCES[slotIndex]) return
-
-    // Immediately cancel any pending release countdown
-    if (releaseTimerRef.current) {
-      clearTimeout(releaseTimerRef.current)
-      releaseTimerRef.current = null
-    }
-
-    if (activeSlot === slotIndex) return
-
-    const now = Date.now()
-    const dx = Math.abs(e.clientX - lastMousePosRef.current.x)
-    const dy = Math.abs(e.clientY - lastMousePosRef.current.y)
-
-    // Anti-flicker protection:
-    // If a switch happened recently (< 300ms) and the cursor hasn't moved significantly,
-    // this event is synthesized by layout shift under a stationary cursor — ignore it.
-    if (now - lastSwitchedTimeRef.current < 300 && dx < 12 && dy < 12) {
-      return
-    }
-
-    lastMousePosRef.current = { x: e.clientX, y: e.clientY }
-
-    if (enterTimerRef.current) {
-      clearTimeout(enterTimerRef.current)
-    }
-
-    // Hover intent delay (80ms): prevents flicker when cursor rapidly sweeps across words
-    enterTimerRef.current = setTimeout(() => {
-      lastSwitchedTimeRef.current = Date.now()
-      setActiveSlot(slotIndex)
-      enterTimerRef.current = null
-    }, 80)
-  }
-
-  const handleSlotMouseMove = (slotIndex: number, e: React.MouseEvent) => {
-    lastMousePosRef.current = { x: e.clientX, y: e.clientY }
-
-    if (releaseTimerRef.current) {
-      clearTimeout(releaseTimerRef.current)
-      releaseTimerRef.current = null
-    }
-
-    if (activeSlot !== slotIndex && !enterTimerRef.current && SENTENCES[slotIndex]) {
-      handleSlotEnter(slotIndex, e)
-    }
-  }
-
-  const handleContainerEnter = () => {
-    // If cursor re-enters the title area during release delay, keep the current narrative alive
-    if (releaseTimerRef.current) {
-      clearTimeout(releaseTimerRef.current)
-      releaseTimerRef.current = null
-    }
+    if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
+    setActiveSlot(slotIndex)
   }
 
   const handleContainerLeave = () => {
-    if (enterTimerRef.current) {
-      clearTimeout(enterTimerRef.current)
-      enterTimerRef.current = null
-    }
-    if (releaseTimerRef.current) {
-      clearTimeout(releaseTimerRef.current)
-    }
-
-    // Generous release delay (1400ms):
-    // Holds the hovered narrative so the user can comfortably finish reading it,
-    // before initiating a slow, silky return back to the canonical title.
+    if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
+    // Generous, slow release hold (850ms) before silky smooth return
     releaseTimerRef.current = setTimeout(() => {
       setActiveSlot(-1)
-      lastSwitchedTimeRef.current = Date.now()
-      releaseTimerRef.current = null
-    }, 1400)
+    }, 850)
   }
 
   const currentConfig = activeSlot !== -1 && SENTENCES[activeSlot] ? SENTENCES[activeSlot] : SENTENCES.default
   const hasActiveAnchor = activeSlot !== -1
-  const isReturning = activeSlot === -1
 
   // Server render / pre-hydration: Render canonical heading directly for fast LCP & SEO
   if (!mounted) {
@@ -172,66 +99,46 @@ export function InteractiveHeroTitle() {
   }
 
   return (
-    <div
-      className="min-h-[130px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[210px] flex items-center justify-center"
-      onMouseEnter={handleContainerEnter}
-      onMouseLeave={handleContainerLeave}
-    >
+    <div className="min-h-[130px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[210px] flex items-center justify-center">
       <h1
-        className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none"
+        className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none transition-all duration-700"
         aria-label="Crafting Authentic Brand Identities That Resonate"
+        onMouseLeave={handleContainerLeave}
       >
         {currentConfig.words.map((word, idx) => {
           const isAnchor = idx === currentConfig.anchorSlot
-
           return (
-            <span key={idx} className="inline-block">
-              <span
-                className="inline-grid relative cursor-pointer px-1 py-0.5 align-baseline"
-                style={{ gridTemplateColumns: "1fr", gridTemplateRows: "1fr" }}
-                onMouseEnter={(e) => handleSlotEnter(idx, e)}
-                onMouseMove={(e) => handleSlotMouseMove(idx, e)}
-              >
-                <AnimatePresence initial={false}>
-                  <motion.span
-                    key={word}
-                    style={{ gridArea: "1 / 1" }}
-                    initial={{
-                      opacity: 0,
-                      y: 12,
-                      filter: "blur(5px)",
-                    }}
-                    animate={{
-                      opacity: isAnchor ? 1 : hasActiveAnchor ? 0.65 : 1,
-                      y: isAnchor ? -4 : 0,
-                      scale: isAnchor ? 1.025 : 1,
-                      filter: "blur(0px)",
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -10,
-                      filter: "blur(5px)",
-                    }}
-                    transition={{
-                      duration: isReturning ? 1.35 : 1.2,
-                      ease: [0.16, 1, 0.3, 1],
-                      delay: isAnchor
-                        ? 0
-                        : isReturning
-                        ? idx * 0.035
-                        : Math.abs(idx - (activeSlot === -1 ? 0 : activeSlot)) * 0.035,
-                    }}
-                    className={`inline-block will-change-[transform,opacity,filter] ${
-                      isAnchor
-                        ? "text-foreground font-serif italic"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {word}
-                  </motion.span>
-                </AnimatePresence>
-              </span>
-              {idx < currentConfig.words.length - 1 ? " " : ""}
+            <span
+              key={idx}
+              className="inline-block relative cursor-pointer px-1 py-0.5 align-baseline"
+              onMouseEnter={() => handleSlotEnter(idx)}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={word}
+                  initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
+                  animate={{
+                    opacity: isAnchor ? 1 : hasActiveAnchor ? 0.72 : 1,
+                    y: isAnchor ? -4 : 0,
+                    scale: isAnchor ? 1.02 : 1,
+                    filter: "blur(0px)",
+                  }}
+                  exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+                  transition={{
+                    duration: 0.9,
+                    ease: [0.16, 1, 0.3, 1],
+                    delay: isAnchor ? 0 : idx * 0.02,
+                  }}
+                  className={`inline-block will-change-[transform,opacity,filter] ${
+                    isAnchor
+                      ? "text-foreground font-serif italic"
+                      : "text-foreground"
+                  }`}
+                >
+                  {word}
+                </motion.span>
+              </AnimatePresence>
+              {idx < currentConfig.words.length - 1 ? "\u00A0" : ""}
             </span>
           )
         })}

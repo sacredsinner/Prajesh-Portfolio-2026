@@ -156,10 +156,12 @@ Use words that evoke craftsmanship, texture, architecture, and enduring material
 | Channel / Context | Tone Modulation | Primary Objective |
 | :--- | :--- | :--- |
 | **Public Portfolio & Hero** | Poetic, architectural, unapologetically confident. | Establish studio prestige and filter for serious clients. |
+| **Kinetic Hero Interaction** | Slot-anchored typographic truth, tactile physics. | Demonstrate living digital craft and typographic depth. |
+| **Intake Funnel (`/start`)** | Diagnostic, structured, encouraging, transparent. | Qualify client scope, calculate investment tiers, capture intent. |
 | **Case Studies (`/projects`)** | Objective, analytical, monograph-style reportage. | Prove ROI, demonstrate design thinking, credit collaborators. |
 | **Client Proposals & Invoices** | Courteous, scrupulously transparent, unambiguous. | Eliminate friction, outline exact milestones, respect financial trust. |
 | **Client Portals (`/m/[token]`)** | Collaborative, focused, encouraging targeted critique. | Guide client feedback to strategic objectives rather than subjective bias. |
-| **AI Strategist ("Praj")** | Consultative, sharp, conversational, lead-qualifying. | Educate visitor, uncover project scope, invite consultation. |
+| **AI Strategist ("Praj")** | Consultative, sharp, conversational, lead-qualifying. | Educate visitor, uncover project scope, route to `/start`. |
 | **Studio Notes & Essays** | Thought-provoking, contrarian, intellectually generous. | Shape industry discourse and articulate design philosophy. |
 
 ---

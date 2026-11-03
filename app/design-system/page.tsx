@@ -7,6 +7,7 @@ import { TypographyPlayground } from "@/components/design-system/typography-play
 import { ComponentShowcase } from "@/components/design-system/component-showcase"
 import { BrandmarkBreakdown } from "@/components/design-system/brandmark-breakdown"
 import { MotionSandbox } from "@/components/design-system/motion-sandbox"
+import { VoiceShowcase } from "@/components/design-system/voice-showcase"
 import { CodeExporter } from "@/components/design-system/code-exporter"
 import { SITE_NAME, SITE_URL } from "@/lib/site"
 import {
@@ -19,6 +20,7 @@ import {
   Maximize2,
   Box,
   Activity,
+  MessageSquare,
   Code,
 } from "lucide-react"
 
@@ -45,6 +47,7 @@ const navAnchors = [
   { id: "spacing", label: "Grid & Spacing", icon: Maximize2 },
   { id: "components", label: "UI Components", icon: Layers },
   { id: "motion", label: "Motion", icon: Activity },
+  { id: "voice", label: "Voice & Tone", icon: MessageSquare },
   { id: "export", label: "Code Export", icon: Code },
 ]
 
@@ -330,7 +333,22 @@ export default function DesignSystemPage() {
         <MotionSandbox />
       </section>
 
-      {/* 9. Code & Token Export */}
+      {/* 9. Brand Voice & Verbal Identity */}
+      <section id="voice" className="page-container py-16 border-t border-border scroll-mt-24">
+        <div className="mb-12">
+          <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono block mb-2">
+            Verbal Identity
+          </span>
+          <h2 className="font-serif text-3xl md:text-5xl tracking-tight">Brand Voice & Lexicon</h2>
+          <p className="text-muted-foreground mt-3 max-w-xl text-base">
+            Quiet editorial confidence, architectural rigor, tactile candor, and purposeful vocabulary standards.
+          </p>
+        </div>
+
+        <VoiceShowcase />
+      </section>
+
+      {/* 10. Code & Token Export */}
       <section id="export" className="page-container py-16 border-t border-border scroll-mt-24">
         <div className="mb-12">
           <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono block mb-2">

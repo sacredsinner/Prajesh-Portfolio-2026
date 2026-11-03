@@ -58,6 +58,50 @@ export function CanvasStage({
     }
   }, [onInitControls, fitTo, fitItems, zoomAt, canvas.items])
 
+  // Global smooth zoom keyboard shortcuts (+, -, 0)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault()
+        zoomAt(1.25, undefined, undefined, true)
+      } else if (e.key === "-" || e.key === "_") {
+        e.preventDefault()
+        zoomAt(1 / 1.25, undefined, undefined, true)
+      } else if (e.key === "0") {
+        e.preventDefault()
+        fitItems(canvas.items, true)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [zoomAt, fitItems, canvas.items])
+
+  // Double-click on canvas background to smoothly zoom in/out
+  const onDoubleClick = (e: React.MouseEvent) => {
+    const targetEl = e.target as HTMLElement | null
+    if (
+      targetEl &&
+      (targetEl.closest("button, a, input, textarea, select, [role='button'], [data-control]") ||
+        targetEl.closest("[data-item]"))
+    ) {
+      return
+    }
+    if (view.scale < 1.35) {
+      zoomAt(1.65, e.clientX, e.clientY, true)
+    } else {
+      fitItems(canvas.items, true)
+    }
+  }
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
 
@@ -143,6 +187,7 @@ export function CanvasStage({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
+      onDoubleClick={onDoubleClick}
     >
       <div
         className="absolute left-0 top-0 origin-top-left"
@@ -187,7 +232,7 @@ export function CanvasStage({
           )
         })}
       </div>
-      <ZoomControls scale={view.scale} onZoom={(f) => zoomAt(f)} onFit={() => fitItems(canvas.items, true)} />
+      <ZoomControls scale={view.scale} onZoom={(f) => zoomAt(f, undefined, undefined, true)} onFit={() => fitItems(canvas.items, true)} />
       <MiniMap canvas={canvas} view={view} viewport={ref.current} bounds={bounds} onJump={(x, y) => setView({ ...view, x, y })} />
       {children}
     </div>
@@ -257,6 +302,7 @@ export function ZoomControls({ scale, onZoom, onFit }: { scale: number; onZoom: 
         }}
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-secondary active:scale-95"
         aria-label="Zoom out"
+        title="Zoom out (-)"
       >
         −
       </button>
@@ -267,7 +313,7 @@ export function ZoomControls({ scale, onZoom, onFit }: { scale: number; onZoom: 
           onFit()
         }}
         className="min-w-14 cursor-pointer rounded-full px-2 text-xs tabular-nums transition hover:bg-secondary active:scale-95"
-        title="Fit to content"
+        title="Fit to content (0)"
       >
         {Math.round(scale * 100)}%
       </button>
@@ -279,6 +325,7 @@ export function ZoomControls({ scale, onZoom, onFit }: { scale: number; onZoom: 
         }}
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-secondary active:scale-95"
         aria-label="Zoom in"
+        title="Zoom in (+)"
       >
         +
       </button>

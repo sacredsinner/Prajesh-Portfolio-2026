@@ -28,7 +28,7 @@ const inputClass = "w-full rounded-lg border border-border bg-background px-2.5 
 export function BoardEditor({ board }: { board: Board }) {
   const b = useBoard(board.canvas)
   const { canvas } = b
-  const { view, setView, ref, toCanvas, zoomAt, fitTo, fitItems } = useViewport()
+  const { view, setView, ref, toCanvas, zoomAt, fitTo, fitItems, isAnimating, stopAnimation } = useViewport()
   const [selected, setSelected] = useState<string[]>([])
   const [selectedConnector, setSelectedConnector] = useState<string | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -172,6 +172,7 @@ export function BoardEditor({ board }: { board: Board }) {
   const selectedRef = useRef(selected)
   selectedRef.current = selected
   const onPointerDown = (e: React.PointerEvent) => {
+    stopAnimation()
     if (e.button === 1 || tool === "pan" || (e.button === 0 && e.altKey)) {
       setDrag({ kind: "pan", start: { x: e.clientX, y: e.clientY }, view: { x: view.x, y: view.y } })
       ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
@@ -309,7 +310,7 @@ export function BoardEditor({ board }: { board: Board }) {
 
         {/* Stage */}
         <div ref={ref} className={`relative min-w-0 flex-1 touch-none overflow-hidden select-none ${cursor}`} style={backgroundStyle(canvas.background, view)} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onDragOver={(e) => e.preventDefault()} onDrop={onDrop} onDoubleClick={() => { if (single && (single.type === "note" || single.type === "sticky")) editingText.current = true }}>
-          <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
+          <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`, transition: isAnimating ? "transform 450ms cubic-bezier(0.16, 1, 0.3, 1)" : "none" }}>
             <ConnectorLayer canvas={canvas} selected={selectedConnector} onSelect={(id) => { setSelectedConnector(id); setSelected([]) }} />
             {drag?.kind === "connect" && (() => { const from = canvas.items.find((i) => i.id === drag.from); return from ? <svg className="pointer-events-none absolute overflow-visible" style={{ left: 0, top: 0, zIndex: 998 }}><line x1={from.x + from.w / 2} y1={from.y + from.h / 2} x2={drag.to.x} y2={drag.to.y} stroke="#1B1A16" strokeWidth={1.5} strokeDasharray="6 4" /></svg> : null })()}
             {sorted.map((item) => {
@@ -331,7 +332,7 @@ export function BoardEditor({ board }: { board: Board }) {
             {guides.h.map((y) => <div key={`h${y}`} className="pointer-events-none absolute h-px bg-[#BD3A2A]" style={{ top: y, left: -100000, width: 200000, zIndex: 5002 }} />)}
           </div>
           {canvas.items.length === 0 && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><p className="max-w-sm text-center text-sm text-muted-foreground">Empty board. Upload or paste images, add notes and swatches from the left rail, or drop a Figma, Pinterest or Behance link anywhere.</p></div>}
-          <ZoomControls scale={view.scale} onZoom={(f) => zoomAt(f)} onFit={() => fitItems(canvas.items)} />
+          <ZoomControls scale={view.scale} onZoom={(f) => zoomAt(f, undefined, undefined, true)} onFit={() => fitItems(canvas.items, true)} />
           <MiniMap canvas={canvas} view={view} viewport={ref.current} bounds={boundsOf(canvas.items)} onJump={(x, y) => setView({ ...view, x, y })} />
           {message && <p role="alert" className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-destructive bg-background px-3 py-1 text-xs text-destructive">{message} <button type="button" onClick={() => setMessage("")} className="ml-2 underline">dismiss</button></p>}
         </div>

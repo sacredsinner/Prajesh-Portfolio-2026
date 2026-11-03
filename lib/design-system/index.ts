@@ -5,6 +5,9 @@ import {
   RADIUS_TOKENS,
   MOTION_TOKENS,
   BRAND_MARK_RULES,
+  BRAND_TONE_PRINCIPLES,
+  LEXICON_GUIDELINES,
+  VOICE_CHANNELS,
   type ColorToken,
   type TypographyToken,
 } from "./tokens"
@@ -85,6 +88,9 @@ export function exportDesignSystemJson(): string {
       motion: MOTION_TOKENS,
       brandMark: BRAND_MARK_RULES,
       brandDna: BRAND_DNA,
+      voicePrinciples: BRAND_TONE_PRINCIPLES,
+      lexicon: LEXICON_GUIDELINES,
+      voiceChannels: VOICE_CHANNELS,
     },
     null,
     2

@@ -31,19 +31,33 @@ The visual language follows the **Prajesh Shakya Design System**:
 ## Core Features & Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                       Prajesh Shakya Studio Ecosystem                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │                                 │                        │
++-----------------------------------------------------------------------------+
+|                       Prajesh Shakya Studio Ecosystem                       |
++-----------------------------------------------------------------------------+
+          |                                 |                        |
   [ Public Portfolio ]             [ Creative Studio ]      [ Client Operations ]
-  • Behance Case Studies           • AI Moodboard Designer  • Private Portals (/m/)
-  • Packages & Pricing (/packages) • Project Studio         • Quotes & Invoices (/i/)
-  • Notes & RSS (/blog, /notes)    • Socials & Buffer Hub   • Contact Inquiries CRM
-  • AI Strategist ("Praj")         • Notion Sync Engine     • Mobile MFE (/overview)
-  • Promo Studio (/promo)          • Newsletter Broadcasts  • Multi-Currency Engine
+  • Strategic Funnel (/start)      • Behance Project Studio • Private Portals (/m/)
+  • Kinetic Typography Hero        • Socials & Buffer Hub   • Split Invoices & Pay (/i/)
+  • Behance Case Studies           • Notion Sync Engine     • Intake CRM & Contacts
+  • Packages & Pricing (/packages) • Newsletter Broadcasts  • Mobile MFE (/overview)
+  • Notes & RSS (/blog, /notes)    • Design System Explorer • Local Auth & Offline Mock
+  • AI Strategist ("Praj")         • Promo Studio (/promo)  • Multi-Currency Engine
 ```
 
-### 1. Behance-Style Project Studio (`/admin/projects`)
+### 1. Strategic Client Intake Funnel (`/start`)
+- **5-Step Diagnostic Wizard (`components/funnel/intake-wizard.tsx`)**:
+  - *Step 1: Project Stage* (New Venture, Rebrand & Repositioning, Design System Scaling, Strategy Audit).
+  - *Step 2: Deliverables Checklist* (Core Visual Identity, Brand Strategy, Guidelines Book, Digital Design, Packaging).
+  - *Step 3: Timeline Calibration* (Urgent, Standard 1–2 months, Relaxed 3+ months).
+  - *Step 4: Investment & Currency* (Dynamic currency toggle between USD, AUD, NPR with real-time budget brackets).
+  - *Step 5: Founder Details & Brief* (Company, website, key friction points, and contextual notes).
+- **Intelligent Package Recommendation Engine (`lib/funnel.ts`)**:
+  - Automatically correlates stage, scope, and timeline to recommend the optimal package tier (**Foundation**, **Identity**, or **System**) with transparent pricing and deliverable breakdowns.
+- **Server Action & CRM Integration (`app/actions/funnel.ts`)**:
+  - Validates submissions with Zod and records structured leads directly into the CRM database (`db/schema.ts` contacts table), complete with recommended package tags, timeline urgency, and budget metadata.
+- **Global CTA Alignment**: Seamlessly unifies calls-to-action across the homepage, case study footers, and navigation to direct prospective clients straight into the intake funnel.
+
+### 2. Behance-Style Project Studio (`/admin/projects`)
 - **Interactive Cover Studio**: Drag-and-drop cover uploads with an interactive crop tool, focal point calibration, and real-time aspect ratio previews.
 - **15 Modular Content Blocks**:
   - Full-width hero images, multi-column image grids (2–4 columns), and responsive image carousels.
@@ -54,14 +68,36 @@ The visual language follows the **Prajesh Shakya Design System**:
 - **Workflow & Layout Controls**: Boxed, wide, and full-bleed width toggles, drag-and-drop reordering, copy/duplicate blocks, undo/redo (`Cmd+Z` / `Cmd+Shift+Z`), debounced autosave, and multi-device preview frames (Desktop 1440px, Tablet 768px, Mobile 375px).
 - **Metadata & Publishing Engine**: Project status states (`draft`, `published`, `scheduled`, `unlisted`), creative fields, tools used, client credits, licensing presets, SEO snippet validator, and accessibility checker.
 
-### 2. Client Moodboards & Presentation Studio (`/m/[token]`)
+### 3. Client Moodboards & Presentation Studio (`/m/[token]`)
 - **Client Collaboration Portal (`/m/[token]`)**:
   - Private tokenized links for zero-friction client review without requiring account registration.
   - Pin-point item commenting, revision request logs, and one-click milestone approval workflows.
   - Automated canvas versioning (keeps a rolling 30-snapshot history).
   - Pre-seeded flagship showcase: *Apple Guitars Interactive Moodboard* featuring brand imagery, typography, and YouTube/Figma embeds.
 
-### 3. Mobile Command Center & Micro-Frontend (`/overview` & `/mobile/overview`)
+### 4. Advanced Invoicing, Split Payments & Payment Panel (`/admin/invoices` & `/i/[token]`)
+- **Milestone & Advance Payments**: Flexible billing splits supporting upfront deposits (e.g. 50% deposit / 50% final, or 40/30/30 milestones) with clear payment status tracking (`draft`, `sent`, `viewed`, `paid`, `partially_paid`, `overdue`).
+- **Dynamic Client Payment Panel (`components/documents/payment-panel.tsx`)**:
+  - Direct QR code rendering for instant mobile scanning (supporting eSewa, Wise, Stripe payment links, or encoded bank credentials).
+  - One-click clipboard copy utility for Swift/BIC, IBAN, and account numbers.
+  - Structured bank transfer instruction parsing.
+- **Multi-Currency Engine**: Full transactional support for **NPR (Nepalese Rupee)**, **AUD (Australian Dollar)**, and **USD (US Dollar)**.
+- **High-Fidelity PDF Generation**: Rendered client-side and server-side using `pdf-lib` and `@pdf-lib/fontkit`.
+- **Payment Reminders**: Automated follow-up cron endpoint at `/api/cron/invoice-reminders` powered by Resend.
+
+### 5. Local Developer Authentication Bypass & CMS Resilience
+- **Zero-Dependency Local Login (`app/actions/local-auth.ts`, `lib/auth.ts`)**:
+  - Dedicated developer bypass using credentials (`admin` / `admin@123`) backed by an HTTP-only `dev_admin_session` cookie.
+  - Allows full administration testing without requiring active Google OAuth client IDs or live external Better Auth infrastructure.
+- **Resilient Fallback Mode (`app/admin/page.tsx`, `lib/overview.ts`)**:
+  - Admin dashboard gracefully falls back to `getSafeOverview()`, `DEMO_PROJECTS`, `DEMO_NOTES`, and mock CRM leads if the Neon Postgres database is unreachable or offline.
+  - Guarantees 100% operational UI exploration during local testing or demo environments.
+
+### 6. Kinetic Typographic Hero & Interaction Design (`components/home/interactive-hero-title.tsx`)
+- **6-Slot Anchor Word Morphing**: Desktop hero title features interactive slot-anchored typographic physics. Hovering over any word keeps it anchored in its horizontal slot while flanking words transition into contextual editorial narratives (*"Crafting Timeless Visual Worlds"*, *"Defining Strategic Brand Systems"*, etc.).
+- **Deliberate Physics**: Built with Framer Motion using a gentle 850ms hysteresis release hold before returning to rest, avoiding jarring visual flickers and expressing tactile patience.
+
+### 7. Mobile Command Center & Micro-Frontend (`/overview` & `/mobile/overview`)
 - **Mobile-First MFE Architecture**:
   - Built-in postMessage communication protocol via `useMicroFrontendBridge` (`lib/mfe-bridge.ts`).
   - Seamlessly embeddable inside native iOS/Android webviews or third-party iframe shells with automatic height synchronization and bidirectional events.
@@ -69,34 +105,25 @@ The visual language follows the **Prajesh Shakya Design System**:
   - Real-time studio pulse: cashflow totals, pending/overdue invoices, active client moodboards, recent enquiries, and portfolio analytics.
   - Instant demo switch (`/overview?demo=true`) providing full mock exploration when database access is offline.
 
-### 4. Social Media Command & Buffer Integration (`/admin/socials`)
+### 8. Social Media Command & Buffer Integration (`/admin/socials`)
 - Centralized multi-platform publishing hub supporting **Instagram**, **Facebook**, **LinkedIn**, **X (Twitter)**, **Threads**, and **Bluesky**.
 - Integrated with **Buffer's GraphQL API** and Buffer MCP server (`https://mcp.buffer.com/mcp`).
-- Draft scheduling, queue timeline visualization, idea scratchpad, link auto-shortening, and account profile sync.
+- Draft scheduling, queue timeline visualization, idea scratchpad (`data/socials-state.json`), link auto-shortening, and account profile sync.
 
-### 5. Multi-Currency Invoicing & Quote System (`/admin/invoices` & `/i/[token]`)
-- Multi-currency quotes and invoices supporting **NPR (Nepalese Rupee)**, **AUD (Australian Dollar)**, and **USD (US Dollar)**.
-- High-fidelity PDF generation rendered directly in-browser and server-side using `pdf-lib` and `@pdf-lib/fontkit`.
-- One-click workflow: Convert approved quotes directly into active invoices.
-- Automated payment follow-up cron endpoint at `/api/cron/invoice-reminders` powered by Resend.
-- Client verification portal with digital acceptance logging.
-
-### 6. "Praj" — AI Brand Strategist & Lead Qualifier (`/api/chat`)
+### 9. "Praj" — AI Brand Strategist & Lead Qualifier (`/api/chat`)
 - Conversational brand strategist widget embedded on public pages.
 - Powered by **Google Gemini** (`gemini-3.5-flash-lite` / `gemini-1.5-flash`) via the Vercel AI SDK (`@ai-sdk/google`, `ai`).
 - Trained on 10+ years of creative direction expertise, service package specs, and case studies.
-- Intelligent lead capture (`lib/chat-lead.ts`) that automatically analyzes chat dialogues, extracts client project briefs, budget bands, and contact details, and logs them directly into the CRM.
+- Intelligent lead capture (`lib/chat-lead.ts`) that automatically analyzes chat dialogues, extracts client project briefs, budget bands, and contact details, and routes them to the `/start` funnel and CRM.
 
-### 7. Notion CMS Synchronization (`/api/notion/sync`)
-- Automated synchronization between Notion editorial databases and the portfolio's `/notes` and `/blog` routes.
+### 10. Notion CMS Synchronization & Publishing Engine
+- Automated synchronization between Notion editorial databases and the portfolio's `/notes` and `/blog` routes (`/api/notion/sync`).
 - Full markdown compilation via `notion-to-md` with support for custom callouts, code syntax, and hero images.
 - Protected webhook route requiring `NOTION_SYNC_SECRET` for secure automated syncs.
 - Automated RSS 2.0 feed generation at `/blog/rss.xml`.
-
-### 8. Packaging, Pricing & Newsletter Broadcasts
-- **Package Tiers (`/packages`)**: Interactive pricing tables for Foundation, Identity, and System tiers with live currency switching and add-on estimators. Rich Schema.org `ItemList` and `Offer` JSON-LD metadata for SEO.
-- **Newsletter Engine (`/admin/newsletter`)**: Broadcast creation with Resend integration, double opt-in verification (`/api/newsletter/confirm`), and contact list sync.
-- **Promo Video Studio (`/promo`)**: Built-in 60 FPS motion graphics renderer and video exporter for social promotion (feature-flag guarded).
+- Interactive pricing tables for Foundation, Identity, and System tiers with live currency switching (`/packages`).
+- Newsletter broadcast creation with Resend integration (`/admin/newsletter`) and double opt-in verification (`/api/newsletter/confirm`).
+- Built-in 60 FPS motion graphics renderer and video exporter for social promotion (`/promo`).
 
 ---
 

@@ -50,23 +50,22 @@ Target Clients:
 • Agencies
 
 Brand Personality:
-• Premium
-• Intelligent
-• Calm
-• Creative
-• Honest
-• Strategic
-• Minimalist
-• Modern
+- Quiet Editorial Confidence: Grounded, authoritative, calm, and deliberate. Never defensive or hyped.
+- Architectural Rigor: Precise design, typographic, and business terminology (hierarchy, structure, positioning).
+- Tactile Candor: Direct, human, candid advice; no agency doublespeak or corporate buzzwords.
+- Deliberate Restraint: Measured cadence, concise clarity, and respect for the visitor's time.
+
+Lexicon Rules (Strictly Enforced):
+- Words to Embrace: Craft, Endure, Architecture, Distinction, Grounded, Clarity, Scalable, Editorial, Hierarchy.
+- Words Banned: Disruptive, 10x, Growth-hacked, Guru, Ninja, Wizard, Synergy, Aesthetic (as a noun), Revolutionary.
 
 Tone:
-• Professional
-• Friendly
-• Helpful
-• Confident
-• Clear
-• Never robotic
-• Never overly salesy
+- Professional yet warm
+- Discerning and consultative
+- Helpful without being subservient
+- Confident without arrogance
+- Never robotic
+- Never overly salesy
 
 --------------------------------------------------
 GOALS

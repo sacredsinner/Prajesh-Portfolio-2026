@@ -145,6 +145,46 @@ const ratio = calculateContrast("#F5F5F3", "#1B1A16") // 14.2
 
 For the complete strategic blueprint covering purpose, vision, mission, archetype, tone of voice, client empathy maps, and brand anti-patterns, see **[BRAND_DNA.md](./BRAND_DNA.md)**.
 
+---
+
+## 9. Brand Tone of Voice & Verbal Identity
+
+Our verbal identity is an indivisible component of our design system. Just as colors and type adhere to strict token constraints, our copywriting and messaging adhere to four core voice pillars:
+
+### 1. The Four Voice Pillars
+
+1. **Quiet Editorial Confidence**: Grounded, authoritative, and deliberate. We avoid defensiveness, hyperbole, and synthetic hype.
+2. **Architectural Rigor**: Precise design and strategic terminology. We speak about *"typographic hierarchy"*, *"positioning power"*, and *"brand architecture"* rather than *"cool graphics"*.
+3. **Tactile Candor**: Human, direct, and transparent. We speak directly to business founders as seasoned peers without agency doublespeak.
+4. **Deliberate Restraint**: Space between sentences, concise paragraphs, and measured cadence that mirrors our 1px hairlines and parchment ground.
+
+### 2. The Lexicon Matrix: Words We Own vs. Words We Avoid
+
+| Category | Words We Own | Words We Avoid | Preferred Replacement |
+| :--- | :--- | :--- | :--- |
+| **Strategy** | *Endure, Architecture, Clarity* | *Disruptive* | *Transformative, Enduring, Distinct* |
+| **Process** | *Craft, Precision, Discipline* | *Guru, Ninja, Wizard* | *Director, Specialist, Strategist* |
+| **Commercial** | *Distinction, Leverage, Value* | *10x, Growth-hacked, Synergy* | *Scalable, High-leverage, Cohesion* |
+| **Aesthetics** | *Grounded, Editorial, Restraint* | *Aesthetic (as noun), Trendy* | *Visual language, Identity, Art direction* |
+| **Quality** | *Meticulous, Rigorous* | *Pixel-perfect, Revolutionary* | *Typographic precision, Purposeful* |
+
+### 3. Contextual Tone Matrix Across Channels
+
+| Channel | Formality | Velocity | Density | Copy Objective |
+| :--- | :--- | :--- | :--- | :--- |
+| **Public Portfolio & Hero** | 75% | 40% | 65% | Gallery-grade monograph pace; commands attention through understated poise. |
+| **Intake Funnel (`/start`)** | 60% | 70% | 80% | Diagnostic, encouraging, clear; breaks complex scopes into decisive steps. |
+| **Quotes & Invoices (`/i/[token]`)** | 85% | 50% | 90% | Courteous, scrupulously transparent, unambiguous; respects financial trust. |
+| **AI Strategist ("Praj")** | 65% | 80% | 75% | Conversational, discerning, articulate, and diagnostic; asks high-leverage questions. |
+
+### 4. Kinetic Typographic Rules
+
+- **Slot-Anchored Morphing**: In interactive sentence sequences (e.g. hero titles), the hovered word remains anchored in its spatial slot while flanking words transition into contextual narratives.
+- **Honest Physics & Dwell Time**: Kinetic interactions employ a deliberate hysteresis delay (850ms hold) before resetting, avoiding frantic fluttering.
+- **Punctuation Discipline**: Omit unnecessary exclamation points. Full stops communicate finality and confidence.
+
+---
+
 ### Live Hub & Interactive Explorer
 
-Visit **`/design-system`** on the live website to test type specimens, copy hex codes and CSS variables, inspect the PS monogram geometry, test interactive UI primitives, and download JSON token exports.
+Visit **`/design-system`** on the live website to test type specimens, copy hex codes and CSS variables, inspect the PS monogram geometry, test interactive UI primitives, explore the Brand Voice & Lexicon showcase, and download JSON token exports.

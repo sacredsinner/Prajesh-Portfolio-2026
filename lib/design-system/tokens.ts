@@ -350,3 +350,135 @@ export const BRAND_MARK_RULES = {
     "Do not place on busy un-vetted photographic backgrounds without scrim.",
   ],
 }
+
+export interface BrandTonePrinciple {
+  id: string
+  name: string
+  kicker: string
+  description: string
+  exampleGood: string
+  exampleBad: string
+  rationale: string
+}
+
+export const BRAND_TONE_PRINCIPLES: BrandTonePrinciple[] = [
+  {
+    id: "quiet-confidence",
+    name: "Quiet Editorial Confidence",
+    kicker: "Pillar 01",
+    description: "Grounded, authoritative, and deliberate. Never defensive, salesy, or apologetic.",
+    exampleGood: "We design brand systems that endure because they are anchored in strategy, typographic truth, and cultural relevance.",
+    exampleBad: "We are an award-winning rockstar agency that disrupts industries with revolutionary out-of-the-box branding!",
+    rationale: "True craftsmanship needs no hyperbole. Restrained language allows visual and strategic work to speak with pure clarity.",
+  },
+  {
+    id: "architectural-rigor",
+    name: "Architectural Rigor",
+    kicker: "Pillar 02",
+    description: "Precise design, typographic, and business terminology that treats brand as foundational infrastructure.",
+    exampleGood: "Establishing modular layout systems, baseline typographic scales, and high-contrast color hierarchies built for digital longevity.",
+    exampleBad: "Making your business look super clean, modern, and aesthetically pleasing with nice trendy vibes.",
+    rationale: "Positions the studio as a serious business partner solving commercial clarity problems rather than delivering cosmetic decorations.",
+  },
+  {
+    id: "tactile-candor",
+    name: "Tactile Candor",
+    kicker: "Pillar 03",
+    description: "Human, candid, and direct. We speak directly with founders as seasoned peers.",
+    exampleGood: "A great brand won't fix a broken product, but it ensures an exceptional one is never overlooked.",
+    exampleBad: "Leveraging synergistic paradigms to maximize omnichannel brand touchpoint conversion velocity.",
+    rationale: "Earns immediate trust by cutting through agency jargon and speaking plainly about commercial reality.",
+  },
+  {
+    id: "deliberate-restraint",
+    name: "Deliberate Restraint",
+    kicker: "Pillar 04",
+    description: "Measured cadence, generous spacing, and concise prose that mirrors our 1px hairline rules and parchment ground.",
+    exampleGood: "Identity, typography, and digital craft. Built for founders who value enduring distinction.",
+    exampleBad: "Check out our crazy long list of all 150 things we could possibly do for you including every trendy tactic under the sun!",
+    rationale: "Editorial breathing room communicates discernment, focus, and high aesthetic selectivity.",
+  },
+]
+
+export interface LexiconTerm {
+  word: string
+  type: "own" | "avoid"
+  category: "Strategy" | "Aesthetics" | "Process" | "Commercial"
+  context: string
+  replacement?: string
+}
+
+export const LEXICON_GUIDELINES: LexiconTerm[] = [
+  // Words We Own
+  { word: "Craft", type: "own", category: "Process", context: "Signifies deliberate technical skill, dedication, and care in visual and digital execution." },
+  { word: "Endure", type: "own", category: "Strategy", context: "Emphasizes brand equity designed to outlast design fads and ephemeral algorithm trends." },
+  { word: "Architecture", type: "own", category: "Strategy", context: "Frames brand assets, typography, and guidelines as structural organizational systems." },
+  { word: "Distinction", type: "own", category: "Commercial", context: "Focuses on meaningful market differentiation grounded in genuine founder ethos." },
+  { word: "Grounded", type: "own", category: "Aesthetics", context: "Reflects our warm parchment ground (#F5F5F3) and realistic commercial reasoning." },
+  { word: "Clarity", type: "own", category: "Strategy", context: "The ultimate outcome of thoughtful design: eliminating ambiguity for buyers and audiences." },
+  { word: "Restraint", type: "own", category: "Aesthetics", context: "The conscious discipline of omitting decorative fluff to elevate core substance." },
+  { word: "Editorial", type: "own", category: "Aesthetics", context: "High-contrast typographic dialogue, fine bookmaking proportions, and gallery-level presentation." },
+
+  // Words We Avoid
+  { word: "Disruptive", type: "avoid", category: "Strategy", context: "Overused startup cliché that communicates aggression rather than strategic alignment.", replacement: "Enduring, distinct, or transformative" },
+  { word: "Guru / Ninja / Wizard", type: "avoid", category: "Process", context: "Flippant informal tropes that erode professional authority.", replacement: "Director, strategist, or specialist" },
+  { word: "10x / Growth-hacked", type: "avoid", category: "Commercial", context: "Short-term tactical gimmicks incompatible with enduring brand equity.", replacement: "Scalable, sustainable, high-leverage" },
+  { word: "Synergy", type: "avoid", category: "Commercial", context: "Hollow corporate filler with zero semantic utility.", replacement: "Alignment, integration, or cohesion" },
+  { word: "Aesthetic (as a noun)", type: "avoid", category: "Aesthetics", context: "Superficial visual trend-chasing devoid of brand substance.", replacement: "Visual language, identity, or art direction" },
+  { word: "Revolutionary", type: "avoid", category: "Commercial", context: "Unearned hype that makes sophisticated founders skeptical.", replacement: "Purposeful, definitive, or rigorous" },
+  { word: "Pixel-perfect", type: "avoid", category: "Process", context: "Dated web jargon that misses the fluid reality of modern responsive design systems.", replacement: "Typographic precision, meticulous craft" },
+]
+
+export interface VoiceChannel {
+  id: string
+  label: string
+  formality: number // 0-100
+  velocity: number // 0-100 (pace of delivery)
+  density: number // 0-100 (information density)
+  description: string
+  primaryAudience: string
+  exampleCopy: string
+}
+
+export const VOICE_CHANNELS: VoiceChannel[] = [
+  {
+    id: "portfolio",
+    label: "Public Portfolio & Case Studies",
+    formality: 75,
+    velocity: 40,
+    density: 65,
+    description: "Quiet, gallery-grade narrative pace. Rich in typographic and strategic rationale.",
+    primaryAudience: "Founders, CMOs, Venture Capitalists, Creative Directors",
+    exampleCopy: "A complete identity and editorial packaging system for an artisanal luthier studio in Melbourne, balancing historic acoustic craft with modernist clarity.",
+  },
+  {
+    id: "intake",
+    label: "Client Intake Wizard (/start)",
+    formality: 60,
+    velocity: 70,
+    density: 80,
+    description: "Diagnostic, structured, encouraging, and clear. Breaks complex scopes into decisive steps.",
+    primaryAudience: "Prospective clients qualifying their project scope and budget",
+    exampleCopy: "Select your current stage and required deliverables. We'll recommend an optimal scope tier and transparent investment estimate.",
+  },
+  {
+    id: "invoicing",
+    label: "Quotes, Invoices & Payment (/i/[token])",
+    formality: 85,
+    velocity: 50,
+    density: 90,
+    description: "Courteous, completely transparent, unambiguous, and operationally exact.",
+    primaryAudience: "Clients, finance leads, accounting teams",
+    exampleCopy: "Milestone payment for Phase 1 Deliverables: Visual Identity & Brand Book. Net 14 terms. Scan the QR code or transfer via Wise/SWIFT below.",
+  },
+  {
+    id: "ai-strategist",
+    label: "AI Brand Strategist ('Praj')",
+    formality: 65,
+    velocity: 80,
+    density: 75,
+    description: "Conversational, discerning, articulate, and opinionated. Asks sharp diagnostic questions.",
+    primaryAudience: "Inquiring visitors exploring brand repositioning or package fit",
+    exampleCopy: "Tell me about your product and the friction you're seeing in market. Are customers struggling to perceive your value, or has your business simply outgrown its original mark?",
+  },
+]
