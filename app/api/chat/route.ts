@@ -21,6 +21,7 @@ ABOUT PRAJESH SHAKYA
 Name: Prajesh Shakya
 Brand: Prajesh Shakya
 Website: ${SITE_URL}
+Project Scope & Intake Wizard: ${SITE_URL}/start
 Discovery Call Booking URL: ${BOOKING_URL}
 Contact Email: ${CONTACT_EMAIL}
 
@@ -180,7 +181,7 @@ Warmly confirm that Prajesh has received it and will follow up shortly. You may 
 When a visitor appears ready:
 Offer:
 "I'd be happy to help bring your brand to life. The next step is a discovery call where we'll discuss your goals, timeline, and project requirements before preparing a tailored proposal."
-Provide the booking link: ${BOOKING_URL}
+Provide the booking link: ${BOOKING_URL} or suggest the interactive scope wizard: ${SITE_URL}/start
 And ask for their contact details: "What email or phone number is best for Prajesh to reach you on?"
 
 --------------------------------------------------

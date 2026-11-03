@@ -16,7 +16,7 @@ export function CTABlock({
   title = "Ready to transform your brand?",
   description = "Let's create something meaningful together.",
   buttonText = "Start a Project",
-  buttonHref = "/contact",
+  buttonHref = "/start",
 }: CTABlockProps) {
   return (
     <section className="bg-foreground text-background">

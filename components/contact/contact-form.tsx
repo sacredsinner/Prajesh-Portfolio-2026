@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
-import { Send } from "lucide-react"
+import Link from "next/link"
+import { ArrowRight, Send, Sparkles } from "lucide-react"
 import { submitContact } from "@/app/actions/cms"
 import { BOOKING_URL, CONTACT_EMAIL } from "@/lib/site"
 import { TIMELINE_CHOICES } from "@/lib/packages"
@@ -65,6 +66,21 @@ export function ContactForm({ choices }: { choices: Choices }) {
           <p className="mt-8 max-w-md text-lg leading-relaxed text-muted-foreground">
             You don&apos;t need to have everything figured out before reaching out. Maybe you&apos;re starting something new. Maybe your current brand doesn&apos;t feel like you anymore. Or maybe you just have an idea you&apos;re trying to make sense of. Let&apos;s talk.
           </p>
+          <div className="mt-8 border border-border bg-secondary/20 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Scope Estimator</span>
+            </div>
+            <p className="text-sm text-foreground">
+              Prefer calculating your deliverables, package recommendation, and investment tier step-by-step?
+            </p>
+            <Link
+              href="/start"
+              className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-foreground underline underline-offset-4 hover:opacity-70"
+            >
+              Open Interactive Intake Wizard <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           <div className="mt-12 space-y-6">
             <div>
               <span className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">Email</span>

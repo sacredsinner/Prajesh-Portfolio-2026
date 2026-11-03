@@ -37,7 +37,7 @@ export function PackagesView({ pricing }: { pricing: Pricing }) {
             <ul className={`mt-8 space-y-2 border-t pt-6 text-sm ${item.popular ? "border-background/20" : "border-border"}`}>
               {item.includes.map((line) => <li key={line} className="flex gap-3"><span aria-hidden="true">—</span>{line}</li>)}
             </ul>
-            <Link href={`/contact?package=${item.name}`} className={`group mt-auto inline-flex items-center gap-2 self-start pt-8 text-sm underline-offset-4 hover:underline`}>Start with {item.name} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
+            <Link href={`/start?package=${encodeURIComponent(item.name.toLowerCase())}`} className={`group mt-auto inline-flex items-center gap-2 self-start pt-8 text-sm underline-offset-4 hover:underline`}>Configure {item.name} scope <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
           </article>
         ))}
       </div>

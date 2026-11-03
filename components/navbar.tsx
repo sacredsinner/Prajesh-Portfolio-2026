@@ -90,7 +90,7 @@ export function Navbar() {
 
           {/* CTA Button - Desktop */}
           <Link
-            href="/contact"
+            href="/start"
             className="hidden md:inline-flex px-5 py-2.5 bg-foreground text-background text-sm tracking-wide hover:bg-foreground/90 transition-colors"
           >
             Start a Project
@@ -136,7 +136,7 @@ export function Navbar() {
               ))}
               <li className="pt-4">
                 <Link
-                  href="/contact"
+                  href="/start"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="inline-flex px-5 py-2.5 bg-foreground text-background text-sm tracking-wide"
                 >

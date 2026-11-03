@@ -5,6 +5,7 @@ import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import type { Project } from "@/components/project-card"
 import { ShareLinks, type ShareLinksProps } from "@/components/share-links"
+import { ArrowRight } from "lucide-react"
 import { BlockCaseStudy } from "@/components/projects/block-case-study"
 
 const ease = [0.16, 1, 0.3, 1] as const
@@ -149,6 +150,28 @@ export function EditorialCaseStudy({
           <ShareLinks {...share} />
         </section>
       )}
+
+      <section className="border-t border-border bg-foreground text-background py-16 md:py-20">
+        <div className="page-container flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-2 max-w-xl">
+            <span className="font-mono text-xs uppercase tracking-widest text-background/70">
+              Start Your Transformation
+            </span>
+            <h3 className="font-serif text-3xl md:text-4xl text-balance">
+              Inspired by {project.title}?
+            </h3>
+            <p className="text-sm text-background/80 leading-relaxed">
+              Explore your deliverables, estimate package investments, and calculate your project scope in 2 minutes.
+            </p>
+          </div>
+          <Link
+            href={`/start?ref=${encodeURIComponent(project.slug)}`}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-background text-foreground text-sm font-medium hover:bg-background/90 transition-colors self-start md:self-auto shrink-0"
+          >
+            Calculate Project Scope <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
 
       <Link
         href={`/projects/${nextProject.slug}`}
