@@ -222,6 +222,15 @@ function markdownToNotionBlocks(markdown: string): any[] {
   return blocks
 }
 
+function extractNotionId(raw: string): string {
+  const trimmed = raw.trim()
+  const uuidMatch = trimmed.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i)
+  if (uuidMatch) return uuidMatch[0]
+  const hexMatch = trimmed.match(/[a-f0-9]{32}/i)
+  if (hexMatch) return hexMatch[0]
+  return trimmed.replace(/-/g, "")
+}
+
 async function runExport() {
   console.log("🚀 Starting Notion Copy Deck Exporter...")
 
@@ -244,7 +253,7 @@ async function runExport() {
   let parentParam: any = null
 
   if (TARGET_PARENT_ID) {
-    const cleanId = TARGET_PARENT_ID.replace(/-/g, "")
+    const cleanId = extractNotionId(TARGET_PARENT_ID)
     // Determine if parent is database or page
     try {
       await notion.databases.retrieve({ database_id: cleanId })

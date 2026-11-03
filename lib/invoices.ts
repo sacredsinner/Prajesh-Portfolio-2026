@@ -5,7 +5,7 @@ import { fromCents, toCents, type Currency } from "@/lib/money"
 export type DocumentKind = "quote" | "invoice"
 export type InvoiceItem = { id: string; description: string; quantity: number; unitPrice: number; discount?: number }
 
-export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "converted"
+export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "converted" | "paid"
 export type InvoiceStatus = "draft" | "sent" | "paid" | "void"
 export type DisplayStatus = QuoteStatus | InvoiceStatus | "overdue" | "expired"
 

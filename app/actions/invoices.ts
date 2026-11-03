@@ -73,6 +73,13 @@ export async function listDocuments() {
   try {
     await requireAdmin()
     await ensureSchema()
+    try {
+      await db
+        .update(invoices)
+        .set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
+        .where(eq(invoices.status, "draft"))
+    } catch {}
+
     const rows = await db.select().from(invoices).orderBy(desc(invoices.issueDate), desc(invoices.createdAt))
     if (rows && rows.length > 0) {
       return rows
@@ -128,7 +135,7 @@ export async function listDocuments() {
           id: item.id || `local-${idx}`,
           kind: item.kind || "invoice",
           number: item.number,
-          status: item.status || "draft",
+          status: item.status || "paid",
           clientName: item.clientName,
           clientCompany: item.clientCompany || null,
           clientEmail: item.clientEmail || null,
@@ -146,7 +153,7 @@ export async function listDocuments() {
           sentAt: null,
           viewedAt: null,
           acceptedBy: null,
-          paidAt: null,
+          paidAt: item.paidAt ? new Date(item.paidAt) : item.status === "paid" ? new Date(item.issueDate) : null,
           reminderCount: 0,
         }))
       }
@@ -195,7 +202,7 @@ export async function deleteDocument(id: string): Promise<PlainResult> {
   return { ok: true }
 }
 
-const STATUS_BY_KIND = { quote: ["draft", "sent", "accepted", "declined", "converted"], invoice: ["draft", "sent", "paid", "void"] } as const
+const STATUS_BY_KIND = { quote: ["draft", "sent", "accepted", "declined", "converted", "paid"], invoice: ["draft", "sent", "paid", "void"] } as const
 
 export async function setDocumentStatus(id: string, status: string): Promise<PlainResult> {
   await requireAdmin()

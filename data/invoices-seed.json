@@ -2,7 +2,7 @@
   {
     "number": "INV-15",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Manav Bista",
     "clientCompany": null,
     "clientEmail": null,
@@ -22,12 +22,13 @@
         "unitPrice": 5000,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2026-08-12T00:00:00.000Z"
   },
   {
     "number": "Q-13",
     "kind": "quote",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Manav Bista",
     "clientCompany": null,
     "clientEmail": null,
@@ -68,12 +69,13 @@
         "unitPrice": 5000,
         "discount": 3571.43
       }
-    ]
+    ],
+    "paidAt": "2026-07-20T00:00:00.000Z"
   },
   {
     "number": "INV-12",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Iod Parc",
     "clientCompany": null,
     "clientEmail": null,
@@ -93,12 +95,13 @@
         "unitPrice": 3000,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2026-06-12T00:00:00.000Z"
   },
   {
     "number": "INV-11",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Amazing Parents",
     "clientCompany": null,
     "clientEmail": null,
@@ -118,12 +121,13 @@
         "unitPrice": 50,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2026-06-01T00:00:00.000Z"
   },
   {
     "number": "INV-10",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Grad Skill",
     "clientCompany": null,
     "clientEmail": null,
@@ -157,12 +161,13 @@
         "unitPrice": 120,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2026-04-03T00:00:00.000Z"
   },
   {
     "number": "Q-09",
     "kind": "quote",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Grad skill",
     "clientCompany": null,
     "clientEmail": null,
@@ -189,12 +194,13 @@
         "unitPrice": 120,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2026-04-03T00:00:00.000Z"
   },
   {
     "number": "INV-16",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Australia College of Pioneers",
     "clientCompany": null,
     "clientEmail": null,
@@ -235,12 +241,13 @@
         "unitPrice": 10,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2025-11-28T00:00:00.000Z"
   },
   {
     "number": "INV-35",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "ACP Australia",
     "clientCompany": null,
     "clientEmail": null,
@@ -337,12 +344,13 @@
         "unitPrice": 120,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2025-02-11T00:00:00.000Z"
   },
   {
     "number": "Q-05",
     "kind": "quote",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Anil Shrestha (Opal college)",
     "clientCompany": null,
     "clientEmail": null,
@@ -362,12 +370,13 @@
         "unitPrice": 20,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2024-11-20T00:00:00.000Z"
   },
   {
     "number": "INV-45",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Serenity Connect.au",
     "clientCompany": null,
     "clientEmail": null,
@@ -394,12 +403,13 @@
         "unitPrice": 5,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2024-08-28T00:00:00.000Z"
   },
   {
     "number": "INV-30",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Style Matrix",
     "clientCompany": null,
     "clientEmail": null,
@@ -433,12 +443,13 @@
         "unitPrice": 5,
         "discount": 0
       }
-    ]
+    ],
+    "paidAt": "2024-08-25T00:00:00.000Z"
   },
   {
     "number": "INV-29",
     "kind": "invoice",
-    "status": "draft",
+    "status": "paid",
     "clientName": "Australia College of Pioneers",
     "clientCompany": null,
     "clientEmail": null,
@@ -465,6 +476,7 @@
         "unitPrice": 5,
         "discount": 1.5
       }
-    ]
+    ],
+    "paidAt": "2024-08-25T00:00:00.000Z"
   }
 ]
