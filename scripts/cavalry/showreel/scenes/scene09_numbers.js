@@ -14,10 +14,10 @@ function buildScene09(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 15, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Section Header
   var header = api.create("textShape", "S09_Header");
@@ -94,8 +94,8 @@ function buildScene09(api, rootGroup, CONFIG) {
     var entryFrame = s.start + 20 + i * 25;
     api.keyframe(colGroup, entryFrame, { "position.y": -50, "opacity": 0 });
     api.keyframe(colGroup, entryFrame + 35, { "position.y": 0, "opacity": 100 });
-    api.magicEasing(colGroup, "position.y", entryFrame + 35, "EaseOut");
-    api.magicEasing(colGroup, "opacity", entryFrame + 35, "EaseOut");
+    // magicEasing on colGroup omitted
+    // magicEasing on colGroup omitted
   }
 
   // Footer Tagline

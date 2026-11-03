@@ -14,10 +14,10 @@ function buildScene08(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 15, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Section Header
   var header = api.create("textShape", "S08_Header");
@@ -65,7 +65,7 @@ function buildScene08(api, rootGroup, CONFIG) {
   api.keyframe(coreGroup, s.start + 20, { "scale.x": 0.9, "scale.y": 0.9 });
   api.keyframe(coreGroup, s.start + 180, { "scale.x": 1.15, "scale.y": 1.15 });
   api.keyframe(coreGroup, s.end - 20, { "scale.x": 1.0, "scale.y": 1.0 });
-  api.magicEasing(coreGroup, "scale.x", s.start + 180, "EaseInOut");
+  // magicEasing on coreGroup omitted
 
   // 6 Satellite Connected Nodes
   var nodes = [
@@ -114,7 +114,7 @@ function buildScene08(api, rootGroup, CONFIG) {
     var nEntry = s.start + 30 + i * 16;
     api.keyframe(nodeGroup, nEntry, { "scale.x": 0.5, "scale.y": 0.5, "opacity": 0 });
     api.keyframe(nodeGroup, nEntry + 24, { "scale.x": 1.0, "scale.y": 1.0, "opacity": 100 });
-    api.magicEasing(nodeGroup, "scale.x", nEntry + 24, "ElasticOut");
+    // magicEasing on nodeGroup omitted
   }
 
   return g;

@@ -14,10 +14,10 @@ function buildScene07(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 15, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Section Header
   var header = api.create("textShape", "S07_Header");
@@ -115,8 +115,8 @@ function buildScene07(api, rootGroup, CONFIG) {
     var entryFrame = s.start + 20 + i * 24;
     api.keyframe(toolGroup, entryFrame, { "position.x": -60, "opacity": 0 });
     api.keyframe(toolGroup, entryFrame + 18, { "position.x": 0, "opacity": 100 });
-    api.magicEasing(toolGroup, "position.x", entryFrame + 18, "EaseOut");
-    api.magicEasing(toolGroup, "opacity", entryFrame + 18, "EaseOut");
+    // magicEasing on toolGroup omitted
+    // magicEasing on toolGroup omitted
   }
 
   return g;

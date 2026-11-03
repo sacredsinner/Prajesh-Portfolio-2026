@@ -20,10 +20,10 @@ const DOCUMENT_TYPES = ["application/pdf"]
 const PORTFOLIO_MEDIA_TYPES = [...IMAGE_TYPES, ...VIDEO_TYPES, ...DOCUMENT_TYPES]
 
 const RULES = [
-  { prefix: "portfolio/showcase/", types: VIDEO_TYPES, maxBytes: 150 * MB },
-  { prefix: "portfolio/", types: PORTFOLIO_MEDIA_TYPES, maxBytes: 100 * MB },
-  { prefix: "clients/", types: IMAGE_TYPES, maxBytes: 12 * MB },
-  { prefix: "moodboards/", types: [...IMAGE_TYPES, ...DOCUMENT_TYPES], maxBytes: 30 * MB },
+  { prefix: "portfolio/showcase/", types: undefined, maxBytes: 250 * MB },
+  { prefix: "portfolio/", types: undefined, maxBytes: 150 * MB },
+  { prefix: "clients/", types: undefined, maxBytes: 25 * MB },
+  { prefix: "moodboards/", types: undefined, maxBytes: 100 * MB },
 ]
 
 export async function POST(request: Request) {

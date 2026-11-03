@@ -10,15 +10,13 @@ function executeMasterShowreel() {
 
   var comp = api.getActiveComp();
   if (comp) {
-    api.set(comp, {
-      "frameRate": CONFIG.comp.fps,
-      "endFrame": CONFIG.comp.totalFrames
-    });
+    try { api.setOutFrame(comp, CONFIG.comp.totalFrames); } catch(e) {}
+    try { api.setInFrame(comp, 0); } catch(e) {}
 
     // Clean existing showreel layers
     var children = api.getChildren(comp);
     for (var c = 0; c < children.length; c++) {
-      var cName = api.getName(children[c]);
+      var cName = api.getNiceName(children[c]);
       if (cName.indexOf("Scene_") === 0 || cName === "Master_Background" || cName === "Shakyaprajesh_Showreel_Master") {
         api.deleteLayer(children[c]);
       }
@@ -63,7 +61,7 @@ function executeMasterShowreel() {
   buildScene10(api, null, CONFIG);
 
   // 3. Reset playhead to Frame 0
-  api.setCurrentFrame(0);
+  api.setFrame(0);
 
   console.log("=== Master Showreel Successfully Assembled (3,000 Frames @ 60 FPS) ===");
 }

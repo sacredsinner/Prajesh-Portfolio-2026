@@ -14,10 +14,10 @@ function buildScene05(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 15, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Section Header
   var header = api.create("textShape", "S05_Header");

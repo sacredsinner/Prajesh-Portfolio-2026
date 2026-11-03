@@ -276,10 +276,79 @@ export async function importInvoicesFromCSV(csvText: string): Promise<CsvImportR
   await ensureSchema()
 
   if (!csvText || typeof csvText !== "string" || !csvText.trim()) {
-    return { ok: false, error: "Empty CSV content provided." }
+    return { ok: false, error: "Empty file content provided." }
   }
 
-  // Parse lines considering quotes and multi-line fields
+  const trimmed = csvText.trim()
+
+  // 1. Direct JSON support (array of invoices or single invoice object)
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      const list = Array.isArray(parsed) ? parsed : [parsed]
+      let insertedCount = 0
+      let updatedCount = 0
+
+      for (const item of list) {
+        if (!item || typeof item !== "object") continue
+        const kind: "quote" | "invoice" = item.kind === "quote" ? "quote" : "invoice"
+        const rawNum = String(item.number || `${kind === "quote" ? "Q" : "INV"}-${String(Date.now()).slice(-4)}`).trim()
+        const number = rawNum.startsWith("INV-") || rawNum.startsWith("Q-") ? rawNum : `${kind === "quote" ? "Q" : "INV"}-${rawNum.padStart(2, "0")}`
+
+        const clientName = item.clientName || item.customer || "Client"
+        const total = String(item.total || "0")
+        const items = Array.isArray(item.items) && item.items.length
+          ? item.items
+          : [{ id: "item-1", description: "Services", quantity: 1, unitPrice: Number(total) || 0 }]
+
+        const [existing] = await db.select().from(invoices).where(eq(invoices.number, number)).limit(1)
+
+        if (existing) {
+          await db
+            .update(invoices)
+            .set({
+              clientName,
+              clientEmail: item.clientEmail || existing.clientEmail,
+              currency: item.currency || existing.currency,
+              items,
+              total,
+              taxRate: String(item.taxRate || existing.taxRate || "0"),
+              issueDate: parseDateToIso(item.issueDate || item.date),
+              dueDate: item.dueDate ? parseDateToIso(item.dueDate) : existing.dueDate,
+              notes: item.notes || existing.notes,
+              paymentLink: item.paymentLink || existing.paymentLink,
+              updatedAt: new Date(),
+            })
+            .where(eq(invoices.id, existing.id))
+          updatedCount++
+        } else {
+          await db.insert(invoices).values({
+            kind,
+            number,
+            status: item.status || "draft",
+            clientName,
+            clientEmail: item.clientEmail || null,
+            currency: item.currency || "USD",
+            items,
+            total,
+            taxRate: String(item.taxRate || "0"),
+            issueDate: parseDateToIso(item.issueDate || item.date),
+            dueDate: item.dueDate ? parseDateToIso(item.dueDate) : null,
+            notes: item.notes || null,
+            paymentLink: item.paymentLink || null,
+            publicToken: newToken(),
+          })
+          insertedCount++
+        }
+      }
+      revalidatePath("/admin/invoices")
+      return { ok: true, count: insertedCount, updated: updatedCount }
+    } catch {
+      // Not JSON, continue to CSV/TSV parser
+    }
+  }
+
+  // 2. CSV / TSV / Delimited parser
   const lines: string[] = []
   let current = ""
   let inQuotes = false
@@ -299,7 +368,11 @@ export async function importInvoicesFromCSV(csvText: string): Promise<CsvImportR
   }
   if (current.trim().length > 0) lines.push(current)
 
-  if (lines.length < 2) return { ok: false, error: "CSV does not contain enough rows." }
+  if (lines.length < 2) return { ok: false, error: "Uploaded content does not contain enough rows to import." }
+
+  // Detect delimiter: tab, semicolon or comma
+  const firstLine = lines[0]
+  const delimiter = firstLine.includes("\t") ? "\t" : firstLine.includes(";") && !firstLine.includes(",") ? ";" : ","
 
   const splitRow = (row: string) => {
     const values: string[] = []
@@ -314,7 +387,7 @@ export async function importInvoicesFromCSV(csvText: string): Promise<CsvImportR
         } else {
           quoted = !quoted
         }
-      } else if (c === "," && !quoted) {
+      } else if (c === delimiter && !quoted) {
         values.push(val.trim())
         val = ""
       } else {

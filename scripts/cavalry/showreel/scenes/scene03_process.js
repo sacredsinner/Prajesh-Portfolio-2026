@@ -14,10 +14,10 @@ function buildScene03(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 20, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 20, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 20, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Scene Section Header
   var header = api.create("textShape", "S03_Header");
@@ -109,8 +109,8 @@ function buildScene03(api, rootGroup, CONFIG) {
     api.keyframe(cardGroup, s.start + 20, { "position.y": -drift });
     api.keyframe(cardGroup, s.start + 160, { "position.y": drift });
     api.keyframe(cardGroup, s.end - 20, { "position.y": -drift });
-    api.magicEasing(cardGroup, "position.y", s.start + 160, "EaseInOut");
-    api.magicEasing(cardGroup, "position.y", s.end - 20, "EaseInOut");
+    // magicEasing on cardGroup omitted
+    // magicEasing on cardGroup omitted
   }
 
   return g;

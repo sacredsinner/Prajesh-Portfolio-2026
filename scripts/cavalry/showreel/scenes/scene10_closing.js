@@ -14,10 +14,10 @@ function buildScene10(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 25, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Eyebrow
   var eyebrow = api.create("textShape", "S10_Eyebrow");
@@ -119,8 +119,8 @@ function buildScene10(api, rootGroup, CONFIG) {
   // Domain lockup reveals after manifesto dissolves
   api.keyframe(domainGroup, s.start + 115, { "scale.x": 0.9, "scale.y": 0.9, "opacity": 0 });
   api.keyframe(domainGroup, s.start + 155, { "scale.x": 1.0, "scale.y": 1.0, "opacity": 100 });
-  api.magicEasing(domainGroup, "scale.x", s.start + 155, "EaseOut");
-  api.magicEasing(domainGroup, "opacity", s.start + 155, "EaseOut");
+  // magicEasing on domainGroup omitted
+  // magicEasing on domainGroup omitted
 
   return g;
 }

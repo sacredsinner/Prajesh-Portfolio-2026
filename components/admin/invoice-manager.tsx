@@ -337,35 +337,52 @@ export function InvoiceManager({
     toast.success(`Client reminder message for ${doc.clientName} copied!`)
   }
 
-  // Handle CSV file upload
+  // Process import with continuous step-by-step notification feedback
+  async function processImportContent(text: string, filename?: string) {
+    if (!text || !text.trim()) {
+      toast.error("File is empty. Please provide valid invoice data.")
+      return
+    }
+    const toastId = "import-flow"
+    setImporting(true)
+    toast.loading(filename ? `1/3: Reading ${filename}…` : "1/3: Reading input content…", { id: toastId })
+
+    try {
+      await new Promise((r) => setTimeout(r, 200))
+      toast.loading("2/3: Parsing invoices, quotes & line items…", { id: toastId })
+
+      const result = await importInvoicesFromCSV(text)
+      if (!result.ok) {
+        toast.error(`Import failed: ${result.error}`, { id: toastId })
+        setImporting(false)
+        return
+      }
+
+      toast.loading("3/3: Synchronizing records with database…", { id: toastId })
+      await new Promise((r) => setTimeout(r, 250))
+      toast.success(`✓ Successfully imported ${result.count} new invoices and updated ${result.updated}!`, { id: toastId })
+      setImportModalOpen(false)
+      setImportText("")
+      router.refresh()
+    } catch (err: any) {
+      toast.error(`Import failed: ${err?.message || err}`, { id: toastId })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  // Handle ANY file upload with automatic continuation
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const text = await file.text()
     setImportText(text)
+    await processImportContent(text, file.name)
+    e.target.value = ""
   }
 
   async function executeImport() {
-    if (!importText.trim()) {
-      toast.error("Please paste or upload CSV data first.")
-      return
-    }
-    setImporting(true)
-    try {
-      const result = await importInvoicesFromCSV(importText)
-      if (!result.ok) {
-        toast.error(result.error)
-        return
-      }
-      toast.success(`Successfully imported ${result.count} new invoices and updated ${result.updated}!`)
-      setImportModalOpen(false)
-      setImportText("")
-      router.refresh()
-    } catch {
-      toast.error("Import failed. Please check the CSV format and try again.")
-    } finally {
-      setImporting(false)
-    }
+    await processImportContent(importText)
   }
 
   if (editing) {
@@ -748,14 +765,14 @@ export function InvoiceManager({
         </>
       )}
 
-      {/* CSV Import Modal */}
+      {/* Universal File / CSV Import Modal */}
       {importModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-serif text-xl">Import Invoices from CSV</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Compatible with Invoice Generator export or standard CSV.</p>
+                <h3 className="font-serif text-xl">Import Invoices &amp; Quotes</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Eligible for any file format: CSV, TSV, JSON, TXT, or Invoice Generator exports.</p>
               </div>
               <button
                 type="button"
@@ -766,45 +783,69 @@ export function InvoiceManager({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Choose a CSV file</label>
+            <div className="space-y-4">
+              {/* Dropzone & File Input */}
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+                onDrop={async (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  const file = e.dataTransfer.files?.[0]
+                  if (file) {
+                    const text = await file.text()
+                    setImportText(text)
+                    await processImportContent(text, file.name)
+                  }
+                }}
+                className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-6 text-center cursor-pointer hover:border-foreground/50 hover:bg-secondary/30 transition-all"
+              >
+                <Upload className="size-8 text-muted-foreground mb-2" />
+                <span className="text-xs font-medium">Click to select or drag and drop any file</span>
+                <span className="text-[11px] text-muted-foreground mt-1">.csv, .json, .tsv, .txt (Upload will automatically continue with notifications)</span>
                 <input
                   type="file"
-                  accept=".csv"
+                  accept="*"
                   onChange={handleFileUpload}
-                  className="text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-foreground file:text-background hover:file:opacity-90"
+                  className="hidden"
                 />
-              </div>
+              </label>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Or paste CSV raw content</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Or paste raw text / CSV / JSON content</label>
                 <textarea
-                  rows={6}
+                  rows={5}
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
-                  placeholder={`customer,type,number,date,currency,total,item,quantity,unit_cost\n"Client Name",invoice,1,"Aug 12, 2026",NPR,5000,"Logo Design",1,5000`}
+                  placeholder={`customer,type,number,date,currency,total,item,quantity,unit_cost\n"Manav Bista",invoice,15,"Aug 12, 2026",NPR,5000,"Logo Design",1,5000`}
                   className={`${inputClass} font-mono text-xs`}
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-border pt-4">
-              <button
-                type="button"
-                onClick={() => setImportModalOpen(false)}
-                className="rounded-full border border-border px-4 py-2 text-xs hover:bg-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={importing || !importText.trim()}
-                onClick={executeImport}
-                className="rounded-full bg-foreground px-5 py-2 text-xs font-medium text-background hover:opacity-90 disabled:opacity-40"
-              >
-                {importing ? "Importing…" : "Import Now"}
-              </button>
+            <div className="flex justify-between items-center border-t border-border pt-4">
+              <span className="text-xs text-muted-foreground">
+                {importing ? "Processing upload in background…" : "Selecting a file automatically imports and notifies."}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImportModalOpen(false)}
+                  className="rounded-full border border-border px-4 py-2 text-xs hover:bg-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={importing || !importText.trim()}
+                  onClick={executeImport}
+                  className="rounded-full bg-foreground px-5 py-2 text-xs font-medium text-background hover:opacity-90 disabled:opacity-40"
+                >
+                  {importing ? "Processing…" : "Continue Import"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

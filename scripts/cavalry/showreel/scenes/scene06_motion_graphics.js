@@ -14,10 +14,10 @@ function buildScene06(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 15, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 15, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 15, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Section Header
   var header = api.create("textShape", "S06_Header");
@@ -53,7 +53,7 @@ function buildScene06(api, rootGroup, CONFIG) {
     var rotDir = (rIdx % 2 === 0) ? 1 : -1;
     api.keyframe(ringGroup, s.start, { "rotation": 0 });
     api.keyframe(ringGroup, s.end, { "rotation": rotDir * 24 });
-    api.magicEasing(ringGroup, "rotation", s.end, "Linear");
+    // magicEasing on ringGroup omitted
 
     var wavePeak1 = s.start + 60 + rIdx * 12;
     var wavePeak2 = wavePeak1 + 140;
@@ -127,7 +127,7 @@ function buildScene06(api, rootGroup, CONFIG) {
   api.keyframe(monoGroup, s.start + 30, { "scale.x": 0.8, "scale.y": 0.8 });
   api.keyframe(monoGroup, s.start + 180, { "scale.x": 1.2, "scale.y": 1.2 });
   api.keyframe(monoGroup, s.end - 30, { "scale.x": 1.0, "scale.y": 1.0 });
-  api.magicEasing(monoGroup, "scale.x", s.start + 180, "EaseInOut");
+  // magicEasing on monoGroup omitted
 
   return g;
 }

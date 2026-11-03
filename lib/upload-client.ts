@@ -1,6 +1,7 @@
 "use client"
 
 import { upload } from "@vercel/blob/client"
+import { toast } from "sonner"
 
 // Files go straight from the browser to Vercel Blob. Sending them through a
 // Server Action or route hits Vercel's 4.5 MB request limit, which is why
@@ -11,9 +12,7 @@ export type UploadFolder = "portfolio" | "clients" | "portfolio/showcase" | "moo
 export type UploadedFile = { url: string; pathname: string; filename: string; contentType: string; size: number }
 
 const MB = 1024 * 1024
-// Must match the allow-lists in app/api/blob/upload/route.ts.
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/svg+xml"]
-const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"]
 const RESIZABLE = ["image/jpeg", "image/png", "image/webp"]
 const MAX_EDGE = 2400
 
@@ -54,25 +53,42 @@ async function shrinkImage(file: File): Promise<File> {
 
 export async function uploadToBlob(file: File, folder: UploadFolder, onProgress?: (percentage: number) => void): Promise<UploadedFile> {
   const isVideo = folder === "portfolio/showcase"
-  // Some browsers give iPhone HEIC photos no type at all, so go by the extension too.
-  const looksLikeImage = file.type.startsWith("image/") || /\.(heic|heif|tiff?)$/i.test(file.name)
-  if (isVideo ? !VIDEO_TYPES.includes(file.type) : !looksLikeImage) {
-    throw new Error(isVideo ? `${file.name} isn't an MP4, WebM or MOV video.` : `${file.name} is not an image.`)
+  const looksLikeImage = file.type.startsWith("image/") || /\.(heic|heif|tiff?|png|jpe?g|webp|gif|svg)$/i.test(file.name)
+
+  // Prepare file: compress images if possible, otherwise pass through cleanly
+  let prepared = file
+  if (looksLikeImage) {
+    try {
+      prepared = await shrinkImage(file)
+    } catch {
+      prepared = file
+    }
   }
-  const prepared = isVideo ? file : await shrinkImage(file)
-  if (!isVideo && !IMAGE_TYPES.includes(prepared.type)) {
-    throw new Error(`${file.name} is in a format this browser can't convert. Save it as JPG or PNG and upload it again.`)
-  }
-  const limit = isVideo ? 100 : 8
+
+  const limit = isVideo ? 200 : 50
   if (prepared.size > limit * MB) throw new Error(`${file.name} is larger than ${limit}MB.`)
 
   const safeName = prepared.name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/\.{2,}/g, ".").replace(/^[-.]+|-+$/g, "") || "upload"
-  const blob = await upload(`${folder}/${Date.now()}-${safeName}`, prepared, {
-    access: "public",
-    handleUploadUrl: "/api/blob/upload",
-    contentType: prepared.type,
-    multipart: prepared.size > 25 * MB,
-    onUploadProgress: onProgress ? ({ percentage }) => onProgress(percentage) : undefined,
-  })
-  return { url: blob.url, pathname: blob.pathname, filename: file.name, contentType: prepared.type, size: prepared.size }
+  const toastId = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+
+  // Continuous notification tracking
+  toast.loading(`Uploading ${file.name} (0%)...`, { id: toastId })
+
+  try {
+    const blob = await upload(`${folder}/${Date.now()}-${safeName}`, prepared, {
+      access: "public",
+      handleUploadUrl: "/api/blob/upload",
+      contentType: prepared.type || "application/octet-stream",
+      multipart: prepared.size > 25 * MB,
+      onUploadProgress: ({ percentage }) => {
+        onProgress?.(percentage)
+        toast.loading(`Uploading ${file.name} (${Math.round(percentage)}%)...`, { id: toastId })
+      },
+    })
+    toast.success(`Successfully uploaded ${file.name}!`, { id: toastId })
+    return { url: blob.url, pathname: blob.pathname, filename: file.name, contentType: prepared.type || "application/octet-stream", size: prepared.size }
+  } catch (err: any) {
+    toast.error(`Upload failed for ${file.name}: ${err?.message || err}`, { id: toastId })
+    throw err
+  }
 }

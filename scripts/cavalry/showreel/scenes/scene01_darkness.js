@@ -14,16 +14,16 @@ function buildScene01(api, rootGroup, CONFIG) {
   // Scene Visibility Keyframes (Active: 0 - 240)
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 20, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 20, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 20, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Subtle camera drift on group scale
   api.keyframe(g, s.start, { "scale.x": 0.95, "scale.y": 0.95 });
   api.keyframe(g, s.end, { "scale.x": 1.05, "scale.y": 1.05 });
-  api.magicEasing(g, "scale.x", s.end, "EaseInOut");
-  api.magicEasing(g, "scale.y", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Corner specs (Geist Mono)
   var specTL = api.create("textShape", "S01_Spec_TL");

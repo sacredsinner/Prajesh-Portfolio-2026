@@ -14,10 +14,10 @@ function buildScene02(api, rootGroup, CONFIG) {
   // Group Visibility Keyframes
   api.keyframe(g, s.start, { "opacity": 0 });
   api.keyframe(g, s.start + 20, { "opacity": 100 });
-  api.magicEasing(g, "opacity", s.start + 20, "EaseOut");
+  // magicEasing on group omitted for Cavalry compatibility
   api.keyframe(g, s.end - 20, { "opacity": 100 });
   api.keyframe(g, s.end, { "opacity": 0 });
-  api.magicEasing(g, "opacity", s.end, "EaseInOut");
+  // magicEasing on group omitted for Cavalry compatibility
 
   // Eyebrow label (Geist Mono)
   var eyebrow = api.create("textShape", "S02_Eyebrow");
