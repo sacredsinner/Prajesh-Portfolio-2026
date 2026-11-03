@@ -25,9 +25,9 @@ import {
 } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: "Design System — Prajesh Shakya",
+  title: "Brand & UI Design Systems Architecture — Prajesh Shakya",
   description:
-    "The living design system powering the portfolio and content studio of Prajesh Shakya. Minimal mono palette, editorial typography, and purposeful motion.",
+    "Explore the Brand & UI Design Systems Architecture of Prajesh Shakya: editorial typography, WCAG 2.1 AA accessible UI components, and tactile motion guidelines.",
   alternates: {
     canonical: `${SITE_URL}/design-system`,
   },

@@ -10,7 +10,8 @@
     "seed": "tsx scripts/seed-projects.ts",
     "seed:moodboards": "tsx scripts/seed-moodboards.ts",
     "migrate:invoices": "tsx scripts/migrate-invoices.ts",
-    "generate:pdf": "tsx scripts/generate-brand-dna-pdf.ts"
+    "generate:pdf": "tsx scripts/generate-brand-dna-pdf.ts",
+    "sync:notion:dna": "tsx scripts/populate-notion-brand-dna.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.107",

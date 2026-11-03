@@ -8,9 +8,16 @@ import { getPricing } from "@/lib/pricing"
 import { SITE_URL } from "@/lib/site"
 
 export const metadata: Metadata = {
-  title: "Packages & Pricing — Prajesh Shakya",
-  description: "Brand identity packages from Prajesh Shakya: Foundation, Identity and System, with starting prices in NPR, AUD and USD, plus add-ons and day rates.",
+  title: "Brand Identity Packages & Pricing (USD, AUD, NPR) — Prajesh Shakya",
+  description:
+    "Transparent multi-currency brand identity pricing: Foundation ($2,500+ / AUD $3,500+ / NPR 50,000+), Identity ($6,000+ / AUD $8,500+ / NPR 120,000+), and System ($11,000+ / AUD $16,000+ / NPR 250,000+).",
   alternates: { canonical: "/packages" },
+  openGraph: {
+    title: "Brand Identity Packages & Pricing (USD, AUD, NPR) — Prajesh Shakya",
+    description:
+      "Transparent multi-currency brand identity pricing: Foundation ($2,500+), Identity ($6,000+), and System ($11,000+). No hidden agency markups.",
+    url: `${SITE_URL}/packages`,
+  },
 }
 
 // Refreshed every 5 minutes, and immediately when packages are saved in /admin.

@@ -7,10 +7,16 @@ import { getPublishedProjects, toProjectCard } from "@/lib/public-content"
 import type { Project } from "@/components/project-card"
 
 export const metadata: Metadata = {
-  title: "Brand Identity Projects — Prajesh Shakya",
+  title: "Brand Strategy, Visual Identity & Packaging Case Studies — Prajesh Shakya",
   description:
-    "Explore my selected brand identity projects and case studies, from strategy and logo design to complete visual systems.",
+    "Explore commercial case studies in brand strategy, logo architecture, packaging design, and visual systems for ambitious businesses across Nepal, Australia, and the US.",
   alternates: { canonical: "/projects" },
+  openGraph: {
+    title: "Brand Strategy, Visual Identity & Packaging Case Studies — Prajesh Shakya",
+    description:
+      "Selected commercial case studies in brand strategy, logo systems, and packaging architecture.",
+    url: "https://www.shakyaprajesh.com.np/projects",
+  },
 }
 
 // Pages are cached and refreshed every 5 minutes, and immediately when content is saved in /admin.

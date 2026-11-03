@@ -14,37 +14,37 @@ interface SentenceConfig {
 const SENTENCES: Record<string | number, SentenceConfig> = {
   default: {
     anchorSlot: -1,
-    words: ["Crafting", "Authentic", "Brand", "Identities", "That", "Resonate"],
+    words: ["Turning", "Ambitious", "Businesses", "Into", "Unmistakable", "Brands"],
   },
-  // Hover on "Crafting" (Slot 0)
+  // Hover on "Turning" (Slot 0)
   0: {
     anchorSlot: 0,
-    anchorWord: "Crafting",
-    words: ["Crafting", "Timeless", "Visual", "Worlds", "With", "Precision"],
+    anchorWord: "Turning",
+    words: ["Turning", "Bold", "Visions", "Into", "Market", "Leaders"],
   },
-  // Hover on "Authentic" (Slot 1)
+  // Hover on "Ambitious" (Slot 1)
   1: {
     anchorSlot: 1,
-    anchorWord: "Authentic",
-    words: ["Uncovering", "Authentic", "Truth", "Behind", "Every", "Founder"],
+    anchorWord: "Ambitious",
+    words: ["Elevating", "Ambitious", "Founders", "Into", "Industry", "Icons"],
   },
-  // Hover on "Brand" (Slot 2)
+  // Hover on "Businesses" (Slot 2)
   2: {
     anchorSlot: 2,
-    anchorWord: "Brand",
-    words: ["Defining", "Strategic", "Brand", "Systems", "Built", "To Endure"],
+    anchorWord: "Businesses",
+    words: ["Transforming", "Growing", "Businesses", "With", "Enduring", "Craft"],
   },
-  // Hover on "Identities" (Slot 3)
-  3: {
-    anchorSlot: 3,
-    anchorWord: "Identities",
-    words: ["Designing", "Timeless", "Brand", "Identities", "That", "Endure"],
+  // Hover on "Unmistakable" (Slot 4)
+  4: {
+    anchorSlot: 4,
+    anchorWord: "Unmistakable",
+    words: ["Designing", "Singular", "Identities", "Into", "Unmistakable", "Brands"],
   },
-  // Hover on "Resonate" (Slot 5)
+  // Hover on "Brands" (Slot 5)
   5: {
     anchorSlot: 5,
-    anchorWord: "Resonate",
-    words: ["Creating", "Human", "Brand", "Identities", "That", "Resonate"],
+    anchorWord: "Brands",
+    words: ["Building", "Enduring", "Identities", "Into", "Iconic", "Brands"],
   },
 }
 
@@ -85,7 +85,7 @@ export function InteractiveHeroTitle() {
       <div className="min-h-[130px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[210px] flex items-center justify-center">
         <h1
           className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none"
-          aria-label="Crafting Authentic Brand Identities That Resonate"
+          aria-label="Turning Ambitious Businesses Into Unmistakable Brands"
         >
           {DEFAULT_WORDS.map((word, idx) => (
             <span key={word} className="inline-block px-1">
@@ -102,7 +102,7 @@ export function InteractiveHeroTitle() {
     <div className="min-h-[130px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[210px] flex items-center justify-center">
       <h1
         className="hero-animate-title font-serif text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight leading-[1.05] text-balance select-none transition-all duration-700"
-        aria-label="Crafting Authentic Brand Identities That Resonate"
+        aria-label="Turning Ambitious Businesses Into Unmistakable Brands"
         onMouseLeave={handleContainerLeave}
       >
         {currentConfig.words.map((word, idx) => {

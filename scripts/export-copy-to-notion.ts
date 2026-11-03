@@ -78,10 +78,26 @@ function parseInlineFormatting(text: string): RichTextItem[] {
     } else if (token.startsWith("[") && token.includes("](") && token.endsWith(")")) {
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
       if (linkMatch) {
-        result.push({
-          type: "text",
-          text: { content: truncate(linkMatch[1]), link: { url: linkMatch[2] } },
-        })
+        const rawUrl = linkMatch[2].trim()
+        let validUrl: string | null = null
+        if (/^https?:\/\//i.test(rawUrl) || /^mailto:/i.test(rawUrl)) {
+          validUrl = rawUrl
+        } else if (rawUrl.startsWith("/")) {
+          validUrl = `https://www.shakyaprajesh.com.np${rawUrl}`
+        }
+
+        if (validUrl) {
+          result.push({
+            type: "text",
+            text: { content: truncate(linkMatch[1]), link: { url: validUrl } },
+          })
+        } else {
+          result.push({
+            type: "text",
+            text: { content: truncate(linkMatch[1]), link: null },
+            annotations: { bold: true },
+          })
+        }
       } else {
         result.push({
           type: "text",
@@ -143,6 +159,32 @@ function markdownToNotionBlocks(markdown: string): any[] {
     // Divider
     if (trimmed === "---" || trimmed === "***" || trimmed === "___") {
       blocks.push({ object: "block", type: "divider", divider: {} })
+      continue
+    }
+
+    // Markdown Table handling
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      if (/^\|[\s:-|-]+\|$/.test(trimmed)) {
+        continue // skip table separator row (e.g. | :--- | :--- |)
+      }
+      const cells = trimmed.split("|").map((c) => c.trim()).filter(Boolean)
+      if (cells.length === 2) {
+        blocks.push({
+          object: "block",
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: parseInlineFormatting(`**${cells[0]}**: ${cells[1]}`),
+          },
+        })
+      } else if (cells.length > 0) {
+        blocks.push({
+          object: "block",
+          type: "paragraph",
+          paragraph: {
+            rich_text: parseInlineFormatting(cells.join(" · ")),
+          },
+        })
+      }
       continue
     }
 

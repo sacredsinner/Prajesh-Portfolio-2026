@@ -48,7 +48,7 @@ export function ProcessSection() {
       <SectionHeader
         label="Process"
         title="How I work with you"
-        description="A proven methodology that transforms insight into identity."
+        description="Six deliberate steps from raw business insight to a living visual system."
       />
 
       <div className="grid gap-12 md:grid-cols-2 md:gap-8 lg:grid-cols-3">

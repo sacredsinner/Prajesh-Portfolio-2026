@@ -19,7 +19,7 @@ export const person = {
   email: `mailto:${CONTACT_EMAIL}`,
   image: absoluteUrl("/images/about-portrait.jpg"),
   sameAs: SOCIAL_LINKS.map((link) => link.href),
-  knowsAbout: ["Brand strategy", "Brand identity design", "Logo design", "Visual identity systems"],
+  knowsAbout: ["Brand Strategy", "Visual Identity Systems", "Typography", "Packaging Design", "Design Systems"],
 }
 
 export const siteSchema = {
@@ -36,7 +36,8 @@ export const siteSchema = {
       image: absoluteUrl("/og-image.jpg"),
       founder: { "@id": PERSON_ID },
       address: { "@type": "PostalAddress", addressLocality: "Kathmandu", addressCountry: "NP" },
-      areaServed: ["Nepal", "Australia", "Worldwide"],
+      areaServed: ["NP", "AU", "US"],
+      priceRange: "$$",
       sameAs: SOCIAL_LINKS.map((link) => link.href),
     },
   ],

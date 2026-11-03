@@ -20,6 +20,7 @@
 | **Core Offering Tiers** | Foundation (3–4 wks) · Identity (6–8 wks) · System (10–12 wks) |
 | **PDF Monograph** | [`Prajesh-Shakya-Brand-DNA.pdf`](./Prajesh-Shakya-Brand-DNA.pdf) (A4 5-Page Monograph) |
 | **API PDF Route** | `/api/brand-dna/pdf` |
+| **Notion Document** | [Prajesh Shakya — Brand DNA (Notion)](https://www.notion.so/prajesh1993/Prajesh-Shakya-Brand-DNA-Strategic-Identity-Manual-40d4f078210f81c7b9d9e2ec4a553674) |
 
 ---
 
